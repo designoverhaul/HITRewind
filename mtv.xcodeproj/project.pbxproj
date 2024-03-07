@@ -15,6 +15,11 @@
 		1C2643ED2B9A671F006D5D69 /* mtvTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2643EC2B9A671F006D5D69 /* mtvTests.swift */; };
 		1C2643F72B9A671F006D5D69 /* mtvUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2643F62B9A671F006D5D69 /* mtvUITests.swift */; };
 		1C2643F92B9A671F006D5D69 /* mtvUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2643F82B9A671F006D5D69 /* mtvUITestsLaunchTests.swift */; };
+		1C2644072B9A7023006D5D69 /* PlaylistModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2644062B9A7023006D5D69 /* PlaylistModel.swift */; };
+		1C26440A2B9A716F006D5D69 /* PlaylistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2644092B9A716F006D5D69 /* PlaylistView.swift */; };
+		1C26440D2B9A71A7006D5D69 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C26440C2B9A71A7006D5D69 /* Constants.swift */; };
+		1C26440F2B9A7680006D5D69 /* ArtistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C26440E2B9A7680006D5D69 /* ArtistView.swift */; };
+		1C2644122B9A76AC006D5D69 /* XCDYouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,6 +51,10 @@
 		1C2643F22B9A671F006D5D69 /* mtvUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mtvUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C2643F62B9A671F006D5D69 /* mtvUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mtvUITests.swift; sourceTree = "<group>"; };
 		1C2643F82B9A671F006D5D69 /* mtvUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mtvUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		1C2644062B9A7023006D5D69 /* PlaylistModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistModel.swift; sourceTree = "<group>"; };
+		1C2644092B9A716F006D5D69 /* PlaylistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistView.swift; sourceTree = "<group>"; };
+		1C26440C2B9A71A7006D5D69 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		1C26440E2B9A7680006D5D69 /* ArtistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtistView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +62,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C2644122B9A76AC006D5D69 /* XCDYouTubeKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,6 +106,9 @@
 		1C2643D72B9A671D006D5D69 /* mtv */ = {
 			isa = PBXGroup;
 			children = (
+				1C26440B2B9A719B006D5D69 /* constants */,
+				1C2644082B9A715A006D5D69 /* views */,
+				1C2644052B9A700F006D5D69 /* models */,
 				1C2643D82B9A671D006D5D69 /* AppDelegate.swift */,
 				1C2643DA2B9A671D006D5D69 /* ViewController.swift */,
 				1C2643DC2B9A671D006D5D69 /* Main.storyboard */,
@@ -122,6 +135,31 @@
 			path = mtvUITests;
 			sourceTree = "<group>";
 		};
+		1C2644052B9A700F006D5D69 /* models */ = {
+			isa = PBXGroup;
+			children = (
+				1C2644062B9A7023006D5D69 /* PlaylistModel.swift */,
+			);
+			path = models;
+			sourceTree = "<group>";
+		};
+		1C2644082B9A715A006D5D69 /* views */ = {
+			isa = PBXGroup;
+			children = (
+				1C2644092B9A716F006D5D69 /* PlaylistView.swift */,
+				1C26440E2B9A7680006D5D69 /* ArtistView.swift */,
+			);
+			path = views;
+			sourceTree = "<group>";
+		};
+		1C26440B2B9A719B006D5D69 /* constants */ = {
+			isa = PBXGroup;
+			children = (
+				1C26440C2B9A71A7006D5D69 /* Constants.swift */,
+			);
+			path = constants;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -138,6 +176,9 @@
 			dependencies = (
 			);
 			name = mtv;
+			packageProductDependencies = (
+				1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */,
+			);
 			productName = mtv;
 			productReference = 1C2643D52B9A671D006D5D69 /* mtv.app */;
 			productType = "com.apple.product-type.application";
@@ -210,6 +251,9 @@
 				Base,
 			);
 			mainGroup = 1C2643CC2B9A671D006D5D69;
+			packageReferences = (
+				1C2644102B9A76AC006D5D69 /* XCRemoteSwiftPackageReference "XCDYouTubeKit" */,
+			);
 			productRefGroup = 1C2643D62B9A671D006D5D69 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -253,7 +297,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C26440D2B9A71A7006D5D69 /* Constants.swift in Sources */,
+				1C26440F2B9A7680006D5D69 /* ArtistView.swift in Sources */,
 				1C2643DB2B9A671D006D5D69 /* ViewController.swift in Sources */,
+				1C2644072B9A7023006D5D69 /* PlaylistModel.swift in Sources */,
+				1C26440A2B9A716F006D5D69 /* PlaylistView.swift in Sources */,
 				1C2643D92B9A671D006D5D69 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -595,6 +643,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1C2644102B9A76AC006D5D69 /* XCRemoteSwiftPackageReference "XCDYouTubeKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/cbg-dev-k/XCDYouTubeKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.16.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1C2644102B9A76AC006D5D69 /* XCRemoteSwiftPackageReference "XCDYouTubeKit" */;
+			productName = XCDYouTubeKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1C2643CD2B9A671D006D5D69 /* Project object */;
 }
