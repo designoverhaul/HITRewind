@@ -41,14 +41,16 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         layout.minimumInteritemSpacing = 20
         layout.minimumLineSpacing = 20
         layout.itemSize = CGSize(width: 150, height: 150) // Adjust as needed
-        
+
         playlistImagesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         playlistImagesCollectionView.backgroundColor = .clear
         playlistImagesCollectionView.dataSource = self
         playlistImagesCollectionView.delegate = self
-        playlistImagesCollectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "ImageCell")
-        view.addSubview(playlistImagesCollectionView)
         
+        // Register the PlaylistImageCell class
+        playlistImagesCollectionView.register(PlaylistImageCell.self, forCellWithReuseIdentifier: "PlaylistCell")
+        view.addSubview(playlistImagesCollectionView)
+
         playlistImagesCollectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             playlistImagesCollectionView.leadingAnchor.constraint(equalTo: playlistTableView.trailingAnchor, constant: 20),
@@ -57,7 +59,6 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             playlistImagesCollectionView.bottomAnchor.constraint(equalTo: playlistTableView.bottomAnchor)
         ])
     }
-    
     private func fetchPlaylists() {
         
         
@@ -154,39 +155,37 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ImageCell", for: indexPath)
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PlaylistCell", for: indexPath) as? PlaylistImageCell else {
+            return UICollectionViewCell()
+        }
 
         // Configure the cell content here
         if let videoURL = playlists[selectedPlaylistIndex ?? 0].fields.videoUrls?[indexPath.item],
            let videoID = extractYouTubeVideoID(from: videoURL) {
             let thumbnailURLString = "https://i.ytimg.com/vi/\(videoID)/sddefault.jpg"
             if let url = URL(string: thumbnailURLString) {
-                let imageView = UIImageView(frame: cell.bounds)
-                imageView.contentMode = .scaleAspectFill
-                imageView.clipsToBounds = true
-                imageView.load(url: url)
-                cell.addSubview(imageView)
+                cell.imageView.load(url: url)
             }
             
-            let titleLabel = UILabel(frame: CGRect(x: 0, y: cell.bounds.height, width: cell.bounds.width, height: 20))
-            titleLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.title // Use appropriate title from playlist model
-            titleLabel.textColor = .white
-            titleLabel.font = UIFont.systemFont(ofSize: 14)
-            titleLabel.textAlignment = .center
-            cell.addSubview(titleLabel)
-            
-            // Add year label below the title label
-            let yearLabel = UILabel(frame: CGRect(x: 0, y: cell.bounds.height + 20, width: cell.bounds.width, height: 20))
-            yearLabel.text = "\(playlists[selectedPlaylistIndex ?? 0].fields.year)" // Use appropriate year from playlist model
-            yearLabel.textColor = .white
-            yearLabel.font = UIFont.systemFont(ofSize: 12)
-            yearLabel.textAlignment = .center
-            cell.addSubview(yearLabel)
+            cell.titleLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.title // Use appropriate title from playlist model
+            cell.yearLabel.text = "\(playlists[selectedPlaylistIndex ?? 0].fields.year)" // Use appropriate year from playlist model
         }
 
         return cell
     }
 }
+extension UIImageView {
+    func load(url: URL) {
+        DispatchQueue.global().async { [weak self] in
+            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                DispatchQueue.main.async {
+                    self?.image = image
+                }
+            }
+        }
+    }
+}
+
 
 // Utility function to extract YouTube video ID from URL
 func extractYouTubeVideoID(from videoURL: String) -> String? {
@@ -205,17 +204,7 @@ func extractYouTubeVideoID(from videoURL: String) -> String? {
 }
 
 // Extension to load image from URL asynchronously
-extension UIImageView {
-    func load(url: URL) {
-        DispatchQueue.global().async { [weak self] in
-            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    self?.image = image
-                }
-            }
-        }
-    }
-}
+
 
 extension UIColor {
     convenience init?(hex: String) {

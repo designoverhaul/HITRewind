@@ -19,6 +19,8 @@
 		1C26440D2B9A71A7006D5D69 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C26440C2B9A71A7006D5D69 /* Constants.swift */; };
 		1C26440F2B9A7680006D5D69 /* PlayListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C26440E2B9A7680006D5D69 /* PlayListViewController.swift */; };
 		1C2644122B9A76AC006D5D69 /* XCDYouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */; };
+		1C4BD6572BA11176002C37C1 /* ImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6562BA11176002C37C1 /* ImageCell.swift */; };
+		1C4BD65A2BA1143B002C37C1 /* VideoDurationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +55,8 @@
 		1C2644062B9A7023006D5D69 /* PlaylistModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistModel.swift; sourceTree = "<group>"; };
 		1C26440C2B9A71A7006D5D69 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		1C26440E2B9A7680006D5D69 /* PlayListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayListViewController.swift; sourceTree = "<group>"; };
+		1C4BD6562BA11176002C37C1 /* ImageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCell.swift; sourceTree = "<group>"; };
+		1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDurationService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +108,7 @@
 		1C2643D72B9A671D006D5D69 /* mtv */ = {
 			isa = PBXGroup;
 			children = (
+				1C4BD6582BA11428002C37C1 /* Services */,
 				1C26440B2B9A719B006D5D69 /* constants */,
 				1C2644082B9A715A006D5D69 /* views */,
 				1C2644052B9A700F006D5D69 /* models */,
@@ -145,6 +150,7 @@
 			isa = PBXGroup;
 			children = (
 				1C26440E2B9A7680006D5D69 /* PlayListViewController.swift */,
+				1C4BD6562BA11176002C37C1 /* ImageCell.swift */,
 			);
 			path = views;
 			sourceTree = "<group>";
@@ -155,6 +161,14 @@
 				1C26440C2B9A71A7006D5D69 /* Constants.swift */,
 			);
 			path = constants;
+			sourceTree = "<group>";
+		};
+		1C4BD6582BA11428002C37C1 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -299,6 +313,8 @@
 				1C2643DB2B9A671D006D5D69 /* ViewController.swift in Sources */,
 				1C2644072B9A7023006D5D69 /* PlaylistModel.swift in Sources */,
 				1C2643D92B9A671D006D5D69 /* AppDelegate.swift in Sources */,
+				1C4BD6572BA11176002C37C1 /* ImageCell.swift in Sources */,
+				1C4BD65A2BA1143B002C37C1 /* VideoDurationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
