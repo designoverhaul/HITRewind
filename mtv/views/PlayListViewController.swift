@@ -148,9 +148,9 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
 extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         guard let selectedPlaylistIndex = selectedPlaylistIndex, selectedPlaylistIndex < playlists.count else {
-                return 0
-            }
-        return playlists[selectedPlaylistIndex ].fields.videoUrls?.count ?? 0
+            return 0
+        }
+        return playlists[selectedPlaylistIndex].fields.videoUrls?.count ?? 0
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -167,6 +167,21 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
                 imageView.load(url: url)
                 cell.addSubview(imageView)
             }
+            
+            let titleLabel = UILabel(frame: CGRect(x: 0, y: cell.bounds.height, width: cell.bounds.width, height: 20))
+            titleLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.title // Use appropriate title from playlist model
+            titleLabel.textColor = .white
+            titleLabel.font = UIFont.systemFont(ofSize: 14)
+            titleLabel.textAlignment = .center
+            cell.addSubview(titleLabel)
+            
+            // Add year label below the title label
+            let yearLabel = UILabel(frame: CGRect(x: 0, y: cell.bounds.height + 20, width: cell.bounds.width, height: 20))
+            yearLabel.text = "\(playlists[selectedPlaylistIndex ?? 0].fields.year)" // Use appropriate year from playlist model
+            yearLabel.textColor = .white
+            yearLabel.font = UIFont.systemFont(ofSize: 12)
+            yearLabel.textAlignment = .center
+            cell.addSubview(yearLabel)
         }
 
         return cell
