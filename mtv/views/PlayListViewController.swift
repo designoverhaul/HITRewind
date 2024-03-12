@@ -168,7 +168,15 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
             }
             
             cell.titleLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.title // Use appropriate title from playlist model
-            cell.yearLabel.text = "\(playlists[selectedPlaylistIndex ?? 0].fields.year)" // Use appropriate year from playlist model
+            cell.yearLabel.text = "\(playlists[selectedPlaylistIndex ?? 0].fields.year)"
+            
+            getVideoDuration(videoUrl: videoURL) { duration in
+                        if let duration = duration {
+                            DispatchQueue.main.async {
+                                cell.durationLabel.text = duration
+                            }
+                        }
+                    }
         }
 
         return cell
