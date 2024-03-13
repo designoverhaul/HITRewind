@@ -14,6 +14,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        showLoadingIndicator() // Show loading indicator
         fetchPlaylists()
     }
 
@@ -99,6 +100,27 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         }
     }
     
+    private func showLoadingIndicator() {
+        // Create and configure the loading indicator
+        loadingIndicator = UIActivityIndicatorView(style: .large)
+        loadingIndicator.color = .white
+        loadingIndicator.startAnimating()
+        view.addSubview(loadingIndicator)
+        
+        // Position the loading indicator in the center of the view
+        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+
+    private func hideLoadingIndicator() {
+        // Stop and remove the loading indicator from the view
+        loadingIndicator.stopAnimating()
+        loadingIndicator.removeFromSuperview()
+    }
+
     private func fetchPlaylists() {
         mtv.fetchPlaylists(apiKey: apiKey, baseURLString: playListUrl) { [weak self] result in
             switch result {
@@ -109,15 +131,16 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                     DispatchQueue.main.async {
                         self?.playlistTableView.reloadData()
                         self?.playlistImagesCollectionView.reloadData()
+                        self?.hideLoadingIndicator() // Hide loading indicator after playlists are fetched
                         self?.selectFirstPlaylist() // Call selectFirstPlaylist() after playlists are fetched
                     }
                 }
             case .failure(let error):
                 print("Error fetching playlists: \(error)")
+                self?.hideLoadingIndicator() // Hide loading indicator if there's an error
             }
         }
     }
-
 }
 
 extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
