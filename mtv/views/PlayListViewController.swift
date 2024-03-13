@@ -258,28 +258,43 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
             return UICollectionViewCell()
         }
 
+        // Reset the cell's content before configuring it
+        cell.imageView.image = nil
+        cell.titleLabel.text = nil
+        cell.yearLabel.text = nil
+        cell.durationLabel.text = nil
+
         // Configure the cell content here
         if let videoURL = playlists[selectedPlaylistIndex ?? 0].fields.videoUrls?[indexPath.item],
-           let videoID = extractYouTubeVideoID(from: videoURL) {
-            let thumbnailURLString = "https://i.ytimg.com/vi/\(videoID)/sddefault.jpg"
+           
+            let videoID = extractYouTubeVideoID(from: videoURL) {
+           
+            let thumbnailURLString = "https://i.ytimg.com/vi/\(videoID)/mqdefault.jpg"
+        
             if let url = URL(string: thumbnailURLString) {
-                cell.imageView.load(url: url)
+                // Asynchronously load the image
+                URLSession.shared.dataTask(with: url) { data, response, error in
+                    if let data = data, let image = UIImage(data: data) {
+                        DispatchQueue.main.async {
+                            cell.imageView.image = image
+                        }
+                    }
+                }.resume()
             }
             
             cell.titleLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.videoTitles?[indexPath.item] // Use appropriate title from playlist model
             cell.yearLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.artistNames?[indexPath.item]
             
             getVideoDuration(videoUrl: videoURL) { duration in
-                        if let duration = duration {
-                            DispatchQueue.main.async {
-                                cell.durationLabel.text = duration
-                            }
-                        }
-                    }
+                DispatchQueue.main.async {
+                    cell.durationLabel.text = duration
+                }
+            }
         }
 
         return cell
     }
+
 }
 
 extension UIImageView {
