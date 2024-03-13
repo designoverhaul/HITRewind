@@ -41,15 +41,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		1C2643D52B9A671D006D5D69 /* mtv.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mtv.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C2643D52B9A671D006D5D69 /* MTV Music Videos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MTV Music Videos.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C2643D82B9A671D006D5D69 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1C2643DA2B9A671D006D5D69 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		1C2643DD2B9A671D006D5D69 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		1C2643DF2B9A671F006D5D69 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1C2643E22B9A671F006D5D69 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		1C2643E82B9A671F006D5D69 /* mtvTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mtvTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C2643E82B9A671F006D5D69 /* MTV Music VideosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MTV Music VideosTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C2643EC2B9A671F006D5D69 /* mtvTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mtvTests.swift; sourceTree = "<group>"; };
-		1C2643F22B9A671F006D5D69 /* mtvUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mtvUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C2643F22B9A671F006D5D69 /* MTV Music VideosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MTV Music VideosUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C2643F62B9A671F006D5D69 /* mtvUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mtvUITests.swift; sourceTree = "<group>"; };
 		1C2643F82B9A671F006D5D69 /* mtvUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mtvUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		1C2644062B9A7023006D5D69 /* PlaylistModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistModel.swift; sourceTree = "<group>"; };
@@ -98,9 +98,9 @@
 		1C2643D62B9A671D006D5D69 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1C2643D52B9A671D006D5D69 /* mtv.app */,
-				1C2643E82B9A671F006D5D69 /* mtvTests.xctest */,
-				1C2643F22B9A671F006D5D69 /* mtvUITests.xctest */,
+				1C2643D52B9A671D006D5D69 /* MTV Music Videos.app */,
+				1C2643E82B9A671F006D5D69 /* MTV Music VideosTests.xctest */,
+				1C2643F22B9A671F006D5D69 /* MTV Music VideosUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -174,9 +174,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1C2643D42B9A671D006D5D69 /* mtv */ = {
+		1C2643D42B9A671D006D5D69 /* MTV Music Videos */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1C2643FC2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "mtv" */;
+			buildConfigurationList = 1C2643FC2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music Videos" */;
 			buildPhases = (
 				1C2643D12B9A671D006D5D69 /* Sources */,
 				1C2643D22B9A671D006D5D69 /* Frameworks */,
@@ -186,17 +186,17 @@
 			);
 			dependencies = (
 			);
-			name = mtv;
+			name = "MTV Music Videos";
 			packageProductDependencies = (
 				1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */,
 			);
 			productName = mtv;
-			productReference = 1C2643D52B9A671D006D5D69 /* mtv.app */;
+			productReference = 1C2643D52B9A671D006D5D69 /* MTV Music Videos.app */;
 			productType = "com.apple.product-type.application";
 		};
-		1C2643E72B9A671F006D5D69 /* mtvTests */ = {
+		1C2643E72B9A671F006D5D69 /* MTV Music VideosTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1C2643FF2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "mtvTests" */;
+			buildConfigurationList = 1C2643FF2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music VideosTests" */;
 			buildPhases = (
 				1C2643E42B9A671F006D5D69 /* Sources */,
 				1C2643E52B9A671F006D5D69 /* Frameworks */,
@@ -207,14 +207,14 @@
 			dependencies = (
 				1C2643EA2B9A671F006D5D69 /* PBXTargetDependency */,
 			);
-			name = mtvTests;
+			name = "MTV Music VideosTests";
 			productName = mtvTests;
-			productReference = 1C2643E82B9A671F006D5D69 /* mtvTests.xctest */;
+			productReference = 1C2643E82B9A671F006D5D69 /* MTV Music VideosTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		1C2643F12B9A671F006D5D69 /* mtvUITests */ = {
+		1C2643F12B9A671F006D5D69 /* MTV Music VideosUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1C2644022B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "mtvUITests" */;
+			buildConfigurationList = 1C2644022B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music VideosUITests" */;
 			buildPhases = (
 				1C2643EE2B9A671F006D5D69 /* Sources */,
 				1C2643EF2B9A671F006D5D69 /* Frameworks */,
@@ -225,9 +225,9 @@
 			dependencies = (
 				1C2643F42B9A671F006D5D69 /* PBXTargetDependency */,
 			);
-			name = mtvUITests;
+			name = "MTV Music VideosUITests";
 			productName = mtvUITests;
-			productReference = 1C2643F22B9A671F006D5D69 /* mtvUITests.xctest */;
+			productReference = 1C2643F22B9A671F006D5D69 /* MTV Music VideosUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -253,7 +253,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 1C2643D02B9A671D006D5D69 /* Build configuration list for PBXProject "mtv" */;
+			buildConfigurationList = 1C2643D02B9A671D006D5D69 /* Build configuration list for PBXProject "MTV Music Videos" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -269,9 +269,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1C2643D42B9A671D006D5D69 /* mtv */,
-				1C2643E72B9A671F006D5D69 /* mtvTests */,
-				1C2643F12B9A671F006D5D69 /* mtvUITests */,
+				1C2643D42B9A671D006D5D69 /* MTV Music Videos */,
+				1C2643E72B9A671F006D5D69 /* MTV Music VideosTests */,
+				1C2643F12B9A671F006D5D69 /* MTV Music VideosUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -340,12 +340,12 @@
 /* Begin PBXTargetDependency section */
 		1C2643EA2B9A671F006D5D69 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1C2643D42B9A671D006D5D69 /* mtv */;
+			target = 1C2643D42B9A671D006D5D69 /* MTV Music Videos */;
 			targetProxy = 1C2643E92B9A671F006D5D69 /* PBXContainerItemProxy */;
 		};
 		1C2643F42B9A671F006D5D69 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1C2643D42B9A671D006D5D69 /* mtv */;
+			target = 1C2643D42B9A671D006D5D69 /* MTV Music Videos */;
 			targetProxy = 1C2643F32B9A671F006D5D69 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -498,7 +498,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "My TV";
+				INFOPLIST_KEY_CFBundleDisplayName = "MTV Music Videos";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -525,7 +525,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "My TV";
+				INFOPLIST_KEY_CFBundleDisplayName = "MTV Music Videos";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -558,7 +558,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/mtv.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/mtv";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MTV Music Videos.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MTV Music Videos";
 				TVOS_DEPLOYMENT_TARGET = 17.2;
 			};
 			name = Debug;
@@ -578,7 +578,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/mtv.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/mtv";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MTV Music Videos.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MTV Music Videos";
 				TVOS_DEPLOYMENT_TARGET = 17.2;
 			};
 			name = Release;
@@ -622,7 +622,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1C2643D02B9A671D006D5D69 /* Build configuration list for PBXProject "mtv" */ = {
+		1C2643D02B9A671D006D5D69 /* Build configuration list for PBXProject "MTV Music Videos" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1C2643FA2B9A671F006D5D69 /* Debug */,
@@ -631,7 +631,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1C2643FC2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "mtv" */ = {
+		1C2643FC2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music Videos" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1C2643FD2B9A671F006D5D69 /* Debug */,
@@ -640,7 +640,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1C2643FF2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "mtvTests" */ = {
+		1C2643FF2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music VideosTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1C2644002B9A671F006D5D69 /* Debug */,
@@ -649,7 +649,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1C2644022B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "mtvUITests" */ = {
+		1C2644022B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music VideosUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1C2644032B9A671F006D5D69 /* Debug */,

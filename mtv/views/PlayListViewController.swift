@@ -122,7 +122,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     }
 
     private func fetchPlaylists() {
-        mtv.fetchPlaylists(apiKey: apiKey, baseURLString: playListUrl) { [weak self] result in
+        fetchThePlaylists(apiKey: apiKey, baseURLString: playListUrl) { [weak self] result in
             switch result {
             case .success(let playlists):
                 self?.playlists = playlists

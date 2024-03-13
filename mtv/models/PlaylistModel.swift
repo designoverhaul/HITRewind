@@ -15,7 +15,7 @@ struct PlaylistFields: Codable {
 }
 
 
-func fetchPlaylists(apiKey: String, baseURLString: String, completion: @escaping (Result<[Playlist], Error>) -> Void) {
+func fetchThePlaylists(apiKey: String, baseURLString: String, completion: @escaping (Result<[Playlist], Error>) -> Void) {
     guard let url = URL(string: baseURLString) else {
         completion(.failure(NSError(domain: "Invalid URL", code: 0, userInfo: nil)))
         return
