@@ -10,6 +10,7 @@ struct PlaylistFields: Codable {
     let title: String
     let mtvVideos: [String]?
     let videoUrls: [String]?
+    let artistNames: [String]?
     let videoTitles: [String]?
 }
 
@@ -34,7 +35,9 @@ func fetchPlaylists(apiKey: String, baseURLString: String, completion: @escaping
             let decoder = JSONDecoder()
             let jsonObject = try decoder.decode([String: [Playlist]].self, from: data)
             // Extract playlists from the "records" key
-            if let playlists = jsonObject["records"] {
+            if var playlists = jsonObject["records"] {
+                // Sort playlists based on the year field in reverse order
+                playlists.sort { $0.fields.year > $1.fields.year }
                 completion(.success(playlists))
             } else {
                 completion(.failure(NSError(domain: "Invalid JSON structure: No playlists found", code: 0, userInfo: nil)))
@@ -46,3 +49,4 @@ func fetchPlaylists(apiKey: String, baseURLString: String, completion: @escaping
     
     task.resume()
 }
+

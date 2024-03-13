@@ -13,7 +13,7 @@ class PlaylistImageCell: UICollectionViewCell {
     let titleLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        label.font = UIFont(name: "sf_pro-bold", size: 21) ?? UIFont.systemFont(ofSize: 21, weight: .regular)
+        label.font = UIFont(name: "sf_pro-bold", size: 24) ?? UIFont.systemFont(ofSize: 24, weight: .regular)
         label.textAlignment = .left
         return label
     }()
@@ -22,7 +22,7 @@ class PlaylistImageCell: UICollectionViewCell {
     let yearLabel: UILabel = {
         let label = UILabel()
         label.textColor = UIColor(hex: "#A789FD")
-        label.font = UIFont(name: "sf_pro-regular", size: 18) ?? UIFont.systemFont(ofSize: 18, weight: .regular)
+        label.font = UIFont(name: "sf_pro-regular", size: 21) ?? UIFont.systemFont(ofSize: 21, weight: .regular)
         label.textAlignment = .center
         return label
     }()
@@ -76,14 +76,14 @@ class PlaylistImageCell: UICollectionViewCell {
             yearLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5)
         ])
         
-        // Add durationLabel to the right of the yearLabel
+        // Add durationLabel to the right of the cell
         addSubview(durationLabel)
         durationLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            durationLabel.leadingAnchor.constraint(equalTo: yearLabel.trailingAnchor, constant: 10),
             durationLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
             durationLabel.centerYAnchor.constraint(equalTo: yearLabel.centerYAnchor)
         ])
     }
+
 }
 

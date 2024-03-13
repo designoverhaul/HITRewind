@@ -117,7 +117,7 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
 
         // Configure the cell content here
         cell.textLabel?.text = String(playlists[indexPath.row].fields.year)
-        cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 28) ?? UIFont.systemFont(ofSize: 20, weight: .bold)
+        cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 26) ?? UIFont.systemFont(ofSize: 26, weight: .bold)
         cell.layer.cornerRadius = 10
         cell.clipsToBounds = true
 
@@ -234,7 +234,7 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
             }
             
             cell.titleLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.videoTitles?[indexPath.item] // Use appropriate title from playlist model
-            cell.yearLabel.text = "\(playlists[selectedPlaylistIndex ?? 0].fields.year)"
+            cell.yearLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.artistNames?[indexPath.item]
             
             getVideoDuration(videoUrl: videoURL) { duration in
                         if let duration = duration {
