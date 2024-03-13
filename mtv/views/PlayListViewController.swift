@@ -161,23 +161,24 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
             }
         }
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let selectedCell = tableView.cellForRow(at: indexPath)
-        selectedCell?.layer.borderWidth = 2
-        selectedCell?.layer.borderColor = UIColor(hex: "#A789FD")?.cgColor
-
-        // Fetch the selected playlist details
-        _ = playlists[indexPath.row]
-        
-
-        // Perform the necessary actions with the selected playlist
-        // For example, you can update UI, fetch additional data, etc.
-        // Here, we'll reload the collection view to show images related to the selected playlist
-        DispatchQueue.main.async {
-            self.selectedPlaylistIndex = indexPath.row
-            self.playlistImagesCollectionView.reloadData()
+        // Clear border from previously selected cell
+        if let previousSelectedIndex = selectedPlaylistIndex,
+           let previousSelectedCell = tableView.cellForRow(at: IndexPath(row: previousSelectedIndex, section: 0)) {
+            previousSelectedCell.layer.borderWidth = 0
         }
-    }
+        
+        // Apply border to newly selected cell
+        if let selectedCell = tableView.cellForRow(at: indexPath) {
+            selectedCell.layer.borderWidth = 2
+            selectedCell.layer.borderColor = UIColor(hex: "#A789FD")?.cgColor
+        }
 
+        // Update selected index
+        selectedPlaylistIndex = indexPath.row
+        
+        // Reload collection view
+        playlistImagesCollectionView.reloadData()
+    }
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         let deselectedCell = tableView.cellForRow(at: indexPath)
         deselectedCell?.layer.borderWidth = 0 // Reset border width
