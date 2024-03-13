@@ -16,7 +16,18 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         setupUI()
         fetchPlaylists()
     }
-    
+
+
+        private func selectFirstPlaylist() {
+            guard !playlists.isEmpty else { 
+                print("empty playlist")
+                return }
+            print("Not empty playlist")
+            selectedPlaylistIndex = 0
+            let indexPath = IndexPath(row: 0, section: 0)
+            tableView(playlistTableView, didSelectRowAt: indexPath) // Call didSelectRowAt method manually
+        }
+
     private func setupUI() {
         view.backgroundColor = .black
         
@@ -89,26 +100,24 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     }
     
     private func fetchPlaylists() {
-        
-        
-        
         mtv.fetchPlaylists(apiKey: apiKey, baseURLString: playListUrl) { [weak self] result in
             switch result {
-                case .success(let playlists):
-                    self?.playlists = playlists
-                    if self?.playlists.isEmpty==false{
-                        self?.selectedPlaylistIndex=0
-                    }
+            case .success(let playlists):
+                self?.playlists = playlists
+                if self?.playlists.isEmpty == false {
+                    self?.selectedPlaylistIndex = 0
                     DispatchQueue.main.async {
                         self?.playlistTableView.reloadData()
                         self?.playlistImagesCollectionView.reloadData()
+                        self?.selectFirstPlaylist() // Call selectFirstPlaylist() after playlists are fetched
                     }
-                case .failure(let error):
-                    print("Error fetching playlists: \(error)")
+                }
+            case .failure(let error):
+                print("Error fetching playlists: \(error)")
             }
         }
     }
-    
+
 }
 
 extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
@@ -157,7 +166,7 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         selectedCell?.layer.borderColor = UIColor(hex: "#A789FD")?.cgColor
 
         // Fetch the selected playlist details
-        let selectedPlaylist = playlists[indexPath.row]
+        _ = playlists[indexPath.row]
         
 
         // Perform the necessary actions with the selected playlist
@@ -213,7 +222,7 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         let videoURL = playlists[selectedPlaylistIndex].fields.videoUrls?[indexPath.item]
 
         if let videoID = extractYouTubeVideoID(from: videoURL ?? "") {
-            print("YouTube Video ID: \(videoID)")
+        
             playVideo(videoIdentifier: videoID)
         } else {
             print("Invalid YouTube video URL \(String(describing: videoURL))")
@@ -248,6 +257,7 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         return cell
     }
 }
+
 extension UIImageView {
     func load(url: URL) {
         DispatchQueue.global().async { [weak self] in

@@ -47,7 +47,6 @@ func getVideoDuration(videoUrl: String, completion: @escaping (String?) -> Void)
         completion(nil) // Return nil if video ID extraction fails
         return
     }
-print(videoID)
     // Construct the YouTube API URL to fetch video details
     let youtubeApiKey = "AIzaSyChKL0fUHEfc1AlKe0ks53Y2wT78gxLiJE"
     let url = "https://www.googleapis.com/youtube/v3/videos?id=\(videoID)&part=contentDetails&key=\(youtubeApiKey)"
@@ -81,7 +80,7 @@ print(videoID)
                let items = json["items"] as? [[String: Any]],
                let contentDetails = items.first?["contentDetails"] as? [String: Any],
                let duration = contentDetails["duration"] as? String {
-                print(duration)
+            
                 // Convert YouTube duration format to hours and minutes
                 let formattedDuration = convertYouTubeDurationToHoursMinutes(duration)
                 completion(formattedDuration)
