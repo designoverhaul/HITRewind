@@ -1,16 +1,17 @@
 
+
 import Foundation
-func convertYouTubeDurationToHoursMinutes(_ duration: String) -> String {
-    // Check if the duration string starts with 'PT' and ends with 'S'
-    if duration.hasPrefix("PT") && duration.hasSuffix("S") {
-        // Remove the 'PT' at the beginning and 'S' at the end
+func convertYouTubeDurationToHoursMinutesSeconds(_ duration: String) -> String {
+    // Check if the duration string starts with 'PT'
+    if duration.hasPrefix("PT") {
+        // Remove the 'PT' at the beginning
         var cleanedDuration = duration
         cleanedDuration.removeFirst(2)
-        cleanedDuration.removeLast()
 
         // Initialize variables to store hours, minutes, and seconds
         var hours = 0
         var minutes = 0
+        var seconds = 0
 
         // Split the duration string based on 'H', 'M', and 'S' to extract hours, minutes, and seconds
         if let hourRange = cleanedDuration.range(of: #"(\d+)H"#, options: .regularExpression) {
@@ -21,13 +22,20 @@ func convertYouTubeDurationToHoursMinutes(_ duration: String) -> String {
             minutes = Int(cleanedDuration[minuteRange].dropLast()) ?? 0
         }
 
-        // Create a formatted string for hours and minutes
+        if let secondRange = cleanedDuration.range(of: #"(\d+)S"#, options: .regularExpression) {
+            seconds = Int(cleanedDuration[secondRange].dropLast()) ?? 0
+        }
+
+        // Create a formatted string for hours, minutes, and seconds
         var formattedDuration = ""
         if hours > 0 {
             formattedDuration += "\(hours)hr "
         }
         if minutes > 0 {
-            formattedDuration += "\(minutes)min"
+            formattedDuration += "\(minutes)min "
+        }
+        if seconds > 0 || (hours == 0 && minutes == 0) { // Include seconds if non-zero or if both hours and minutes are zero
+            formattedDuration += "\(seconds)sec"
         }
 
         return formattedDuration.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -36,9 +44,6 @@ func convertYouTubeDurationToHoursMinutes(_ duration: String) -> String {
     // Return an empty string if the input format is not recognized
     return ""
 }
-
-
-import Foundation
 
 // Define the function to fetch video duration asynchronously
 func getVideoDuration(videoUrl: String, completion: @escaping (String?) -> Void) {
@@ -82,7 +87,7 @@ func getVideoDuration(videoUrl: String, completion: @escaping (String?) -> Void)
                let duration = contentDetails["duration"] as? String {
             
                 // Convert YouTube duration format to hours and minutes
-                let formattedDuration = convertYouTubeDurationToHoursMinutes(duration)
+                let formattedDuration = convertYouTubeDurationToHoursMinutesSeconds(duration)
                 completion(formattedDuration)
             } else {
                 completion(nil)

@@ -98,6 +98,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                 }
             }
         }
+        print("Play video ends ")
     }
     
     private func showLoadingIndicator() {
