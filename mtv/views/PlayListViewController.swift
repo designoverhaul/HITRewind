@@ -71,6 +71,54 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             playlistImagesCollectionView.bottomAnchor.constraint(equalTo: playlistTableView.bottomAnchor)
         ])
     }
+    func playVideoPlaylist(videoIdentifiers: [String], currentIndex: Int = 0) {
+        guard currentIndex < videoIdentifiers.count else {
+            // All videos in the playlist have been played
+            return
+        }
+
+        let playerViewController = AVPlayerViewController()
+        playerViewController.delegate = self
+
+        let currentVideoIdentifier = videoIdentifiers[currentIndex]
+
+        XCDYouTubeClient.default().getVideoWithIdentifier(currentVideoIdentifier) { [weak self, playerViewController] (video: XCDYouTubeVideo?, error: Error?) in
+            guard let streamURLs = video?.streamURLs else {
+                // Unable to retrieve stream URLs for the current video
+                // Proceed to play the next video in the playlist
+                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                return
+            }
+
+            guard let streamURL = (streamURLs[XCDYouTubeVideoQualityHTTPLiveStreaming] ??
+                                   streamURLs[YouTubeVideoQuality.hd720] ??
+                                   streamURLs[YouTubeVideoQuality.medium360] ??
+                                   streamURLs[YouTubeVideoQuality.small240]) else {
+                // Unable to find a suitable stream URL for the current video
+                // Proceed to play the next video in the playlist
+                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                return
+            }
+
+            DispatchQueue.main.async {
+                let avPlayer = AVPlayer(url: streamURL)
+                playerViewController.player = avPlayer
+                self?.present(playerViewController, animated: true) {
+                    avPlayer.play()
+
+                    // Observe playback status to detect when the current video finishes
+                    NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem, queue: nil) { [weak self] _ in
+                        // Dismiss the player view controller
+                        playerViewController.dismiss(animated: true) {
+                            // Play the next video in the playlist
+                            self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     func playVideo(videoIdentifier: String?) {
         let playerViewController = AVPlayerViewController()
         playerViewController.delegate = self
@@ -228,6 +276,33 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
 }
 
 extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    func generatePlaylistFromSelectedVideo(selectedIndexPath: IndexPath) -> [String] {
+        guard let selectedPlaylistIndex = selectedPlaylistIndex, selectedPlaylistIndex < playlists.count else {
+            return []
+        }
+
+        let videoUrls = playlists[selectedPlaylistIndex].fields.videoUrls ?? []
+        let currentVideoIndex = selectedIndexPath.item
+        let totalVideos = videoUrls.count
+
+        // Determine the start and end indices for the playlist
+        var startIndex = currentVideoIndex
+        var endIndex = startIndex + totalVideos
+
+        // If the end index exceeds the total number of videos, wrap around to the beginning
+        if endIndex > totalVideos {
+            endIndex = totalVideos
+        }
+
+        // Create the playlist by appending videos from the start till the end
+        var playlist: [String] = []
+        for index in startIndex..<endIndex {
+            playlist.append(extractYouTubeVideoID(from: videoUrls[index % totalVideos]) ?? "")
+        }
+
+        return playlist
+    }
+
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
            // Adjust the content inset to provide padding on the left and right
            let padding: CGFloat = 50 // Adjust as needed
@@ -247,12 +322,13 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         let videoURL = playlists[selectedPlaylistIndex].fields.videoUrls?[indexPath.item]
 
         if let videoID = extractYouTubeVideoID(from: videoURL ?? "") {
-        
-            playVideo(videoIdentifier: videoID)
+            let playlist = generatePlaylistFromSelectedVideo(selectedIndexPath: indexPath)
+            playVideoPlaylist(videoIdentifiers: playlist)
         } else {
             print("Invalid YouTube video URL \(String(describing: videoURL))")
         }
     }
+
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PlaylistCell", for: indexPath) as? PlaylistImageCell else {
