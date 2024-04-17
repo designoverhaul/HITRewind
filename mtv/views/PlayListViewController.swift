@@ -31,34 +31,47 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
     private func setupUI() {
         view.backgroundColor = .black
-        
+
+        // Add the asset image view
+        let imageView = UIImageView(image: UIImage(named: "mtv_logo"))
+        imageView.contentMode = .scaleAspectFit // Adjust content mode as needed
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(imageView)
+
         // Add the playlistTableView
         playlistTableView = UITableView()
         playlistTableView.dataSource = self
         playlistTableView.delegate = self
         playlistTableView.register(UITableViewCell.self, forCellReuseIdentifier: "PlaylistCell")
         view.addSubview(playlistTableView)
-        
+
         playlistTableView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            playlistTableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
+            // Constraints for imageView
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            imageView.topAnchor.constraint(equalTo: view.topAnchor), // Adjust top constraint as needed
+            imageView.widthAnchor.constraint(equalToConstant: 150), // Adjust width as needed
+            imageView.heightAnchor.constraint(equalToConstant: 150), // Adjust height as needed
+
+            // Constraints for playlistTableView
+            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor,  constant: -40), // Align with the left edge of the view, remove constant: 20
+            playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20), // Place below imageView
             playlistTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             playlistTableView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.25)
         ])
-        
+
         // Add the playlistImagesCollectionView
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
         layout.minimumInteritemSpacing = 20
-        layout.minimumLineSpacing = 20
-        layout.itemSize = CGSize(width: 350, height: 250) // Adjust as needed
+        layout.minimumLineSpacing = 40
+        layout.itemSize = CGSize(width: 340, height: 240) // Adjust as needed
 
         playlistImagesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         playlistImagesCollectionView.backgroundColor = .clear
         playlistImagesCollectionView.dataSource = self
         playlistImagesCollectionView.delegate = self
-        
+
         // Register the PlaylistImageCell class
         playlistImagesCollectionView.register(PlaylistImageCell.self, forCellWithReuseIdentifier: "PlaylistCell")
         view.addSubview(playlistImagesCollectionView)
@@ -67,10 +80,11 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         NSLayoutConstraint.activate([
             playlistImagesCollectionView.leadingAnchor.constraint(equalTo: playlistTableView.trailingAnchor, constant: 40),
             playlistImagesCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            playlistImagesCollectionView.topAnchor.constraint(equalTo: playlistTableView.topAnchor),
+            playlistImagesCollectionView.topAnchor.constraint(equalTo: view.topAnchor),
             playlistImagesCollectionView.bottomAnchor.constraint(equalTo: playlistTableView.bottomAnchor)
         ])
     }
+
     func playVideoPlaylist(videoIdentifiers: [String], currentIndex: Int = 0) {
         guard currentIndex < videoIdentifiers.count else {
             // All videos in the playlist have been played
@@ -215,23 +229,28 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, didUpdateFocusIn context: UICollectionViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
-            guard let nextFocusedIndexPath = context.nextFocusedIndexPath else { return }
-            guard let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath else { return }
+        guard let nextFocusedIndexPath = context.nextFocusedIndexPath else { return }
+        guard let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath else { return }
 
-            // Enlarge the next focused cell
-            if let nextFocusedCell = collectionView.cellForItem(at: nextFocusedIndexPath) as? PlaylistImageCell {
-                coordinator.addCoordinatedAnimations({
-                    nextFocusedCell.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
-                }, completion: nil)
-            }
-
-            // Shrink the previously focused cell
-            if let previouslyFocusedCell = collectionView.cellForItem(at: previouslyFocusedIndexPath) as? PlaylistImageCell {
-                coordinator.addCoordinatedAnimations({
-                    previouslyFocusedCell.transform = CGAffineTransform.identity
-                }, completion: nil)
-            }
+        // Enlarge the next focused cell
+        if let nextFocusedCell = collectionView.cellForItem(at: nextFocusedIndexPath) as? PlaylistImageCell {
+            coordinator.addCoordinatedAnimations({
+                nextFocusedCell.backgroundColor = UIColor(hex: "292631")
+                nextFocusedCell.layer.cornerRadius = 10
+                nextFocusedCell.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+            // Set green background color
+            }, completion: nil)
         }
+
+        // Shrink the previously focused cell
+        if let previouslyFocusedCell = collectionView.cellForItem(at: previouslyFocusedIndexPath) as? PlaylistImageCell {
+            coordinator.addCoordinatedAnimations({
+                previouslyFocusedCell.transform = CGAffineTransform.identity
+                previouslyFocusedCell.backgroundColor = .clear // Clear previous background color
+            }, completion: nil)
+        }
+    }
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // Clear border from previously selected cell
         if let previousSelectedIndex = selectedPlaylistIndex,
@@ -338,7 +357,7 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         // Reset the cell's content before configuring it
         cell.imageView.image = nil
         cell.titleLabel.text = nil
-        cell.yearLabel.text = nil
+        cell.artistNameLabel.text = nil
         cell.durationLabel.text = nil
 
         // Configure the cell content here
@@ -360,7 +379,7 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
             }
             
             cell.titleLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.videoTitles?[indexPath.item] // Use appropriate title from playlist model
-            cell.yearLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.artistNames?[indexPath.item]
+            cell.artistNameLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.artistNames?[indexPath.item]
             
             getVideoDuration(videoUrl: videoURL) { duration in
                 DispatchQueue.main.async {

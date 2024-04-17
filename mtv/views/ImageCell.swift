@@ -19,7 +19,7 @@ class PlaylistImageCell: UICollectionViewCell {
     }()
     
     // Label for displaying the year
-    let yearLabel: UILabel = {
+    let artistNameLabel: UILabel = {
         let label = UILabel()
         label.textColor = UIColor(hex: "#A789FD")
         label.font = UIFont(name: "sf_pro-regular", size: 21) ?? UIFont.systemFont(ofSize: 21, weight: .regular)
@@ -53,7 +53,7 @@ class PlaylistImageCell: UICollectionViewCell {
         NSLayoutConstraint.activate([
             imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-            imageView.topAnchor.constraint(equalTo: topAnchor, constant: 30),
+            imageView.topAnchor.constraint(equalTo: topAnchor, constant: 10),
             imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -60)
         ])
         imageView.layer.cornerRadius = 8 // Adjust the corner radius as needed
@@ -65,23 +65,24 @@ class PlaylistImageCell: UICollectionViewCell {
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-            titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 15)
+            titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 5)
         ])
         
-        // Add yearLabel to the left of the cell
-        addSubview(yearLabel)
-        yearLabel.translatesAutoresizingMaskIntoConstraints = false
+        // Add artistNameLabel to the left of the cell with fixed width
+        addSubview(artistNameLabel)
+        artistNameLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            yearLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            yearLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5)
+            artistNameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            artistNameLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
+            artistNameLabel.widthAnchor.constraint(equalToConstant: 210) // Fixed width constraint
         ])
-        
+        artistNameLabel.textAlignment = .left
         // Add durationLabel to the right of the cell
         addSubview(durationLabel)
         durationLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             durationLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-            durationLabel.centerYAnchor.constraint(equalTo: yearLabel.centerYAnchor)
+            durationLabel.centerYAnchor.constraint(equalTo: artistNameLabel.centerYAnchor)
         ])
     }
 
