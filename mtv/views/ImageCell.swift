@@ -54,7 +54,7 @@ class PlaylistImageCell: UICollectionViewCell {
             imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
             imageView.topAnchor.constraint(equalTo: topAnchor, constant: 10),
-            imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -60)
+            imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -80)
         ])
         imageView.layer.cornerRadius = 8 // Adjust the corner radius as needed
         imageView.layer.masksToBounds = true
@@ -65,7 +65,7 @@ class PlaylistImageCell: UICollectionViewCell {
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-            titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 5)
+            titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 10)
         ])
         
         // Add artistNameLabel to the left of the cell with fixed width
