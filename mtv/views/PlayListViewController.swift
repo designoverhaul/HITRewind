@@ -42,22 +42,24 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         playlistTableView = UITableView()
         playlistTableView.dataSource = self
         playlistTableView.delegate = self
-        playlistTableView.register(UITableViewCell.self, forCellReuseIdentifier: "PlaylistCell")
+        playlistTableView.register(UITableViewCell.self, forCellReuseIdentifier: "PlaylistYear")
         view.addSubview(playlistTableView)
+
+        playlistTableView.cellLayoutMarginsFollowReadableWidth = false
 
         playlistTableView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             // Constraints for imageView
-            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            imageView.topAnchor.constraint(equalTo: view.topAnchor), // Adjust top constraint as needed
-            imageView.widthAnchor.constraint(equalToConstant: 150), // Adjust width as needed
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor,constant: 50),
+            imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 40), // Adjust top constraint as needed
+            imageView.widthAnchor.constraint(equalToConstant: 200), // Adjust width as needed
             imageView.heightAnchor.constraint(equalToConstant: 150), // Adjust height as needed
 
             // Constraints for playlistTableView
-            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor,  constant: -40), // Align with the left edge of the view, remove constant: 20
-            playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20), // Place below imageView
+            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor,constant: -50), // Align with the right edge of the imageView
+            playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor), // Align playlistTableView's top with imageView's top
             playlistTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
-            playlistTableView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.25)
+            playlistTableView.widthAnchor.constraint(equalToConstant: 400) // Adjust width as needed
         ])
 
         // Add the playlistImagesCollectionView
@@ -207,14 +209,15 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 }
 
 extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
+  
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "PlaylistCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "PlaylistYear", for: indexPath)
 
         // Configure the cell content here
         cell.textLabel?.text = String(playlists[indexPath.row].fields.year)
         cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 26) ?? UIFont.systemFont(ofSize: 26, weight: .bold)
         cell.layer.cornerRadius = 10
-        cell.clipsToBounds = true
+      
 
         // Set the background color for hovered state
         let bgColorView = UIView()
@@ -224,33 +227,11 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         // Set the border color and width for selected state
         cell.layer.borderWidth = 0 // reset previous border width
         cell.layer.borderColor = UIColor.clear.cgColor
-
+    
         return cell
     }
 
-    func collectionView(_ collectionView: UICollectionView, didUpdateFocusIn context: UICollectionViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
-        guard let nextFocusedIndexPath = context.nextFocusedIndexPath else { return }
-        guard let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath else { return }
-
-        // Enlarge the next focused cell
-        if let nextFocusedCell = collectionView.cellForItem(at: nextFocusedIndexPath) as? PlaylistImageCell {
-            coordinator.addCoordinatedAnimations({
-                nextFocusedCell.backgroundColor = UIColor(hex: "292631")
-                nextFocusedCell.layer.cornerRadius = 10
-                nextFocusedCell.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-            // Set green background color
-            }, completion: nil)
-        }
-
-        // Shrink the previously focused cell
-        if let previouslyFocusedCell = collectionView.cellForItem(at: previouslyFocusedIndexPath) as? PlaylistImageCell {
-            coordinator.addCoordinatedAnimations({
-                previouslyFocusedCell.transform = CGAffineTransform.identity
-                previouslyFocusedCell.backgroundColor = .clear // Clear previous background color
-            }, completion: nil)
-        }
-    }
-
+   
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // Clear border from previously selected cell
         if let previousSelectedIndex = selectedPlaylistIndex,
@@ -275,23 +256,50 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         deselectedCell?.layer.borderWidth = 0 // Reset border width
         deselectedCell?.layer.borderColor = UIColor.clear.cgColor
     }
-
     func tableView(_ tableView: UITableView, didUpdateFocusIn context: UITableViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
-        if let nextFocusedIndexPath = context.nextFocusedIndexPath {
-            if let nextFocusedCell = tableView.cellForRow(at: nextFocusedIndexPath) {
-                nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
+        coordinator.addCoordinatedAnimations({
+            if let nextFocusedIndexPath = context.nextFocusedIndexPath {
+                if let nextFocusedCell = tableView.cellForRow(at: nextFocusedIndexPath) {
+                    nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
+                    nextFocusedCell.contentView.transform = CGAffineTransform.identity
+                }
             }
-        }
-        if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
-            if let previouslyFocusedCell = tableView.cellForRow(at: previouslyFocusedIndexPath) {
-                previouslyFocusedCell.contentView.backgroundColor = UIColor.clear
+            if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
+                if let previouslyFocusedCell = tableView.cellForRow(at: previouslyFocusedIndexPath) {
+                    previouslyFocusedCell.contentView.backgroundColor = UIColor.clear
+                    previouslyFocusedCell.contentView.transform = CGAffineTransform.identity
+                }
             }
-        }
+        }, completion: nil)
     }
+
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return playlists.count
     }
+    func collectionView(_ collectionView: UICollectionView, didUpdateFocusIn context: UICollectionViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+        guard let nextFocusedIndexPath = context.nextFocusedIndexPath else { return }
+        guard let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath else { return }
+
+        // Enlarge the next focused cell
+        if let nextFocusedCell = collectionView.cellForItem(at: nextFocusedIndexPath) as? PlaylistImageCell {
+            coordinator.addCoordinatedAnimations({
+                nextFocusedCell.backgroundColor = UIColor(hex: "292631")
+                nextFocusedCell.layer.cornerRadius = 10
+                nextFocusedCell.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+            // Set green background color
+            }, completion: nil)
+        }
+
+        // Shrink the previously focused cell
+        if let previouslyFocusedCell = collectionView.cellForItem(at: previouslyFocusedIndexPath) as? PlaylistImageCell {
+            coordinator.addCoordinatedAnimations({
+                previouslyFocusedCell.transform = CGAffineTransform.identity
+                previouslyFocusedCell.backgroundColor = .clear // Clear previous background color
+            }, completion: nil)
+        }
+    }
+
 }
 
 extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
@@ -305,7 +313,7 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         let totalVideos = videoUrls.count
 
         // Determine the start and end indices for the playlist
-        var startIndex = currentVideoIndex
+        let startIndex = currentVideoIndex
         var endIndex = startIndex + totalVideos
 
         // If the end index exceeds the total number of videos, wrap around to the beginning
@@ -340,7 +348,7 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
 
         let videoURL = playlists[selectedPlaylistIndex].fields.videoUrls?[indexPath.item]
 
-        if let videoID = extractYouTubeVideoID(from: videoURL ?? "") {
+        if extractYouTubeVideoID(from: videoURL ?? "") != nil {
             let playlist = generatePlaylistFromSelectedVideo(selectedIndexPath: indexPath)
             playVideoPlaylist(videoIdentifiers: playlist)
         } else {
