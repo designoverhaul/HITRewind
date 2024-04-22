@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1C2269012BD4667F00F11B24 /* inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C2269002BD4667F00F11B24 /* inter.ttf */; };
+		1C2269032BD466A100F11B24 /* inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C2269002BD4667F00F11B24 /* inter.ttf */; };
+		1C2269042BD466A200F11B24 /* inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C2269002BD4667F00F11B24 /* inter.ttf */; };
+		1C2269052BD5427900F11B24 /* MTV-Music-Videos-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1C2268F72BD460D900F11B24 /* MTV-Music-Videos-Info.plist */; };
 		1C2643D92B9A671D006D5D69 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2643D82B9A671D006D5D69 /* AppDelegate.swift */; };
 		1C2643DB2B9A671D006D5D69 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2643DA2B9A671D006D5D69 /* ViewController.swift */; };
 		1C2643DE2B9A671D006D5D69 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1C2643DC2B9A671D006D5D69 /* Main.storyboard */; };
@@ -41,6 +45,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1C2268F72BD460D900F11B24 /* MTV-Music-Videos-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "MTV-Music-Videos-Info.plist"; sourceTree = "<group>"; };
+		1C2269002BD4667F00F11B24 /* inter.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = inter.ttf; sourceTree = "<group>"; };
 		1C2643D52B9A671D006D5D69 /* MTV Music Videos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MTV Music Videos.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C2643D82B9A671D006D5D69 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1C2643DA2B9A671D006D5D69 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -85,9 +91,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1C2268FF2BD4667100F11B24 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				1C2269002BD4667F00F11B24 /* inter.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 		1C2643CC2B9A671D006D5D69 = {
 			isa = PBXGroup;
 			children = (
+				1C2268F72BD460D900F11B24 /* MTV-Music-Videos-Info.plist */,
 				1C2643D72B9A671D006D5D69 /* mtv */,
 				1C2643EB2B9A671F006D5D69 /* mtvTests */,
 				1C2643F52B9A671F006D5D69 /* mtvUITests */,
@@ -108,6 +123,7 @@
 		1C2643D72B9A671D006D5D69 /* mtv */ = {
 			isa = PBXGroup;
 			children = (
+				1C2268FF2BD4667100F11B24 /* Fonts */,
 				1C4BD6582BA11428002C37C1 /* Services */,
 				1C26440B2B9A719B006D5D69 /* constants */,
 				1C2644082B9A715A006D5D69 /* views */,
@@ -282,6 +298,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				1C2643E32B9A671F006D5D69 /* LaunchScreen.storyboard in Resources */,
+				1C2269012BD4667F00F11B24 /* inter.ttf in Resources */,
+				1C2269052BD5427900F11B24 /* MTV-Music-Videos-Info.plist in Resources */,
 				1C2643E02B9A671F006D5D69 /* Assets.xcassets in Resources */,
 				1C2643DE2B9A671D006D5D69 /* Main.storyboard in Resources */,
 			);
@@ -291,6 +309,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C2269032BD466A100F11B24 /* inter.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -298,6 +317,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C2269042BD466A200F11B24 /* inter.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -498,6 +518,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "MTV-Music-Videos-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "MTV Music Videos";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -507,7 +528,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4;
+				MARKETING_VERSION = 1.39;
 				PRODUCT_BUNDLE_IDENTIFIER = designoverhaul.mytv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -525,6 +546,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "MTV-Music-Videos-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "MTV Music Videos";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -534,7 +556,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4;
+				MARKETING_VERSION = 1.39;
 				PRODUCT_BUNDLE_IDENTIFIER = designoverhaul.mytv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

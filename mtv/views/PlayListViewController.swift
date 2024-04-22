@@ -8,7 +8,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     
     private var playlistTableView: UITableView!
     private var playlistImagesCollectionView: UICollectionView!
-    
+    private var selectedYearLabel: UILabel!
     private var loadingIndicator: UIActivityIndicatorView!
     
     override func viewDidLoad() {
@@ -34,10 +34,30 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
         // Add the asset image view
         let imageView = UIImageView(image: UIImage(named: "mtv_logo"))
-        imageView.contentMode = .scaleAspectFit // Adjust content mode as needed
+        imageView.contentMode = .scaleAspectFill // Adjust content mode to fill the frame
         imageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(imageView)
+        
+        selectedYearLabel = UILabel()
+        selectedYearLabel.textColor = UIColor(hex: "#FFF61D")
+        selectedYearLabel.font = UIFont(name: "inter", size: 43) ?? UIFont.systemFont(ofSize: 43, weight: .heavy)
+        selectedYearLabel.textAlignment = .right // Align the text to the right
+        selectedYearLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(selectedYearLabel)
 
+        // Add constraints for imageView and selectedYearLabel
+        NSLayoutConstraint.activate([
+            // Constraints for imageView
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 52),
+            imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 66),
+            imageView.widthAnchor.constraint(equalToConstant: 145),
+            imageView.heightAnchor.constraint(equalToConstant: 115),
+            
+            // Constraints for selectedYearLabel
+            selectedYearLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 50),
+            selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -2.2),
+        ])
+        
         // Add the playlistTableView
         playlistTableView = UITableView()
         playlistTableView.dataSource = self
@@ -49,15 +69,9 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
         playlistTableView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            // Constraints for imageView
-            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor,constant: 50),
-            imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 40), // Adjust top constraint as needed
-            imageView.widthAnchor.constraint(equalToConstant: 200), // Adjust width as needed
-            imageView.heightAnchor.constraint(equalToConstant: 150), // Adjust height as needed
-
             // Constraints for playlistTableView
-            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor,constant: -50), // Align with the right edge of the imageView
-            playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor), // Align playlistTableView's top with imageView's top
+            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor,constant: -51), // Align with the right edge of the imageView
+            playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 30), // Align playlistTableView's top with imageView's top
             playlistTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             playlistTableView.widthAnchor.constraint(equalToConstant: 400) // Adjust width as needed
         ])
@@ -80,7 +94,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
         playlistImagesCollectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            playlistImagesCollectionView.leadingAnchor.constraint(equalTo: playlistTableView.trailingAnchor, constant: 40),
+            playlistImagesCollectionView.leadingAnchor.constraint(equalTo: playlistTableView.trailingAnchor, constant: 70),
             playlistImagesCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             playlistImagesCollectionView.topAnchor.constraint(equalTo: view.topAnchor),
             playlistImagesCollectionView.bottomAnchor.constraint(equalTo: playlistTableView.bottomAnchor)
@@ -247,6 +261,9 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
 
         // Update selected index
         selectedPlaylistIndex = indexPath.row
+        
+        // Update selected year label
+        selectedYearLabel.text = String(playlists[indexPath.row].fields.year)
         
         // Reload collection view
         playlistImagesCollectionView.reloadData()
