@@ -304,7 +304,7 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
                 nextFocusedCell.backgroundColor = UIColor(hex: "292631")
                 nextFocusedCell.layer.cornerRadius = 10
                 nextFocusedCell.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-            // Set green background color
+                // Set green background color
             }, completion: nil)
         }
 
@@ -359,6 +359,14 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         return playlists[selectedPlaylistIndex].fields.videoUrls?.count ?? 0
     }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        // Deselect the previously selected cell
+        if let previouslySelectedIndexPath = collectionView.indexPathsForSelectedItems?.first {
+            if let previouslySelectedCell = collectionView.cellForItem(at: previouslySelectedIndexPath) as? PlaylistImageCell {
+                previouslySelectedCell.transform = CGAffineTransform.identity
+                previouslySelectedCell.backgroundColor = .clear
+            }
+        }
+
         guard let selectedPlaylistIndex = selectedPlaylistIndex, selectedPlaylistIndex < playlists.count else {
             return
         }
