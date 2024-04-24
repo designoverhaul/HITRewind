@@ -108,12 +108,23 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             return
         }
 
+        // Show loading indicator
+        let loadingIndicator = UIActivityIndicatorView(style: .large)
+        loadingIndicator.color = .white
+        loadingIndicator.center = view.center
+        view.addSubview(loadingIndicator)
+        loadingIndicator.startAnimating()
+
         let playerViewController = AVPlayerViewController()
         playerViewController.delegate = self
 
         let currentVideoIdentifier = videoIdentifiers[currentIndex]
 
         XCDYouTubeClient.default().getVideoWithIdentifier(currentVideoIdentifier) { [weak self, playerViewController] (video: XCDYouTubeVideo?, error: Error?) in
+            // Hide loading indicator
+            loadingIndicator.stopAnimating()
+            loadingIndicator.removeFromSuperview()
+
             guard let streamURLs = video?.streamURLs else {
                 // Unable to retrieve stream URLs for the current video
                 // Proceed to play the next video in the playlist
@@ -227,13 +238,14 @@ extension PlayListViewController: UICollectionViewDelegate {
         coordinator.addCoordinatedAnimations({
             if let nextFocusedIndexPath = context.nextFocusedIndexPath {
                 if let nextFocusedCell = collectionView.cellForItem(at: nextFocusedIndexPath) as? PlaylistImageCell {
-                    // Enlarge the focused cell
+                    nextFocusedCell.backgroundColor = UIColor(hex: "292631")
+                                  nextFocusedCell.layer.cornerRadius = 10
                     nextFocusedCell.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
                 }
             }
             if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
                 if let previouslyFocusedCell = collectionView.cellForItem(at: previouslyFocusedIndexPath) as? PlaylistImageCell {
-                    // Shrink the previously focused cell
+                    previouslyFocusedCell.backgroundColor = .clear 
                     previouslyFocusedCell.transform = CGAffineTransform.identity
                 }
             }
