@@ -87,6 +87,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         playlistImagesCollectionView.backgroundColor = .clear
         playlistImagesCollectionView.dataSource = self
         playlistImagesCollectionView.delegate = self
+    
 
         // Register the PlaylistImageCell class
         playlistImagesCollectionView.register(PlaylistImageCell.self, forCellWithReuseIdentifier: "PlaylistCell")
@@ -221,6 +222,24 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         }
     }
 }
+extension PlayListViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didUpdateFocusIn context: UICollectionViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+        coordinator.addCoordinatedAnimations({
+            if let nextFocusedIndexPath = context.nextFocusedIndexPath {
+                if let nextFocusedCell = collectionView.cellForItem(at: nextFocusedIndexPath) as? PlaylistImageCell {
+                    // Enlarge the focused cell
+                    nextFocusedCell.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+                }
+            }
+            if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
+                if let previouslyFocusedCell = collectionView.cellForItem(at: previouslyFocusedIndexPath) as? PlaylistImageCell {
+                    // Shrink the previously focused cell
+                    previouslyFocusedCell.transform = CGAffineTransform.identity
+                }
+            }
+        }, completion: nil)
+    }
+}
 
 extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
   
@@ -293,28 +312,6 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return playlists.count
-    }
-    func collectionView(_ collectionView: UICollectionView, didUpdateFocusIn context: UICollectionViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
-        guard let nextFocusedIndexPath = context.nextFocusedIndexPath else { return }
-        guard let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath else { return }
-
-        // Enlarge the next focused cell
-        if let nextFocusedCell = collectionView.cellForItem(at: nextFocusedIndexPath) as? PlaylistImageCell {
-            coordinator.addCoordinatedAnimations({
-                nextFocusedCell.backgroundColor = UIColor(hex: "292631")
-                nextFocusedCell.layer.cornerRadius = 10
-                nextFocusedCell.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-                // Set green background color
-            }, completion: nil)
-        }
-
-        // Shrink the previously focused cell
-        if let previouslyFocusedCell = collectionView.cellForItem(at: previouslyFocusedIndexPath) as? PlaylistImageCell {
-            coordinator.addCoordinatedAnimations({
-                previouslyFocusedCell.transform = CGAffineTransform.identity
-                previouslyFocusedCell.backgroundColor = .clear // Clear previous background color
-            }, completion: nil)
-        }
     }
 
 }
