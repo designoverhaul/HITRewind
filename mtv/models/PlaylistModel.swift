@@ -61,14 +61,29 @@ func sortAndArrangePlaylists(apiKey: String, baseURLString: String, completion: 
             // Iterate over each playlist
             for playlistIndex in 0..<playlists.count {
                 if let videoTitles = playlists[playlistIndex].fields.videoTitles {
-                    // Sort videoTitles
-                    let sortedVideoTitles = videoTitles.sorted()
+                    // Custom sorting closure
+                    let sortedVideoTitles = videoTitles.sorted { (title1, title2) -> Bool in
+                        // Check if the first character of each title is alphabet or not
+                        let isTitle1Alphabet = title1.first?.isLetter ?? false
+                        let isTitle2Alphabet = title2.first?.isLetter ?? false
+                        
+                        // Prioritize alphabet titles over special character titles
+                        if isTitle1Alphabet && !isTitle2Alphabet {
+                            return true
+                        } else if !isTitle1Alphabet && isTitle2Alphabet {
+                            return false
+                        } else {
+                            // If both titles start with alphabet or both start with special characters, use normal sorting
+                            return title1 < title2
+                        }
+                    }
                     
                     // Get the sorted indices
                     let sortedIndices = sortedVideoTitles.compactMap { videoTitle in
                         return videoTitles.firstIndex(of: videoTitle)
                     }
                     
+                    // Update the playlist fields with sorted data
                     playlists[playlistIndex].fields.videoTitles = sortedVideoTitles
                     playlists[playlistIndex].fields.mtvVideos = sortedIndices.map { playlists[playlistIndex].fields.mtvVideos?[$0] ?? "" }
                     playlists[playlistIndex].fields.videoUrls = sortedIndices.map { playlists[playlistIndex].fields.videoUrls?[$0] ?? "" }
