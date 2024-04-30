@@ -1,17 +1,17 @@
 import Foundation
 struct Playlist: Codable {
     let id: String
-    let fields: PlaylistFields
+    var fields: PlaylistFields
 }
 
 struct PlaylistFields: Codable {
     let thumbnail: URL
     let year: Int
     let title: String
-    let mtvVideos: [String]?
-    let videoUrls: [String]?
-    let artistNames: [String]?
-    let videoTitles: [String]?
+    var mtvVideos: [String]?
+    var videoUrls: [String]?
+    var artistNames: [String]?
+    var videoTitles: [String]?
 }
 
 
