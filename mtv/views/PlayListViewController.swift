@@ -213,7 +213,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     }
 
     private func fetchPlaylists() {
-        fetchThePlaylists(apiKey: apiKey, baseURLString: playListUrl) { [weak self] result in
+        sortAndArrangePlaylists(apiKey: apiKey, baseURLString: playListUrl) { [weak self] result in
             switch result {
             case .success(let playlists):
                 self?.playlists = playlists

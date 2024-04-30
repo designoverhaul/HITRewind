@@ -50,3 +50,35 @@ func fetchThePlaylists(apiKey: String, baseURLString: String, completion: @escap
     task.resume()
 }
 
+
+func sortAndArrangePlaylists(apiKey: String, baseURLString: String, completion: @escaping (Result<[Playlist], Error>) -> Void) {
+    fetchThePlaylists(apiKey: apiKey, baseURLString: baseURLString) { result in
+        switch result {
+        case .success(var playlists):
+            // Sort playlists based on the year field in reverse order
+            playlists.sort { $0.fields.year > $1.fields.year }
+            
+            // Iterate over each playlist
+            for playlistIndex in 0..<playlists.count {
+                if let videoTitles = playlists[playlistIndex].fields.videoTitles {
+                    // Sort videoTitles
+                    let sortedVideoTitles = videoTitles.sorted()
+                    
+                    // Get the sorted indices
+                    let sortedIndices = sortedVideoTitles.compactMap { videoTitle in
+                        return videoTitles.firstIndex(of: videoTitle)
+                    }
+                    
+                    playlists[playlistIndex].fields.videoTitles = sortedVideoTitles
+                    playlists[playlistIndex].fields.mtvVideos = sortedIndices.map { playlists[playlistIndex].fields.mtvVideos?[$0] ?? "" }
+                    playlists[playlistIndex].fields.videoUrls = sortedIndices.map { playlists[playlistIndex].fields.videoUrls?[$0] ?? "" }
+                    playlists[playlistIndex].fields.artistNames = sortedIndices.map { playlists[playlistIndex].fields.artistNames?[$0] ?? "" }
+                }
+            }
+            
+            completion(.success(playlists))
+        case .failure(let error):
+            completion(.failure(error))
+        }
+    }
+}
