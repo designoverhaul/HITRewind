@@ -3,7 +3,6 @@ struct Playlist: Codable {
     let id: String
     var fields: PlaylistFields
 }
-
 struct PlaylistFields: Codable {
     let thumbnail: URL
     let year: Int
@@ -12,8 +11,8 @@ struct PlaylistFields: Codable {
     var videoUrls: [String]?
     var artistNames: [String]?
     var videoTitles: [String]?
+    var isVisible: [Bool?] // Change to optional Bool
 }
-
 
 func fetchThePlaylists(apiKey: String, baseURLString: String, completion: @escaping (Result<[Playlist], Error>) -> Void) {
     guard let url = URL(string: baseURLString) else {
@@ -33,11 +32,18 @@ func fetchThePlaylists(apiKey: String, baseURLString: String, completion: @escap
         
         do {
             let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase // To handle snake_case keys
             let jsonObject = try decoder.decode([String: [Playlist]].self, from: data)
             // Extract playlists from the "records" key
             if var playlists = jsonObject["records"] {
                 // Sort playlists based on the year field in reverse order
                 playlists.sort { $0.fields.year > $1.fields.year }
+                
+                // Handle nullable isVisible values
+                for var playlist in playlists {
+                    playlist.fields.isVisible = playlist.fields.isVisible.map { $0 ?? true }
+                }
+                
                 completion(.success(playlists))
             } else {
                 completion(.failure(NSError(domain: "Invalid JSON structure: No playlists found", code: 0, userInfo: nil)))
@@ -88,6 +94,8 @@ func sortAndArrangePlaylists(apiKey: String, baseURLString: String, completion: 
                     playlists[playlistIndex].fields.mtvVideos = sortedIndices.map { playlists[playlistIndex].fields.mtvVideos?[$0] ?? "" }
                     playlists[playlistIndex].fields.videoUrls = sortedIndices.map { playlists[playlistIndex].fields.videoUrls?[$0] ?? "" }
                     playlists[playlistIndex].fields.artistNames = sortedIndices.map { playlists[playlistIndex].fields.artistNames?[$0] ?? "" }
+                    playlists[playlistIndex].fields.isVisible = sortedIndices.map { playlists[playlistIndex].fields.isVisible[$0] ?? false }
+                    print(playlists[playlistIndex].fields.isVisible)
                 }
             }
             

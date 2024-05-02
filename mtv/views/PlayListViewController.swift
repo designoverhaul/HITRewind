@@ -362,11 +362,18 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
            return UIEdgeInsets(top: 0, left: padding, bottom: 0, right: padding)
        }
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        guard let selectedPlaylistIndex = selectedPlaylistIndex, selectedPlaylistIndex < playlists.count else {
-            return 0
-        }
-        return playlists[selectedPlaylistIndex].fields.videoUrls?.count ?? 0
-    }
+          guard let selectedPlaylistIndex = selectedPlaylistIndex,
+                selectedPlaylistIndex < playlists.count else {
+              return 0
+          }
+
+          // Filter out items where isVisible is false
+          let visibleVideos = playlists[selectedPlaylistIndex].fields.videoUrls?.enumerated().compactMap { index, _ in
+              playlists[selectedPlaylistIndex].fields.isVisible[index] ?? false
+          }
+
+          return visibleVideos?.filter { $0 }.count ?? 0
+      }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         // Deselect the previously selected cell
         if let previouslySelectedIndexPath = collectionView.indexPathsForSelectedItems?.first {
@@ -390,27 +397,32 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         }
     }
 
-
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PlaylistCell", for: indexPath) as? PlaylistImageCell else {
             return UICollectionViewCell()
         }
 
-        // Reset the cell's content before configuring it
-        cell.imageView.image = nil
-        cell.titleLabel.text = nil
-        cell.artistNameLabel.text = nil
-        cell.durationLabel.text = nil
+        guard let selectedPlaylistIndex = selectedPlaylistIndex,
+              selectedPlaylistIndex < playlists.count else {
+            return cell
+        }
 
-        // Configure the cell content here
-        if let videoURL = playlists[selectedPlaylistIndex ?? 0].fields.videoUrls?[indexPath.item],
-           
-            let videoID = extractYouTubeVideoID(from: videoURL) {
-           
+        // Find the index of the visible item in the playlist
+        let visibleVideos = playlists[selectedPlaylistIndex].fields.isVisible.enumerated().filter { _, isVisible in
+            isVisible ?? false
+        }.map { index, _ in index }
+
+        // Ensure indexPath.item is within visibleVideos bounds
+        guard indexPath.item < visibleVideos.count else {
+            return cell
+        }
+
+        let visibleIndex = visibleVideos[indexPath.item]
+
+        // Configure the cell content using the visible index
+        if let videoURL = playlists[selectedPlaylistIndex].fields.videoUrls?[visibleIndex], let videoID = extractYouTubeVideoID(from: videoURL) {
             let thumbnailURLString = "https://i.ytimg.com/vi/\(videoID)/mqdefault.jpg"
-        
             if let url = URL(string: thumbnailURLString) {
-                // Asynchronously load the image
                 URLSession.shared.dataTask(with: url) { data, response, error in
                     if let data = data, let image = UIImage(data: data) {
                         DispatchQueue.main.async {
@@ -419,10 +431,8 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
                     }
                 }.resume()
             }
-            
-            cell.titleLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.videoTitles?[indexPath.item] // Use appropriate title from playlist model
-            cell.artistNameLabel.text = playlists[selectedPlaylistIndex ?? 0].fields.artistNames?[indexPath.item]
-            
+            cell.titleLabel.text = playlists[selectedPlaylistIndex].fields.videoTitles?[visibleIndex]
+            cell.artistNameLabel.text = playlists[selectedPlaylistIndex].fields.artistNames?[visibleIndex]
             getVideoDuration(videoUrl: videoURL) { duration in
                 DispatchQueue.main.async {
                     cell.durationLabel.text = duration
