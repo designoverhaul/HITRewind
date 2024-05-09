@@ -74,7 +74,7 @@ class PlaylistImageCell: UICollectionViewCell {
         NSLayoutConstraint.activate([
             artistNameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             artistNameLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
-            artistNameLabel.widthAnchor.constraint(equalToConstant: 210) // Fixed width constraint
+            artistNameLabel.widthAnchor.constraint(equalToConstant: 260) // Fixed width constraint
         ])
         artistNameLabel.textAlignment = .left
         // Add durationLabel to the right of the cell

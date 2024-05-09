@@ -26,24 +26,25 @@ func convertYouTubeDurationToHoursMinutesSeconds(_ duration: String) -> String {
             seconds = Int(cleanedDuration[secondRange].dropLast()) ?? 0
         }
 
-        // Create a formatted string for hours, minutes, and seconds
+        // Create formatted strings for hours, minutes, and seconds
         var formattedDuration = ""
         if hours > 0 {
-            formattedDuration += "\(hours)hr "
+            formattedDuration += "\(hours):"
         }
-        if minutes > 0 {
-            formattedDuration += "\(minutes)min "
-        }
-        if seconds > 0 || (hours == 0 && minutes == 0) { // Include seconds if non-zero or if both hours and minutes are zero
-            formattedDuration += "\(seconds)sec"
+        formattedDuration += "\(minutes):"
+        if seconds < 10 {
+            formattedDuration += "0\(seconds)"
+        } else {
+            formattedDuration += "\(seconds)"
         }
 
-        return formattedDuration.trimmingCharacters(in: .whitespacesAndNewlines)
+        return formattedDuration
     }
 
     // Return an empty string if the input format is not recognized
     return ""
 }
+
 
 // Define the function to fetch video duration asynchronously
 func getVideoDuration(videoUrl: String, completion: @escaping (String?) -> Void) {
