@@ -5,12 +5,13 @@ import AVKit
 class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private var playlists: [Playlist] = []
     private var selectedPlaylistIndex: Int?
-    
+    private var visibleVideoIndices: [Int] = []
+
     private var playlistTableView: UITableView!
     private var playlistImagesCollectionView: UICollectionView!
     private var selectedYearLabel: UILabel!
     private var loadingIndicator: UIActivityIndicatorView!
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -18,21 +19,20 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         fetchPlaylists()
     }
 
-
-        private func selectFirstPlaylist() {
-            guard !playlists.isEmpty else { 
-                print("empty playlist")
-                return }
-            print("Not empty playlist")
-            selectedPlaylistIndex = 0
-            let indexPath = IndexPath(row: 0, section: 0)
-            tableView(playlistTableView, didSelectRowAt: indexPath) // Call didSelectRowAt method manually
+    private func selectFirstPlaylist() {
+        guard !playlists.isEmpty else {
+            print("empty playlist")
+            return
         }
+        print("Not empty playlist")
+        selectedPlaylistIndex = 0
+        let indexPath = IndexPath(row: 0, section: 0)
+        tableView(playlistTableView, didSelectRowAt: indexPath) // Call didSelectRowAt method manually
+    }
 
     private func setupUI() {
         view.backgroundColor = .black
 
-        // Add the asset image view
         let imageView = UIImageView(image: UIImage(named: "mtv_logo"))
         imageView.contentMode = .scaleAspectFill // Adjust content mode to fill the frame
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -45,54 +45,41 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         selectedYearLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(selectedYearLabel)
 
-        // Add constraints for imageView and selectedYearLabel
         NSLayoutConstraint.activate([
-            // Constraints for imageView
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 52),
             imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 66),
             imageView.widthAnchor.constraint(equalToConstant: 145),
             imageView.heightAnchor.constraint(equalToConstant: 115),
-            
-            // Constraints for selectedYearLabel
             selectedYearLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 50),
             selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -2.2),
         ])
         
-        // Add the playlistTableView
         playlistTableView = UITableView()
         playlistTableView.dataSource = self
         playlistTableView.delegate = self
         playlistTableView.register(UITableViewCell.self, forCellReuseIdentifier: "PlaylistYear")
         view.addSubview(playlistTableView)
-
         playlistTableView.cellLayoutMarginsFollowReadableWidth = false
-
         playlistTableView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            // Constraints for playlistTableView
-            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor,constant: -51), // Align with the right edge of the imageView
-            playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 30), // Align playlistTableView's top with imageView's top
+            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -51),
+            playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 30),
             playlistTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
-            playlistTableView.widthAnchor.constraint(equalToConstant: 400) // Adjust width as needed
+            playlistTableView.widthAnchor.constraint(equalToConstant: 400)
         ])
 
-        // Add the playlistImagesCollectionView
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
         layout.minimumInteritemSpacing = 20
         layout.minimumLineSpacing = 40
-        layout.itemSize = CGSize(width: 340, height: 240) // Adjust as needed
+        layout.itemSize = CGSize(width: 340, height: 240)
 
         playlistImagesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         playlistImagesCollectionView.backgroundColor = .clear
         playlistImagesCollectionView.dataSource = self
         playlistImagesCollectionView.delegate = self
-    
-
-        // Register the PlaylistImageCell class
         playlistImagesCollectionView.register(PlaylistImageCell.self, forCellWithReuseIdentifier: "PlaylistCell")
         view.addSubview(playlistImagesCollectionView)
-
         playlistImagesCollectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             playlistImagesCollectionView.leadingAnchor.constraint(equalTo: playlistTableView.trailingAnchor, constant: 70),
@@ -104,11 +91,9 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
     func playVideoPlaylist(videoIdentifiers: [String], currentIndex: Int = 0) {
         guard currentIndex < videoIdentifiers.count else {
-            // All videos in the playlist have been played
             return
         }
 
-        // Show loading indicator
         let loadingIndicator = UIActivityIndicatorView(style: .large)
         loadingIndicator.color = .white
         loadingIndicator.center = view.center
@@ -121,13 +106,10 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         let currentVideoIdentifier = videoIdentifiers[currentIndex]
 
         XCDYouTubeClient.default().getVideoWithIdentifier(currentVideoIdentifier) { [weak self, playerViewController] (video: XCDYouTubeVideo?, error: Error?) in
-            // Hide loading indicator
             loadingIndicator.stopAnimating()
             loadingIndicator.removeFromSuperview()
 
             guard let streamURLs = video?.streamURLs else {
-                // Unable to retrieve stream URLs for the current video
-                // Proceed to play the next video in the playlist
                 self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                 return
             }
@@ -136,8 +118,6 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                                    streamURLs[YouTubeVideoQuality.hd720] ??
                                    streamURLs[YouTubeVideoQuality.medium360] ??
                                    streamURLs[YouTubeVideoQuality.small240]) else {
-                // Unable to find a suitable stream URL for the current video
-                // Proceed to play the next video in the playlist
                 self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                 return
             }
@@ -147,12 +127,8 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                 playerViewController.player = avPlayer
                 self?.present(playerViewController, animated: true) {
                     avPlayer.play()
-
-                    // Observe playback status to detect when the current video finishes
                     NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem, queue: nil) { [weak self] _ in
-                        // Dismiss the player view controller
                         playerViewController.dismiss(animated: true) {
-                            // Play the next video in the playlist
                             self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                         }
                     }
@@ -188,17 +164,14 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                 }
             }
         }
-        print("Play video ends ")
+        print("Play video ends")
     }
-    
+
     private func showLoadingIndicator() {
-        // Create and configure the loading indicator
         loadingIndicator = UIActivityIndicatorView(style: .large)
         loadingIndicator.color = .white
         loadingIndicator.startAnimating()
         view.addSubview(loadingIndicator)
-        
-        // Position the loading indicator in the center of the view
         loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -207,7 +180,6 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     }
 
     private func hideLoadingIndicator() {
-        // Stop and remove the loading indicator from the view
         loadingIndicator.stopAnimating()
         loadingIndicator.removeFromSuperview()
     }
@@ -221,31 +193,44 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                     self?.selectedPlaylistIndex = 0
                     DispatchQueue.main.async {
                         self?.playlistTableView.reloadData()
+                        self?.updateVisibleVideoIndices()
                         self?.playlistImagesCollectionView.reloadData()
-                        self?.hideLoadingIndicator() // Hide loading indicator after playlists are fetched
-                        self?.selectFirstPlaylist() // Call selectFirstPlaylist() after playlists are fetched
+                        self?.hideLoadingIndicator()
+                        self?.selectFirstPlaylist()
                     }
                 }
             case .failure(let error):
                 print("Error fetching playlists: \(error)")
-                self?.hideLoadingIndicator() // Hide loading indicator if there's an error
+                self?.hideLoadingIndicator()
             }
         }
     }
+
+    private func updateVisibleVideoIndices() {
+        guard let selectedPlaylistIndex = selectedPlaylistIndex else {
+            visibleVideoIndices = []
+            return
+        }
+
+        visibleVideoIndices = playlists[selectedPlaylistIndex].fields.isVisible.enumerated().compactMap { index, isVisible in
+            isVisible ?? false ? index : nil
+        }
+    }
 }
+
 extension PlayListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didUpdateFocusIn context: UICollectionViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
         coordinator.addCoordinatedAnimations({
             if let nextFocusedIndexPath = context.nextFocusedIndexPath {
                 if let nextFocusedCell = collectionView.cellForItem(at: nextFocusedIndexPath) as? PlaylistImageCell {
                     nextFocusedCell.backgroundColor = UIColor(hex: "292631")
-                                  nextFocusedCell.layer.cornerRadius = 10
+                    nextFocusedCell.layer.cornerRadius = 10
                     nextFocusedCell.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
                 }
             }
             if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
                 if let previouslyFocusedCell = collectionView.cellForItem(at: previouslyFocusedIndexPath) as? PlaylistImageCell {
-                    previouslyFocusedCell.backgroundColor = .clear 
+                    previouslyFocusedCell.backgroundColor = .clear
                     previouslyFocusedCell.transform = CGAffineTransform.identity
                 }
             }
@@ -254,56 +239,40 @@ extension PlayListViewController: UICollectionViewDelegate {
 }
 
 extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
-  
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PlaylistYear", for: indexPath)
-
-        // Configure the cell content here
         cell.textLabel?.text = String(playlists[indexPath.row].fields.year)
         cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 26) ?? UIFont.systemFont(ofSize: 26, weight: .bold)
         cell.layer.cornerRadius = 10
-      
-
-        // Set the background color for hovered state
         let bgColorView = UIView()
         bgColorView.backgroundColor = UIColor.black
         cell.selectedBackgroundView = bgColorView
-
-        // Set the border color and width for selected state
-        cell.layer.borderWidth = 0 // reset previous border width
+        cell.layer.borderWidth = 0
         cell.layer.borderColor = UIColor.clear.cgColor
-    
         return cell
     }
 
-   
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // Clear border from previously selected cell
         if let previousSelectedIndex = selectedPlaylistIndex,
            let previousSelectedCell = tableView.cellForRow(at: IndexPath(row: previousSelectedIndex, section: 0)) {
             previousSelectedCell.layer.borderWidth = 0
         }
-        
-        // Apply border to newly selected cell
         if let selectedCell = tableView.cellForRow(at: indexPath) {
             selectedCell.layer.borderWidth = 2
             selectedCell.layer.borderColor = UIColor(hex: "#A789FD")?.cgColor
         }
-
-        // Update selected index
         selectedPlaylistIndex = indexPath.row
-        
-        // Update selected year label
         selectedYearLabel.text = String(playlists[indexPath.row].fields.year)
-        
-        // Reload collection view
+        updateVisibleVideoIndices()
         playlistImagesCollectionView.reloadData()
     }
+
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         let deselectedCell = tableView.cellForRow(at: indexPath)
-        deselectedCell?.layer.borderWidth = 0 // Reset border width
+        deselectedCell?.layer.borderWidth = 0
         deselectedCell?.layer.borderColor = UIColor.clear.cgColor
     }
+
     func tableView(_ tableView: UITableView, didUpdateFocusIn context: UITableViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
         coordinator.addCoordinatedAnimations({
             if let nextFocusedIndexPath = context.nextFocusedIndexPath {
@@ -321,11 +290,9 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         }, completion: nil)
     }
 
-
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return playlists.count
     }
-
 }
 
 extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
@@ -335,19 +302,16 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         }
 
         let videoUrls = playlists[selectedPlaylistIndex].fields.videoUrls ?? []
-        let currentVideoIndex = selectedIndexPath.item
+        let currentVideoIndex = visibleVideoIndices[selectedIndexPath.item]
         let totalVideos = videoUrls.count
 
-        // Determine the start and end indices for the playlist
         let startIndex = currentVideoIndex
         var endIndex = startIndex + totalVideos
 
-        // If the end index exceeds the total number of videos, wrap around to the beginning
         if endIndex > totalVideos {
             endIndex = totalVideos
         }
 
-        // Create the playlist by appending videos from the start till the end
         var playlist: [String] = []
         for index in startIndex..<endIndex {
             playlist.append(extractYouTubeVideoID(from: videoUrls[index % totalVideos]) ?? "")
@@ -357,25 +321,15 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
     }
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-           // Adjust the content inset to provide padding on the left and right
-           let padding: CGFloat = 50 // Adjust as needed
-           return UIEdgeInsets(top: 0, left: padding, bottom: 0, right: padding)
-       }
+        let padding: CGFloat = 50
+        return UIEdgeInsets(top: 0, left: padding, bottom: 0, right: padding)
+    }
+
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-          guard let selectedPlaylistIndex = selectedPlaylistIndex,
-                selectedPlaylistIndex < playlists.count else {
-              return 0
-          }
+        return visibleVideoIndices.count
+    }
 
-          // Filter out items where isVisible is false
-          let visibleVideos = playlists[selectedPlaylistIndex].fields.videoUrls?.enumerated().compactMap { index, _ in
-              playlists[selectedPlaylistIndex].fields.isVisible[index] ?? false
-          }
-
-          return visibleVideos?.filter { $0 }.count ?? 0
-      }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        // Deselect the previously selected cell
         if let previouslySelectedIndexPath = collectionView.indexPathsForSelectedItems?.first {
             if let previouslySelectedCell = collectionView.cellForItem(at: previouslySelectedIndexPath) as? PlaylistImageCell {
                 previouslySelectedCell.transform = CGAffineTransform.identity
@@ -387,7 +341,7 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
             return
         }
 
-        let videoURL = playlists[selectedPlaylistIndex].fields.videoUrls?[indexPath.item]
+        let videoURL = playlists[selectedPlaylistIndex].fields.videoUrls?[visibleVideoIndices[indexPath.item]]
 
         if extractYouTubeVideoID(from: videoURL ?? "") != nil {
             let playlist = generatePlaylistFromSelectedVideo(selectedIndexPath: indexPath)
@@ -402,24 +356,12 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
             return UICollectionViewCell()
         }
 
-        guard let selectedPlaylistIndex = selectedPlaylistIndex,
-              selectedPlaylistIndex < playlists.count else {
+        guard let selectedPlaylistIndex = selectedPlaylistIndex, selectedPlaylistIndex < playlists.count else {
             return cell
         }
 
-        // Find the index of the visible item in the playlist
-        let visibleVideos = playlists[selectedPlaylistIndex].fields.isVisible.enumerated().filter { _, isVisible in
-            isVisible ?? false
-        }.map { index, _ in index }
+        let visibleIndex = visibleVideoIndices[indexPath.item]
 
-        // Ensure indexPath.item is within visibleVideos bounds
-        guard indexPath.item < visibleVideos.count else {
-            return cell
-        }
-
-        let visibleIndex = visibleVideos[indexPath.item]
-
-        // Configure the cell content using the visible index
         if let videoURL = playlists[selectedPlaylistIndex].fields.videoUrls?[visibleIndex], let videoID = extractYouTubeVideoID(from: videoURL) {
             let thumbnailURLString = "https://i.ytimg.com/vi/\(videoID)/mqdefault.jpg"
             if let url = URL(string: thumbnailURLString) {
@@ -442,7 +384,6 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
 
         return cell
     }
-
 }
 
 extension UIImageView {
@@ -457,8 +398,6 @@ extension UIImageView {
     }
 }
 
-
-// Utility function to extract YouTube video ID from URL
 func extractYouTubeVideoID(from videoURL: String) -> String? {
     guard let url = URL(string: videoURL),
           let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems else {
@@ -473,9 +412,6 @@ func extractYouTubeVideoID(from videoURL: String) -> String? {
 
     return nil
 }
-
-// Extension to load image from URL asynchronously
-
 
 extension UIColor {
     convenience init?(hex: String) {
@@ -492,9 +428,9 @@ extension UIColor {
                   alpha: 1.0)
     }
 }
-struct YouTubeVideoQuality {
-        static let hd720 = NSNumber(value: XCDYouTubeVideoQuality.HD720.rawValue)
 
-        static let medium360 = NSNumber(value: XCDYouTubeVideoQuality.medium360.rawValue)
-        static let small240 = NSNumber(value: XCDYouTubeVideoQuality.small240.rawValue)
-    }
+struct YouTubeVideoQuality {
+    static let hd720 = NSNumber(value: XCDYouTubeVideoQuality.HD720.rawValue)
+    static let medium360 = NSNumber(value: XCDYouTubeVideoQuality.medium360.rawValue)
+    static let small240 = NSNumber(value: XCDYouTubeVideoQuality.small240.rawValue)
+}
