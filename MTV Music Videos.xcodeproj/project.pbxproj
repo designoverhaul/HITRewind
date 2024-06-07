@@ -10,7 +10,6 @@
 		1C2269012BD4667F00F11B24 /* inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C2269002BD4667F00F11B24 /* inter.ttf */; };
 		1C2269032BD466A100F11B24 /* inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C2269002BD4667F00F11B24 /* inter.ttf */; };
 		1C2269042BD466A200F11B24 /* inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C2269002BD4667F00F11B24 /* inter.ttf */; };
-		1C2269052BD5427900F11B24 /* MTV-Music-Videos-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1C2268F72BD460D900F11B24 /* MTV-Music-Videos-Info.plist */; };
 		1C2643D92B9A671D006D5D69 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2643D82B9A671D006D5D69 /* AppDelegate.swift */; };
 		1C2643DB2B9A671D006D5D69 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2643DA2B9A671D006D5D69 /* ViewController.swift */; };
 		1C2643DE2B9A671D006D5D69 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1C2643DC2B9A671D006D5D69 /* Main.storyboard */; };
@@ -254,7 +253,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1520;
-				LastUpgradeCheck = 1520;
+				LastUpgradeCheck = 1540;
 				TargetAttributes = {
 					1C2643D42B9A671D006D5D69 = {
 						CreatedOnToolsVersion = 15.2;
@@ -299,7 +298,6 @@
 			files = (
 				1C2643E32B9A671F006D5D69 /* LaunchScreen.storyboard in Resources */,
 				1C2269012BD4667F00F11B24 /* inter.ttf in Resources */,
-				1C2269052BD5427900F11B24 /* MTV-Music-Videos-Info.plist in Resources */,
 				1C2643E02B9A671F006D5D69 /* Assets.xcassets in Resources */,
 				1C2643DE2B9A671D006D5D69 /* Main.storyboard in Resources */,
 			);
@@ -519,7 +517,7 @@
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "MTV-Music-Videos-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "MTV Music Videos";
+				INFOPLIST_KEY_CFBundleDisplayName = "Hit Rewind";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -547,7 +545,7 @@
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "MTV-Music-Videos-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "MTV Music Videos";
+				INFOPLIST_KEY_CFBundleDisplayName = "Hit Rewind";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
