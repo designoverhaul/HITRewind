@@ -48,10 +48,10 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         NSLayoutConstraint.activate([
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 52),
             imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 66),
-            imageView.widthAnchor.constraint(equalToConstant: 50),
+            imageView.widthAnchor.constraint(equalToConstant: 145),
             imageView.heightAnchor.constraint(equalToConstant: 115),
             selectedYearLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 50),
-            selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -2.2),
+            selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -32.2),
         ])
         
         playlistTableView = UITableView()
