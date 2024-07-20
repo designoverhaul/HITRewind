@@ -39,8 +39,8 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         view.addSubview(imageView)
         
         selectedYearLabel = UILabel()
-        selectedYearLabel.textColor = UIColor(hex: "#FFF61D")
-        selectedYearLabel.font = UIFont(name: "inter", size: 43) ?? UIFont.systemFont(ofSize: 43, weight: .heavy)
+        selectedYearLabel.textColor = UIColor(hex: "#A789FD")
+        selectedYearLabel.font = UIFont(name: "inter", size: 43) ?? UIFont.systemFont(ofSize: 43, weight: .light)
         selectedYearLabel.textAlignment = .right // Align the text to the right
         selectedYearLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(selectedYearLabel)
@@ -51,7 +51,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             imageView.widthAnchor.constraint(equalToConstant: 145),
             imageView.heightAnchor.constraint(equalToConstant: 115),
             selectedYearLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 50),
-            selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -32.2),
+            selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -32.5),
         ])
         
         playlistTableView = UITableView()
