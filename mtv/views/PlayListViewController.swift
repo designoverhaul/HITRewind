@@ -241,7 +241,10 @@ extension PlayListViewController: UICollectionViewDelegate {
 extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PlaylistYear", for: indexPath)
-        cell.textLabel?.text = String(playlists[indexPath.row].fields.year)
+        let playlist = playlists[indexPath.row]
+                let yearText = String(playlist.fields.year)
+                let lockIcon = playlist.fields.isLocked == true ? " 🔒" : ""
+                cell.textLabel?.text = yearText + lockIcon
         cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 26) ?? UIFont.systemFont(ofSize: 26, weight: .bold)
         cell.layer.cornerRadius = 10
         let bgColorView = UIView()
@@ -262,7 +265,14 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
             selectedCell.layer.borderColor = UIColor(hex: "#A789FD")?.cgColor
         }
         selectedPlaylistIndex = indexPath.row
-        selectedYearLabel.text = String(playlists[indexPath.row].fields.year)
+
+        let selectedPlaylist = playlists[indexPath.row]
+        let yearText = String(selectedPlaylist.fields.year)
+        print("Is locked")
+        print(selectedPlaylist.fields.isLocked ??  false)
+        let lockIcon = selectedPlaylist.fields.isLocked == true ? " 🔒" : ""
+        selectedYearLabel.text = yearText + lockIcon
+
         updateVisibleVideoIndices()
         playlistImagesCollectionView.reloadData()
     }

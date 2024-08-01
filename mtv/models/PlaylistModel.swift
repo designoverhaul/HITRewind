@@ -13,7 +13,8 @@ struct PlaylistFields: Codable {
     var videoUrls: [String]?
     var artistNames: [String]?
     var videoTitles: [String]?
-    var isVisible: [Bool?] // Change to optional Bool
+    var isVisible: [Bool?]
+    var isLocked: Bool?
 }
 
 func fetchThePlaylists(apiKey: String, baseURLString: String, completion: @escaping (Result<[Playlist], Error>) -> Void) {
@@ -41,9 +42,9 @@ func fetchThePlaylists(apiKey: String, baseURLString: String, completion: @escap
                 // Sort playlists based on the year field in reverse order
                 playlists.sort { $0.fields.year > $1.fields.year }
 
-                // Handle nullable isVisible values
+                // Handle nullable isLocked values
                 for var playlist in playlists {
-                    playlist.fields.isVisible = playlist.fields.isVisible.map { $0 ?? true }
+                    playlist.fields.isLocked = playlist.fields.isLocked ?? false
                 }
 
                 completion(.success(playlists))
@@ -107,7 +108,7 @@ func sortAndArrangePlaylists(apiKey: String, baseURLString: String, completion: 
                         let mtvVideos = playlists[playlistIndex].fields.mtvVideos ?? []
                         let videoUrls = playlists[playlistIndex].fields.videoUrls ?? []
                         let artistNames = playlists[playlistIndex].fields.artistNames ?? []
-                        let isVisible = playlists[playlistIndex].fields.isVisible ?? []
+                        let isVisible = playlists[playlistIndex].fields.isVisible
 
                         // Update the playlist fields with sorted data
                         playlists[playlistIndex].fields.mtvVideos = sortedIndices.map { mtvVideos.indices.contains($0) ? mtvVideos[$0] : "" }
