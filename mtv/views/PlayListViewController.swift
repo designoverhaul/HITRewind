@@ -8,6 +8,8 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private var visibleVideoIndices: [Int] = []
 
     private var playlistTableView: UITableView!
+    private var lockMessageLabel: UILabel!
+
     private var playlistImagesCollectionView: UICollectionView!
     private var selectedYearLabel: UILabel!
     private var loadingIndicator: UIActivityIndicatorView!
@@ -53,7 +55,15 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             selectedYearLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 50),
             selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -32.5),
         ])
-        
+        lockMessageLabel = UILabel()
+           lockMessageLabel.textColor = .white
+           lockMessageLabel.font = UIFont.systemFont(ofSize: 20, weight: .bold)
+           lockMessageLabel.textAlignment = .center
+           lockMessageLabel.numberOfLines = 0
+           lockMessageLabel.text = "This playlist is locked. Please subscribe to watch it."
+           lockMessageLabel.isHidden = true
+           lockMessageLabel.translatesAutoresizingMaskIntoConstraints = false
+           view.addSubview(lockMessageLabel)
         playlistTableView = UITableView()
         playlistTableView.dataSource = self
         playlistTableView.delegate = self
@@ -65,7 +75,11 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -51),
             playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 30),
             playlistTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
-            playlistTableView.widthAnchor.constraint(equalToConstant: 400)
+            playlistTableView.widthAnchor.constraint(equalToConstant: 400),
+            lockMessageLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            lockMessageLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            lockMessageLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            lockMessageLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         ])
 
         let layout = UICollectionViewFlowLayout()
@@ -268,13 +282,18 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
 
         let selectedPlaylist = playlists[indexPath.row]
         let yearText = String(selectedPlaylist.fields.year)
-        print("Is locked")
-        print(selectedPlaylist.fields.isLocked ??  false)
         let lockIcon = selectedPlaylist.fields.isLocked == true ? " 🔒" : ""
         selectedYearLabel.text = yearText + lockIcon
 
-        updateVisibleVideoIndices()
-        playlistImagesCollectionView.reloadData()
+        if selectedPlaylist.fields.isLocked ?? false{
+            playlistImagesCollectionView.isHidden = true
+            lockMessageLabel.isHidden = false
+        } else {
+            playlistImagesCollectionView.isHidden = false
+            lockMessageLabel.isHidden = true
+            updateVisibleVideoIndices()
+            playlistImagesCollectionView.reloadData()
+        }
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
