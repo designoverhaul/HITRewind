@@ -101,8 +101,22 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             playlistImagesCollectionView.topAnchor.constraint(equalTo: view.topAnchor),
             playlistImagesCollectionView.bottomAnchor.constraint(equalTo: playlistTableView.bottomAnchor)
         ])
-    }
+        let purchaseButton = UIButton(type: .system)
+                purchaseButton.setTitle("Purchase", for: .normal)
+                purchaseButton.translatesAutoresizingMaskIntoConstraints = false
+                purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered) // For tvOS, use .primaryActionTriggered
+                view.addSubview(purchaseButton)
 
+                NSLayoutConstraint.activate([
+                    purchaseButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                    purchaseButton.bottomAnchor.constraint(equalTo: view.topAnchor, constant: 50)
+                ])
+    }
+    @objc private func navigateToPurchases() {
+        let purchasesViewController = PurchasesViewController()
+        purchasesViewController.modalPresentationStyle = .fullScreen
+        present(purchasesViewController, animated: true, completion: nil)
+    }
     func playVideoPlaylist(videoIdentifiers: [String], currentIndex: Int = 0) {
         guard currentIndex < videoIdentifiers.count else {
             return

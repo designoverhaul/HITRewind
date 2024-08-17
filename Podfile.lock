@@ -1,0 +1,20 @@
+PODS:
+  - RevenueCat (4.43.2)
+  - XCDYouTubeKit (2.15.2)
+
+DEPENDENCIES:
+  - RevenueCat
+  - XCDYouTubeKit
+
+SPEC REPOS:
+  trunk:
+    - RevenueCat
+    - XCDYouTubeKit
+
+SPEC CHECKSUMS:
+  RevenueCat: 3d934653b7e8b09af88fd47e9e84cfaf5d0a89ba
+  XCDYouTubeKit: b120aced3d8638ffb570c5450cddb5a1dac448c7
+
+PODFILE CHECKSUM: 8faca9207e5c427d30ec3edbb1fe551422af1351
+
+COCOAPODS: 1.15.2

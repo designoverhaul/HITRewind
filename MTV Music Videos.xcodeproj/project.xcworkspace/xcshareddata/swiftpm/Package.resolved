@@ -1,5 +1,15 @@
 {
+  "originHash" : "e0f71f768dbcd6b19eb9d628d05c5f31f88865f236d8247bf50cc33e12995501",
   "pins" : [
+    {
+      "identity" : "purchases-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RevenueCat/purchases-ios.git",
+      "state" : {
+        "revision" : "56f136a1385a2fe17998d0b34b3db26debeb8ec4",
+        "version" : "5.2.2"
+      }
+    },
     {
       "identity" : "xcdyoutubekit",
       "kind" : "remoteSourceControl",
@@ -10,5 +20,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1C0B177C2C6BFC2A005E2B06 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = 1C0B177B2C6BFC2A005E2B06 /* ReceiptParser */; };
+		1C0B177E2C6BFC2A005E2B06 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 1C0B177D2C6BFC2A005E2B06 /* RevenueCat */; };
+		1C0B17802C6BFC2A005E2B06 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1C0B177F2C6BFC2A005E2B06 /* RevenueCatUI */; };
 		1C2269012BD4667F00F11B24 /* inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C2269002BD4667F00F11B24 /* inter.ttf */; };
 		1C2269032BD466A100F11B24 /* inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C2269002BD4667F00F11B24 /* inter.ttf */; };
 		1C2269042BD466A200F11B24 /* inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C2269002BD4667F00F11B24 /* inter.ttf */; };
@@ -22,11 +25,13 @@
 		1C26440D2B9A71A7006D5D69 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C26440C2B9A71A7006D5D69 /* Constants.swift */; };
 		1C26440F2B9A7680006D5D69 /* PlayListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C26440E2B9A7680006D5D69 /* PlayListViewController.swift */; };
 		1C2644122B9A76AC006D5D69 /* XCDYouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */; };
+		1C30A4862C6237B8005C3E83 /* PurchasesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C30A4852C6237B8005C3E83 /* PurchasesViewController.swift */; };
 		1C46DE042C172B0000E10253 /* inter_light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C46DE032C172B0000E10253 /* inter_light.ttf */; };
 		1C46DE052C172B0000E10253 /* inter_light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C46DE032C172B0000E10253 /* inter_light.ttf */; };
 		1C46DE062C172B0000E10253 /* inter_light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C46DE032C172B0000E10253 /* inter_light.ttf */; };
 		1C4BD6572BA11176002C37C1 /* ImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6562BA11176002C37C1 /* ImageCell.swift */; };
 		1C4BD65A2BA1143B002C37C1 /* VideoDurationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */; };
+		1C7CA4642C71267600CE68EB /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C7CA4632C71267500CE68EB /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,9 +68,11 @@
 		1C2644062B9A7023006D5D69 /* PlaylistModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistModel.swift; sourceTree = "<group>"; };
 		1C26440C2B9A71A7006D5D69 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		1C26440E2B9A7680006D5D69 /* PlayListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayListViewController.swift; sourceTree = "<group>"; };
+		1C30A4852C6237B8005C3E83 /* PurchasesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchasesViewController.swift; sourceTree = "<group>"; };
 		1C46DE032C172B0000E10253 /* inter_light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = inter_light.ttf; sourceTree = "<group>"; };
 		1C4BD6562BA11176002C37C1 /* ImageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCell.swift; sourceTree = "<group>"; };
 		1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDurationService.swift; sourceTree = "<group>"; };
+		1C7CA4632C71267500CE68EB /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,7 +80,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C0B17802C6BFC2A005E2B06 /* RevenueCatUI in Frameworks */,
+				1C0B177C2C6BFC2A005E2B06 /* ReceiptParser in Frameworks */,
+				1C7CA4642C71267600CE68EB /* StoreKit.framework in Frameworks */,
 				1C2644122B9A76AC006D5D69 /* XCDYouTubeKit in Frameworks */,
+				1C0B177E2C6BFC2A005E2B06 /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -111,6 +122,7 @@
 				1C2643EB2B9A671F006D5D69 /* mtvTests */,
 				1C2643F52B9A671F006D5D69 /* mtvUITests */,
 				1C2643D62B9A671D006D5D69 /* Products */,
+				1C7CA4622C71267500CE68EB /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -171,6 +183,7 @@
 			children = (
 				1C26440E2B9A7680006D5D69 /* PlayListViewController.swift */,
 				1C4BD6562BA11176002C37C1 /* ImageCell.swift */,
+				1C30A4852C6237B8005C3E83 /* PurchasesViewController.swift */,
 			);
 			path = views;
 			sourceTree = "<group>";
@@ -191,6 +204,14 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		1C7CA4622C71267500CE68EB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1C7CA4632C71267500CE68EB /* StoreKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -209,6 +230,9 @@
 			name = "MTV Music Videos";
 			packageProductDependencies = (
 				1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */,
+				1C0B177B2C6BFC2A005E2B06 /* ReceiptParser */,
+				1C0B177D2C6BFC2A005E2B06 /* RevenueCat */,
+				1C0B177F2C6BFC2A005E2B06 /* RevenueCatUI */,
 			);
 			productName = mtv;
 			productReference = 1C2643D52B9A671D006D5D69 /* MTV Music Videos.app */;
@@ -284,6 +308,7 @@
 			mainGroup = 1C2643CC2B9A671D006D5D69;
 			packageReferences = (
 				1C2644102B9A76AC006D5D69 /* XCRemoteSwiftPackageReference "XCDYouTubeKit" */,
+				1C30A4842C6235AF005C3E83 /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			productRefGroup = 1C2643D62B9A671D006D5D69 /* Products */;
 			projectDirPath = "";
@@ -339,6 +364,7 @@
 				1C2643DB2B9A671D006D5D69 /* ViewController.swift in Sources */,
 				1C2644072B9A7023006D5D69 /* PlaylistModel.swift in Sources */,
 				1C2643D92B9A671D006D5D69 /* AppDelegate.swift in Sources */,
+				1C30A4862C6237B8005C3E83 /* PurchasesViewController.swift in Sources */,
 				1C4BD6572BA11176002C37C1 /* ImageCell.swift in Sources */,
 				1C4BD65A2BA1143B002C37C1 /* VideoDurationService.swift in Sources */,
 			);
@@ -436,7 +462,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -498,7 +524,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -697,9 +723,32 @@
 				minimumVersion = 2.16.0;
 			};
 		};
+		1C30A4842C6235AF005C3E83 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.2.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		1C0B177B2C6BFC2A005E2B06 /* ReceiptParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1C30A4842C6235AF005C3E83 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = ReceiptParser;
+		};
+		1C0B177D2C6BFC2A005E2B06 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1C30A4842C6235AF005C3E83 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
+		1C0B177F2C6BFC2A005E2B06 /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1C30A4842C6235AF005C3E83 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCatUI;
+		};
 		1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 1C2644102B9A76AC006D5D69 /* XCRemoteSwiftPackageReference "XCDYouTubeKit" */;
