@@ -102,15 +102,22 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             playlistImagesCollectionView.bottomAnchor.constraint(equalTo: playlistTableView.bottomAnchor)
         ])
         let purchaseButton = UIButton(type: .system)
-                purchaseButton.setTitle("Purchase", for: .normal)
-                purchaseButton.translatesAutoresizingMaskIntoConstraints = false
-                purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered) // For tvOS, use .primaryActionTriggered
-                view.addSubview(purchaseButton)
+           purchaseButton.setTitle("Subscribe", for: .normal)
+           purchaseButton.backgroundColor = .yellow // Set background color to yellow
+           purchaseButton.translatesAutoresizingMaskIntoConstraints = false
+           purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered) // For tvOS, use .primaryActionTriggered
+           
+           // Set the button's canBecomeFocused to false
+           purchaseButton.isUserInteractionEnabled = true
+           
+           
+           view.addSubview(purchaseButton)
 
-                NSLayoutConstraint.activate([
-                    purchaseButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                    purchaseButton.bottomAnchor.constraint(equalTo: view.topAnchor, constant: 50)
-                ])
+           NSLayoutConstraint.activate([
+               purchaseButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -50),
+               purchaseButton.bottomAnchor.constraint(equalTo: view.topAnchor, constant: 150),
+               purchaseButton.heightAnchor.constraint(equalToConstant: 40) // Set the button height to 40 points
+           ])
     }
     @objc private func navigateToPurchases() {
         let purchasesViewController = PurchasesViewController()
