@@ -35,15 +35,16 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private func setupUI() {
         view.backgroundColor = .black
 
+        // MTV logo imageView setup
         let imageView = UIImageView(image: UIImage(named: "mtv_logo"))
-        imageView.contentMode = .scaleAspectFill // Adjust content mode to fill the frame
+        imageView.contentMode = .scaleAspectFill
         imageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(imageView)
-        
+
         selectedYearLabel = UILabel()
         selectedYearLabel.textColor = UIColor(hex: "#A789FD")
         selectedYearLabel.font = UIFont(name: "inter", size: 43) ?? UIFont.systemFont(ofSize: 43, weight: .light)
-        selectedYearLabel.textAlignment = .right // Align the text to the right
+        selectedYearLabel.textAlignment = .right
         selectedYearLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(selectedYearLabel)
 
@@ -55,15 +56,41 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             selectedYearLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 50),
             selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -32.5),
         ])
+        let purchaseButton = UIButton(type: .system)
+        purchaseButton.setTitle("Subscribe", for: .normal)
+        purchaseButton.backgroundColor = .white
+        purchaseButton.setTitleColor(.black, for: .normal)
+        purchaseButton.layer.cornerRadius = 20
+        purchaseButton.translatesAutoresizingMaskIntoConstraints = false
+        purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered)
+        purchaseButton.isUserInteractionEnabled = true
+
+        // Customize the button for when it is focused
+        purchaseButton.setTitleColor(.black, for: .focused) // Change text color when focused
+        purchaseButton.adjustsImageWhenHighlighted = false // Disable image adjustments
+
+        // Add the button to the view
+        view.addSubview(purchaseButton)
+
+        NSLayoutConstraint.activate([
+            purchaseButton.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
+            purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20),
+            purchaseButton.heightAnchor.constraint(equalToConstant: 40),
+            purchaseButton.widthAnchor.constraint(equalToConstant: 300)
+        ])
+
+        // Lock message label setup
         lockMessageLabel = UILabel()
-           lockMessageLabel.textColor = .white
-           lockMessageLabel.font = UIFont.systemFont(ofSize: 20, weight: .bold)
-           lockMessageLabel.textAlignment = .center
-           lockMessageLabel.numberOfLines = 0
-           lockMessageLabel.text = "This playlist is locked. Please subscribe to watch it."
-           lockMessageLabel.isHidden = true
-           lockMessageLabel.translatesAutoresizingMaskIntoConstraints = false
-           view.addSubview(lockMessageLabel)
+        lockMessageLabel.textColor = .white
+        lockMessageLabel.font = UIFont.systemFont(ofSize: 20, weight: .bold)
+        lockMessageLabel.textAlignment = .center
+        lockMessageLabel.numberOfLines = 0
+        lockMessageLabel.text = "This playlist is locked. Please subscribe to watch it."
+        lockMessageLabel.isHidden = true
+        lockMessageLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(lockMessageLabel)
+
+        // Playlist tableView setup
         playlistTableView = UITableView()
         playlistTableView.dataSource = self
         playlistTableView.delegate = self
@@ -73,7 +100,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         playlistTableView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -51),
-            playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 30),
+            playlistTableView.topAnchor.constraint(equalTo: purchaseButton.bottomAnchor, constant: 30),
             playlistTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             playlistTableView.widthAnchor.constraint(equalToConstant: 400),
             lockMessageLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -82,6 +109,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             lockMessageLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         ])
 
+        // Playlist images collectionView setup
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
         layout.minimumInteritemSpacing = 20
@@ -101,24 +129,11 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             playlistImagesCollectionView.topAnchor.constraint(equalTo: view.topAnchor),
             playlistImagesCollectionView.bottomAnchor.constraint(equalTo: playlistTableView.bottomAnchor)
         ])
-        let purchaseButton = UIButton(type: .system)
-           purchaseButton.setTitle("Subscribe", for: .normal)
-           purchaseButton.backgroundColor = .yellow // Set background color to yellow
-           purchaseButton.translatesAutoresizingMaskIntoConstraints = false
-           purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered) // For tvOS, use .primaryActionTriggered
-           
-           // Set the button's canBecomeFocused to false
-           purchaseButton.isUserInteractionEnabled = true
-           
-           
-           view.addSubview(purchaseButton)
 
-           NSLayoutConstraint.activate([
-               purchaseButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -50),
-               purchaseButton.bottomAnchor.constraint(equalTo: view.topAnchor, constant: 150),
-               purchaseButton.heightAnchor.constraint(equalToConstant: 40) // Set the button height to 40 points
-           ])
+        // Subscribe button setup
+ 
     }
+
     @objc private func navigateToPurchases() {
         let purchasesViewController = PurchasesViewController()
         purchasesViewController.modalPresentationStyle = .fullScreen
