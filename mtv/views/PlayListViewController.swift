@@ -1,4 +1,5 @@
 import UIKit
+import RevenueCat
 import XCDYouTubeKit
 import AVKit
 
@@ -9,14 +10,19 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
     private var playlistTableView: UITableView!
     private var lockMessageLabel: UILabel!
-
+    private var purchaseButton: UIButton!
+    private var isSubscribed: Bool=false
     private var playlistImagesCollectionView: UICollectionView!
     private var selectedYearLabel: UILabel!
     private var loadingIndicator: UIActivityIndicatorView!
-
+    override func viewWillAppear(_ animated: Bool) {
+           super.viewWillAppear(animated)
+           checkSubscriptionStatus() // Check subscription status each time the view appears
+       }
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        checkSubscriptionStatus()
         showLoadingIndicator() // Show loading indicator
         fetchPlaylists()
     }
@@ -56,28 +62,26 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             selectedYearLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 50),
             selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -32.5),
         ])
-        let purchaseButton = UIButton(type: .system)
-        purchaseButton.setTitle("Subscribe", for: .normal)
-        purchaseButton.backgroundColor = .white
-        purchaseButton.setTitleColor(.black, for: .normal)
-        purchaseButton.layer.cornerRadius = 20
-        purchaseButton.translatesAutoresizingMaskIntoConstraints = false
-        purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered)
-        purchaseButton.isUserInteractionEnabled = true
+ 
+        // Purchase Button styled as a label with a black background
+        purchaseButton = UIButton(type: .system)
+            purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
+        purchaseButton.titleLabel?.font =  UIFont.boldSystemFont(ofSize: 25)
+            purchaseButton.setTitleColor(.white, for: .normal) // White text color for normal state
+            purchaseButton.setTitleColor(UIColor(hex: "#A789FD"), for: .focused) // Purple text color when focused
+            purchaseButton.backgroundColor = .black // Black background
+            purchaseButton.layer.cornerRadius = 0 // No corner radius
+            purchaseButton.translatesAutoresizingMaskIntoConstraints = false
+            purchaseButton.contentHorizontalAlignment = .left // Align text to the left
+            purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered)
+            view.addSubview(purchaseButton)
 
-        // Customize the button for when it is focused
-        purchaseButton.setTitleColor(.black, for: .focused) // Change text color when focused
-        purchaseButton.adjustsImageWhenHighlighted = false // Disable image adjustments
+            NSLayoutConstraint.activate([
+                purchaseButton.heightAnchor.constraint(equalToConstant: 50),
+                purchaseButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 51),
+                purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20)
+            ])
 
-        // Add the button to the view
-        view.addSubview(purchaseButton)
-
-        NSLayoutConstraint.activate([
-            purchaseButton.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
-            purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20),
-            purchaseButton.heightAnchor.constraint(equalToConstant: 40),
-            purchaseButton.widthAnchor.constraint(equalToConstant: 300)
-        ])
 
         // Lock message label setup
         lockMessageLabel = UILabel()
@@ -129,9 +133,23 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             playlistImagesCollectionView.topAnchor.constraint(equalTo: view.topAnchor),
             playlistImagesCollectionView.bottomAnchor.constraint(equalTo: playlistTableView.bottomAnchor)
         ])
+    }
 
-        // Subscribe button setup
- 
+    // Use this method to manage focus updates
+    override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+        super.didUpdateFocus(in: context, with: coordinator)
+
+        if let nextFocusedView = context.nextFocusedView, nextFocusedView == purchaseButton {
+            coordinator.addCoordinatedAnimations({
+                self.purchaseButton.setTitleColor(.black, for: .normal) // Highlight text when focused
+            }, completion: nil)
+        }
+
+        if let previouslyFocusedView = context.previouslyFocusedView, previouslyFocusedView == purchaseButton {
+            coordinator.addCoordinatedAnimations({
+                self.purchaseButton.setTitleColor(.white, for: .normal) // Revert to normal color when unfocused
+            }, completion: nil)
+        }
     }
 
     @objc private func navigateToPurchases() {
@@ -139,6 +157,9 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         purchasesViewController.modalPresentationStyle = .fullScreen
         present(purchasesViewController, animated: true, completion: nil)
     }
+
+
+
     func playVideoPlaylist(videoIdentifiers: [String], currentIndex: Int = 0) {
         guard currentIndex < videoIdentifiers.count else {
             return
@@ -320,15 +341,55 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         let yearText = String(selectedPlaylist.fields.year)
         let lockIcon = selectedPlaylist.fields.isLocked == true ? " 🔒" : ""
         selectedYearLabel.text = yearText + lockIcon
-
-        if selectedPlaylist.fields.isLocked ?? false{
-            playlistImagesCollectionView.isHidden = true
-            lockMessageLabel.isHidden = false
-        } else {
+        
+        if isSubscribed {
             playlistImagesCollectionView.isHidden = false
             lockMessageLabel.isHidden = true
             updateVisibleVideoIndices()
             playlistImagesCollectionView.reloadData()
+        } else {
+            if selectedPlaylist.fields.isLocked ?? false {
+                playlistImagesCollectionView.isHidden = true
+                lockMessageLabel.isHidden = false
+                navigateToPurchases() // Navigate to payment screen if the playlist is locked
+            } else {
+                playlistImagesCollectionView.isHidden = false
+                lockMessageLabel.isHidden = true
+                updateVisibleVideoIndices()
+                playlistImagesCollectionView.reloadData()
+            }
+        }
+    }
+
+    private func checkSubscriptionStatus() {
+        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
+            guard let self = self else { return }
+            
+            if let customerInfo = customerInfo {
+                // Check if there are any active entitlements
+                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
+                
+                // Check if the user has an active subscription based on any active entitlement
+                if !activeEntitlements.isEmpty {
+                    isSubscribed=true
+                    self.purchaseButton.setTitle("Already Subscribed", for: .normal)
+                    self.purchaseButton.isEnabled = false // Disable the button if subscribed
+                    self.lockMessageLabel.isHidden = true // Hide the lock message
+                    self.playlistImagesCollectionView.isHidden = false // Show the playlist images
+                    print("User is subscribed with entitlements: \(activeEntitlements.keys)")
+                } else {
+                    self.purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
+                    self.purchaseButton.isEnabled = true // Enable the button if not subscribed
+                    self.lockMessageLabel.isHidden = false // Show the lock message
+                    self.playlistImagesCollectionView.isHidden = true // Hide the playlist images
+                    print("User is not subscribed. Status: \(customerInfo)")
+                }
+            } else if let error = error {
+                print("Error fetching customer info: \(error.localizedDescription)")
+            }
+            
+            // Fetch playlists after checking the subscription
+            self.fetchPlaylists()
         }
     }
 

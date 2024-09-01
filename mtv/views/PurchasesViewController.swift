@@ -18,14 +18,36 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     private func setupUI() {
-        // Title Label
-        let titleLabel = UILabel()
-        titleLabel.text = "Subscribe for Lifetime"
-        titleLabel.textColor = .yellow
-        titleLabel.font = UIFont.boldSystemFont(ofSize: 36)
-        titleLabel.textAlignment = .center
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(titleLabel)
+        // Stack View to hold the three lines of text
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.alignment = .center
+        stackView.spacing = 10
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        // First Line
+        let firstLineLabel = UILabel()
+        firstLineLabel.text = "🔓 Unlock all years"
+        firstLineLabel.textColor = UIColor(hex: "#A789FD")
+        firstLineLabel.font = UIFont.boldSystemFont(ofSize: 25)
+        stackView.addArrangedSubview(firstLineLabel)
+
+        // Second Line
+        let secondLineLabel = UILabel()
+        secondLineLabel.text = "🚫 No subscription"
+        secondLineLabel.textColor = UIColor(hex: "#A789FD")
+        secondLineLabel.font = UIFont.boldSystemFont(ofSize: 25)
+        stackView.addArrangedSubview(secondLineLabel)
+
+        // Third Line
+        let thirdLineLabel = UILabel()
+        thirdLineLabel.text = "🚫 No ads"
+        thirdLineLabel.textColor = UIColor(hex: "#A789FD")
+        thirdLineLabel.font = UIFont.boldSystemFont(ofSize: 25)
+        stackView.addArrangedSubview(thirdLineLabel)
+
+        // Add the stack view to the view
+        view.addSubview(stackView)
 
         // Icon ImageView
         let iconImageView = UIImageView()
@@ -36,14 +58,14 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
         // Offering Label
         offeringLabel = UILabel()
-        offeringLabel.textColor = UIColor(hex: "#A789FD")
+        offeringLabel.textColor = UIColor(hex: "#DCD2FF")
         offeringLabel.font = UIFont.boldSystemFont(ofSize: 26)
         offeringLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(offeringLabel)
 
         // Purchase Button
         purchaseButton = UIButton(type: .system)
-        purchaseButton.setTitle("Subscribe Now", for: .normal)
+        purchaseButton.setTitle("Purchase", for: .normal)
         purchaseButton.setTitleColor(.black, for: .normal)
         purchaseButton.backgroundColor = .yellow
         purchaseButton.layer.cornerRadius = 15
@@ -56,17 +78,17 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         NSLayoutConstraint.activate([
             // Icon ImageView Constraints
             iconImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            iconImageView.bottomAnchor.constraint(equalTo: titleLabel.topAnchor, constant: -20),
+            iconImageView.bottomAnchor.constraint(equalTo: stackView.topAnchor, constant: -20),
             iconImageView.widthAnchor.constraint(equalToConstant: 200),
             iconImageView.heightAnchor.constraint(equalToConstant: 200),
 
-            // Title Label Constraints
-            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -100),
+            // Stack View Constraints
+            stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -100),
 
             // Offering Label Constraints
             offeringLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            offeringLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 40),
+            offeringLabel.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 40),
 
             // Purchase Button Constraints
             purchaseButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -92,7 +114,10 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
     private func displayOffering(offering: Offering) {
         if let package = offering.availablePackages.first {
-            let offeringText = "\(package.storeProduct.localizedTitle) - $ \(package.storeProduct.price)"
+            let currencyCode = package.storeProduct.currencyCode ?? "$"
+            let offeringText = "Hit Rewind Unlocked - \(currencyCode) \(package.storeProduct.price)"
+
+           
             offeringLabel.text = offeringText
         }
     }
