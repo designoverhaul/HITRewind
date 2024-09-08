@@ -79,8 +79,8 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             // Icon ImageView Constraints
             iconImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             iconImageView.bottomAnchor.constraint(equalTo: stackView.topAnchor, constant: -20),
-            iconImageView.widthAnchor.constraint(equalToConstant: 200),
-            iconImageView.heightAnchor.constraint(equalToConstant: 200),
+            iconImageView.widthAnchor.constraint(equalToConstant: 400),
+            iconImageView.heightAnchor.constraint(equalToConstant: 400),
 
             // Stack View Constraints
             stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -115,7 +115,8 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     private func displayOffering(offering: Offering) {
         if let package = offering.availablePackages.first {
             let currencyCode = package.storeProduct.currencyCode ?? "$"
-            let offeringText = "Hit Rewind Unlocked - \(currencyCode) \(package.storeProduct.price)"
+            let formattedPrice = (currencyCode == "USD") ? "$\(package.storeProduct.price)" : "\(currencyCode) \(package.storeProduct.price)"
+            let offeringText = "Hit Rewind Unlocked - \(formattedPrice)"
 
            
             offeringLabel.text = offeringText

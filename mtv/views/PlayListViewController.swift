@@ -7,6 +7,9 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private var playlists: [Playlist] = []
     private var selectedPlaylistIndex: Int?
     private var visibleVideoIndices: [Int] = []
+    private var dummyFocusableView: UIView!
+    private var isReturningFromAnotherController: Bool = false
+    private var lastSelectedYearIndex: IndexPath?
 
     private var playlistTableView: UITableView!
     private var lockMessageLabel: UILabel!
@@ -16,15 +19,109 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private var selectedYearLabel: UILabel!
     private var loadingIndicator: UIActivityIndicatorView!
     override func viewWillAppear(_ animated: Bool) {
-           super.viewWillAppear(animated)
-           checkSubscriptionStatus() // Check subscription status each time the view appears
-       }
+        super.viewWillAppear(animated)
+
+        if playlists.isEmpty {
+            checkSubscriptionStatus()
+        }
+
+        // Reset UI state without reloading the entire data to avoid unnecessary scrolling
+        resetUIState()
+
+        // Restore focus to the last selected year index if it exists
+        if let lastSelectedIndex = lastSelectedYearIndex {
+            playlistTableView.scrollToRow(at: lastSelectedIndex, at: .middle, animated: false)
+            
+            // Delay focus adjustment to ensure it overrides system adjustments
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                // Select the previously selected cell
+                self.playlistTableView.selectRow(at: lastSelectedIndex, animated: false, scrollPosition: .none)
+                
+                // Update focus to the selected cell
+                self.setNeedsFocusUpdate()
+                self.updateFocusIfNeeded()
+            }
+        } else {
+            // If no year was previously selected, handle the default focus
+            DispatchQueue.main.async {
+                self.setNeedsFocusUpdate()
+            }
+        }
+    }
+
+    override var preferredFocusEnvironments: [UIFocusEnvironment] {
+        // If there's a selected year, return that cell for initial focus; otherwise, return the dummy view
+        if let lastSelectedIndex = lastSelectedYearIndex, let cell = playlistTableView.cellForRow(at: lastSelectedIndex) {
+            return [cell]
+        } else {
+            return [dummyFocusableView]
+        }
+    }
+
+
+    private func updateVisibleVideoIndices() {
+        guard let selectedPlaylistIndex = selectedPlaylistIndex else {
+            visibleVideoIndices = []
+            return
+        }
+
+        visibleVideoIndices = playlists[selectedPlaylistIndex].fields.isVisible.enumerated().compactMap { index, isVisible in
+            isVisible ?? false ? index : nil
+        }
+    }
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        // Restore focus to the last selected year index if it exists after a short delay
+        if let lastSelectedIndex = lastSelectedYearIndex {
+            playlistTableView.scrollToRow(at: lastSelectedIndex, at: .middle, animated: false)
+
+            // Delay focus adjustment to ensure it overrides system adjustments
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                // Select the previously selected cell
+                self.playlistTableView.selectRow(at: lastSelectedIndex, animated: false, scrollPosition: .none)
+                
+                // Update focus to the selected cell
+                self.setNeedsFocusUpdate()
+                self.updateFocusIfNeeded()
+            }
+        } else {
+            // If no year was previously selected, handle the default focus
+            DispatchQueue.main.async {
+                self.setNeedsFocusUpdate()
+            }
+        }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         checkSubscriptionStatus()
         showLoadingIndicator() // Show loading indicator
         fetchPlaylists()
+
+        // Disable automatic adjustments to prevent the system from interfering with the table view's content offset
+        playlistTableView.contentInsetAdjustmentBehavior = .never
+    }
+
+
+    private func resetUIState() {
+        print("Resetting UI State")
+        
+        // Deselect any selected rows in the table view
+        for cell in playlistTableView.visibleCells {
+            if let indexPath = playlistTableView.indexPath(for: cell) {
+                playlistTableView.deselectRow(at: indexPath, animated: false)
+            }
+            cell.layer.borderWidth = 0
+            cell.layer.borderColor = UIColor.clear.cgColor
+        }
+
+        // Reset selected playlist index and related UI elements
+        selectedPlaylistIndex = nil
+        selectedYearLabel.text = ""
+        playlistImagesCollectionView.isHidden = true
+        lockMessageLabel.isHidden = true
     }
 
     private func selectFirstPlaylist() {
@@ -34,8 +131,18 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         }
         print("Not empty playlist")
         selectedPlaylistIndex = 0
-        let indexPath = IndexPath(row: 0, section: 0)
-        tableView(playlistTableView, didSelectRowAt: indexPath) // Call didSelectRowAt method manually
+//        let indexPath = IndexPath(row: 0, section: 0)
+//        tableView(playlistTableView, didSelectRowAt: indexPath) // Call didSelectRowAt method manually
+//        
+    }
+    private func deselectAllRows() {
+        if let selectedIndex = playlistTableView.indexPathForSelectedRow {
+            playlistTableView.deselectRow(at: selectedIndex, animated: false)
+        }
+        selectedPlaylistIndex = nil // Reset the selected playlist index
+        selectedYearLabel.text = "" // Clear the selected year label if needed
+        playlistImagesCollectionView.isHidden = true // Hide images by default
+        lockMessageLabel.isHidden = true // Hide lock message by default
     }
 
     private func setupUI() {
@@ -112,7 +219,19 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             lockMessageLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             lockMessageLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         ])
-
+        dummyFocusableView = UIView()
+          dummyFocusableView.isUserInteractionEnabled = true
+          dummyFocusableView.translatesAutoresizingMaskIntoConstraints = false
+          dummyFocusableView.isAccessibilityElement = true // Make it focusable
+          dummyFocusableView.accessibilityLabel = "Dummy Focus" // Accessibility label for debugging
+          view.addSubview(dummyFocusableView)
+          
+          NSLayoutConstraint.activate([
+              dummyFocusableView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+              dummyFocusableView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+              dummyFocusableView.widthAnchor.constraint(equalToConstant: 1),
+              dummyFocusableView.heightAnchor.constraint(equalToConstant: 1)
+          ])
         // Playlist images collectionView setup
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
@@ -135,6 +254,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         ])
     }
 
+
     // Use this method to manage focus updates
     override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
         super.didUpdateFocus(in: context, with: coordinator)
@@ -153,11 +273,13 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     }
 
     @objc private func navigateToPurchases() {
+        // Save the currently selected index before navigating to the payment screen
+        lastSelectedYearIndex = playlistTableView.indexPathForSelectedRow
+
         let purchasesViewController = PurchasesViewController()
         purchasesViewController.modalPresentationStyle = .fullScreen
         present(purchasesViewController, animated: true, completion: nil)
     }
-
 
 
     func playVideoPlaylist(videoIdentifiers: [String], currentIndex: Int = 0) {
@@ -257,36 +379,27 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
     private func fetchPlaylists() {
         sortAndArrangePlaylists(apiKey: apiKey, baseURLString: playListUrl) { [weak self] result in
+            guard let self = self else { return }
             switch result {
             case .success(let playlists):
-                self?.playlists = playlists
-                if self?.playlists.isEmpty == false {
-                    self?.selectedPlaylistIndex = 0
-                    DispatchQueue.main.async {
-                        self?.playlistTableView.reloadData()
-                        self?.updateVisibleVideoIndices()
-                        self?.playlistImagesCollectionView.reloadData()
-                        self?.hideLoadingIndicator()
-                        self?.selectFirstPlaylist()
-                    }
+                self.playlists = playlists
+                DispatchQueue.main.async {
+                    self.playlistTableView.reloadData()
+                    self.updateVisibleVideoIndices()  // Now this will work correctly
+                    self.playlistImagesCollectionView.reloadData()
+                    self.hideLoadingIndicator()
+                    
+                    // Remove automatic selection
+                    self.selectedPlaylistIndex = nil
                 }
             case .failure(let error):
                 print("Error fetching playlists: \(error)")
-                self?.hideLoadingIndicator()
+                self.hideLoadingIndicator()
             }
         }
     }
 
-    private func updateVisibleVideoIndices() {
-        guard let selectedPlaylistIndex = selectedPlaylistIndex else {
-            visibleVideoIndices = []
-            return
-        }
-
-        visibleVideoIndices = playlists[selectedPlaylistIndex].fields.isVisible.enumerated().compactMap { index, isVisible in
-            isVisible ?? false ? index : nil
-        }
-    }
+  
 }
 
 extension PlayListViewController: UICollectionViewDelegate {
@@ -405,6 +518,9 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
                 if let nextFocusedCell = tableView.cellForRow(at: nextFocusedIndexPath) {
                     nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
                     nextFocusedCell.contentView.transform = CGAffineTransform.identity
+                    
+                    // Optionally: deselect the cell visually if needed
+                    tableView.deselectRow(at: nextFocusedIndexPath, animated: false)
                 }
             }
             if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
