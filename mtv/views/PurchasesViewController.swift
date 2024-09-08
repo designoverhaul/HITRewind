@@ -96,8 +96,41 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             purchaseButton.widthAnchor.constraint(equalToConstant: 400),
             purchaseButton.heightAnchor.constraint(equalToConstant: 60)
         ])
+        // "No Thanks" Button Styled as Text
+        // "No Thanks" Button Styled as Text
+        let noThanksButton = UIButton(type: .system)
+        noThanksButton.setTitle("No Thanks", for: .normal)
+        noThanksButton.setTitleColor(.black, for: .normal)  // Set text color to pure black to blend with the background
+        noThanksButton.backgroundColor = .clear  // No background to mimic text
+        noThanksButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        noThanksButton.addTarget(self, action: #selector(noThanksButtonTapped), for: .primaryActionTriggered)
+        noThanksButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(noThanksButton)
+
+        // Updated Constraints
+        NSLayoutConstraint.activate([
+            // ... (other constraints)
+
+            // "No Thanks" Button Constraints
+            noThanksButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            noThanksButton.topAnchor.constraint(equalTo: purchaseButton.bottomAnchor, constant: 20)
+        ])
+         
+    }
+    @objc private func noThanksButtonTapped() {
+        // Dismiss the current PurchasesViewController and go back to PlayListViewController
+        self.dismiss(animated: true, completion: nil)
     }
 
+//    @objc private func noThanksButtonTapped() {
+//        self.navigationController?.popViewController(animated: true)
+//        // Navigate to PlayListViewController
+////        let playListViewController = PlayListViewController()
+////        self.navigationController?.pushViewController(playListViewController, animated: true)
+////        
+////        playListViewController.modalPresentationStyle = .fullScreen
+////        present(playListViewController, animated: true, completion: nil)
+//    }
     private func fetchOfferings() {
         Purchases.shared.getOfferings { [weak self] (offerings, error) in
             if let error = error {
