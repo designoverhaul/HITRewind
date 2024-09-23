@@ -97,11 +97,15 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         super.viewDidLoad()
         setupUI()
         checkSubscriptionStatus()
-        showLoadingIndicator() // Show loading indicator
+        showLoadingIndicator()
         fetchPlaylists()
 
-        // Disable automatic adjustments to prevent the system from interfering with the table view's content offset
-        playlistTableView.contentInsetAdjustmentBehavior = .never
+        // Add observer for subscription status change
+        NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil)
+    }
+    @objc private func subscriptionStatusChanged() {
+        // Refresh the subscription status
+        checkSubscriptionStatus()
     }
 
 
@@ -479,18 +483,16 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
             guard let self = self else { return }
             
             if let customerInfo = customerInfo {
-                // Check if there are any active entitlements
                 let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
-                
-                // Check if the user has an active subscription based on any active entitlement
                 if !activeEntitlements.isEmpty {
-                    isSubscribed=true
+                    self.isSubscribed = true
                     self.purchaseButton.setTitle("Already Subscribed", for: .normal)
                     self.purchaseButton.isEnabled = false // Disable the button if subscribed
                     self.lockMessageLabel.isHidden = true // Hide the lock message
                     self.playlistImagesCollectionView.isHidden = false // Show the playlist images
                     print("User is subscribed with entitlements: \(activeEntitlements.keys)")
                 } else {
+                    self.isSubscribed = false
                     self.purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
                     self.purchaseButton.isEnabled = true // Enable the button if not subscribed
                     self.lockMessageLabel.isHidden = false // Show the lock message
@@ -500,7 +502,7 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
             } else if let error = error {
                 print("Error fetching customer info: \(error.localizedDescription)")
             }
-            
+
             // Fetch playlists after checking the subscription
             self.fetchPlaylists()
         }

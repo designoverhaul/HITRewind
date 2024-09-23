@@ -157,7 +157,6 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     @objc private func purchaseButtonTapped() {
-        print("Clicked on purchases")
         Purchases.shared.getOfferings { [weak self] (offerings, error) in
             if let error = error {
                 self?.showAlert(title: "Error", message: error.localizedDescription)
@@ -169,7 +168,13 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
                         self?.showAlert(title: "Purchase Cancelled", message: "You cancelled the purchase.")
                     } else if let customerInfo = customerInfo {
                         print("Purchase successful: \(customerInfo)")
+
+                        // Notify PlaylistViewController that the subscription has changed
+                        NotificationCenter.default.post(name: Notification.Name("SubscriptionStatusChanged"), object: nil)
+
                         self?.showAlert(title: "Purchase Successful", message: "Thank you for your purchase!")
+                        // Dismiss the view separately after showing the alert
+                        self?.dismiss(animated: true, completion: nil)
                     }
                 }
             }
