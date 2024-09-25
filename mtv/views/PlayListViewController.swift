@@ -1,3 +1,4 @@
+
 import UIKit
 import RevenueCat
 import XCDYouTubeKit
@@ -21,10 +22,11 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        // Check subscription status and update UI
         if playlists.isEmpty {
             checkSubscriptionStatus()
         }
-
+        
         // Reset UI state without reloading the entire data to avoid unnecessary scrolling
         resetUIState()
 
@@ -40,11 +42,53 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                 // Update focus to the selected cell
                 self.setNeedsFocusUpdate()
                 self.updateFocusIfNeeded()
+                
+                // **Reload the videos for the selected playlist**
+                self.reloadSelectedPlaylistVideos()
             }
         } else {
             // If no year was previously selected, handle the default focus
             DispatchQueue.main.async {
                 self.setNeedsFocusUpdate()
+            }
+        }
+    }
+
+    private func reloadSelectedPlaylistVideos() {
+        // Check if there is a selected playlist
+        guard let selectedPlaylistIndex = selectedPlaylistIndex else {
+            playlistImagesCollectionView.isHidden = true
+            return
+        }
+        
+        // Check if the user is subscribed
+        if isSubscribed {
+            playlistImagesCollectionView.isHidden = false
+            lockMessageLabel.isHidden = true
+            
+            // Update the visible video indices
+            updateVisibleVideoIndices()
+            
+            // Reload the collection view
+            playlistImagesCollectionView.reloadData()
+            
+            // **Invalidate layout to force a full refresh**
+            playlistImagesCollectionView.collectionViewLayout.invalidateLayout()
+        } else {
+            // If the playlist is locked and user is not subscribed, show lock message
+            let selectedPlaylist = playlists[selectedPlaylistIndex]
+            if selectedPlaylist.fields.isLocked ?? false {
+                playlistImagesCollectionView.isHidden = true
+                lockMessageLabel.isHidden = false
+            } else {
+                // Show the videos for the unlocked playlist
+                playlistImagesCollectionView.isHidden = false
+                lockMessageLabel.isHidden = true
+                updateVisibleVideoIndices()
+                playlistImagesCollectionView.reloadData()
+                
+                // **Invalidate layout to force a full refresh**
+                playlistImagesCollectionView.collectionViewLayout.invalidateLayout()
             }
         }
     }
@@ -65,10 +109,12 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             return
         }
 
+        // Check if the selected playlist has visibility flags for its videos
         visibleVideoIndices = playlists[selectedPlaylistIndex].fields.isVisible.enumerated().compactMap { index, isVisible in
             isVisible ?? false ? index : nil
         }
     }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
@@ -137,7 +183,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         selectedPlaylistIndex = 0
 //        let indexPath = IndexPath(row: 0, section: 0)
 //        tableView(playlistTableView, didSelectRowAt: indexPath) // Call didSelectRowAt method manually
-//        
+//
     }
     private func deselectAllRows() {
         if let selectedIndex = playlistTableView.indexPathForSelectedRow {
