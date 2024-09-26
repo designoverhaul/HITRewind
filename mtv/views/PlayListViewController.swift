@@ -16,6 +16,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private var lockMessageLabel: UILabel!
     private var purchaseButton: UIButton!
     private var isSubscribed: Bool=false
+
     private var playlistImagesCollectionView: UICollectionView!
     private var selectedYearLabel: UILabel!
     private var loadingIndicator: UIActivityIndicatorView!
@@ -221,7 +222,8 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         ])
  
         // Purchase Button styled as a label with a black background
-        purchaseButton = UIButton(type: .system)
+        purchaseButton = UIButton(type:  .custom)
+        purchaseButton.backgroundColor = .clear
             purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
         purchaseButton.titleLabel?.font =  UIFont.boldSystemFont(ofSize: 25)
             purchaseButton.setTitleColor(.white, for: .normal) // White text color for normal state
@@ -476,16 +478,23 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PlaylistYear", for: indexPath)
         let playlist = playlists[indexPath.row]
-                let yearText = String(playlist.fields.year)
-                let lockIcon = playlist.fields.isLocked == true ? " 🔒" : ""
-                cell.textLabel?.text = yearText + lockIcon
+
+        // Always display the year
+        let yearText = String(playlist.fields.year)
+
+        // Conditionally display the lock icon if the playlist is locked and the user is NOT subscribed
+        let lockIcon = (!isSubscribed && playlist.fields.isLocked == true) ? " 🔒" : ""
+
+        cell.textLabel?.text = yearText + lockIcon
         cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 26) ?? UIFont.systemFont(ofSize: 26, weight: .bold)
         cell.layer.cornerRadius = 10
+
         let bgColorView = UIView()
         bgColorView.backgroundColor = UIColor.black
         cell.selectedBackgroundView = bgColorView
         cell.layer.borderWidth = 0
         cell.layer.borderColor = UIColor.clear.cgColor
+
         return cell
     }
 
@@ -532,7 +541,7 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
                 let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
                 if !activeEntitlements.isEmpty {
                     self.isSubscribed = true
-                    self.purchaseButton.setTitle("Already Subscribed", for: .normal)
+                    self.purchaseButton.setTitle("👍 Unlocked", for: .normal)
                     self.purchaseButton.isEnabled = false // Disable the button if subscribed
                     self.lockMessageLabel.isHidden = true // Hide the lock message
                     self.playlistImagesCollectionView.isHidden = false // Show the playlist images
