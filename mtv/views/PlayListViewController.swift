@@ -63,12 +63,15 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        // Ensure the table view has laid out its cells
+        playlistTableView.layoutIfNeeded()
         // Update focus after view has appeared
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.setNeedsFocusUpdate()
             self.updateFocusIfNeeded()
         }
     }
+
 
     // MARK: - Focus Management
 
@@ -79,12 +82,36 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         } else if let lastFocusedYearIndexPath = lastFocusedYearIndexPath,
                   let yearCell = playlistTableView.cellForRow(at: lastFocusedYearIndexPath) {
             return [yearCell]
+        } else if let firstAvailableIndex = lastSelectedYearIndex,
+                  let firstYearCell = playlistTableView.cellForRow(at: firstAvailableIndex) {
+            return [firstYearCell]
         } else {
-            return [purchaseButton] // Default focus
+            return [purchaseButton] // Fallback focus
         }
     }
 
-    // MARK: - UI Setup
+    class FocusableButton: UIButton {
+        override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+            super.didUpdateFocus(in: context, with: coordinator)
+            
+            coordinator.addCoordinatedAnimations({
+                if self.isFocused {
+                    self.backgroundColor = UIColor(hex: "#A789FD")
+                    self.layer.cornerRadius = 15.0 // Set desired corner radius
+                    self.layer.masksToBounds = true
+                    self.setTitleColor(UIColor.black, for: .normal) // Change text color to black when focused
+                } else {
+                    self.backgroundColor = UIColor.black
+                    self.layer.cornerRadius = 0.0
+                    self.layer.masksToBounds = false
+                    self.setTitleColor(UIColor(hex: "#A789FD"), for: .normal) // Revert text color to white when not focused
+                }
+            }, completion: nil)
+        }
+    }
+
+    
+    //      UIColor(hex: "#A789FD")
 
     private func setupUI() {
         view.backgroundColor = .black
@@ -102,22 +129,41 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         selectedYearLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(selectedYearLabel)
 
-        // Purchase Button
-        purchaseButton = UIButton(type: .custom)
+        purchaseButton = FocusableButton(type: .custom)
         purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
         purchaseButton.setTitleColor(.white, for: .normal)
         purchaseButton.backgroundColor = .black
-        purchaseButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 25)
+
+        // Set the font to bold using the same font
+        if let font = UIFont(name: "Inter", size: 25) {
+            let fontDescriptor = font.fontDescriptor.withSymbolicTraits(.traitBold)
+            if let boldFontDescriptor = fontDescriptor {
+                purchaseButton.titleLabel?.font = UIFont(descriptor: boldFontDescriptor, size: 28)
+            } else {
+                purchaseButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 30)
+            }
+        } else {
+            purchaseButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 30)
+        }
+
         purchaseButton.contentHorizontalAlignment = .left
-        purchaseButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 0)
+        purchaseButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20) // Added right padding
         purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered)
         purchaseButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(purchaseButton)
 
+
+           NSLayoutConstraint.activate([
+               // ... your existing constraints for purchaseButton ...
+               purchaseButton.heightAnchor.constraint(equalToConstant: 50),
+               purchaseButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 51),
+               purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20)
+           ])
+
         // Lock message label setup
         lockMessageLabel = UILabel()
         lockMessageLabel.textColor = .white
-        lockMessageLabel.font = UIFont.systemFont(ofSize: 20, weight: .bold)
+        lockMessageLabel.font = UIFont.systemFont(ofSize: 30, weight: .bold)
         lockMessageLabel.textAlignment = .center
         lockMessageLabel.numberOfLines = 0
         lockMessageLabel.text = "This playlist is locked. Please subscribe to watch it."
@@ -193,12 +239,14 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                     self.isSubscribed = true
                     DispatchQueue.main.async {
                         self.purchaseButton.setTitle("👍 Unlocked", for: .normal)
+                        
                         self.purchaseButton.isEnabled = false
                     }
                 } else {
                     self.isSubscribed = false
                     DispatchQueue.main.async {
                         self.purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
+                        
                         self.purchaseButton.isEnabled = true
                     }
                 }
@@ -257,6 +305,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             if isSubscribed || !(playlist.fields.isLocked ?? false) {
                 selectedPlaylistIndex = index
                 lastSelectedYearIndex = IndexPath(row: index, section: 0)
+                lastFocusedYearIndexPath = lastSelectedYearIndex // Update the last focused year index path
                 playlistTableView.selectRow(at: lastSelectedYearIndex, animated: false, scrollPosition: .none)
                 updateUIForSelectedPlaylist()
                 return
@@ -265,6 +314,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         // No available playlists
         selectedPlaylistIndex = nil
         lastSelectedYearIndex = nil
+        lastFocusedYearIndexPath = nil
         updateUIForSelectedPlaylist()
     }
 
@@ -279,7 +329,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
     // MARK: - Data Fetching
 
-    private func fetchPlaylists() {
+    func fetchPlaylists() {
         sortAndArrangePlaylists(apiKey: apiKey, baseURLString: playListUrl) { [weak self] result in
             guard let self = self else { return }
             switch result {
@@ -293,6 +343,8 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                         // Automatically select the first available playlist if no selection has been made before
                         if self.selectedPlaylistIndex == nil {
                             self.selectFirstAvailablePlaylist()
+                            // Ensure the first year is focused
+                            self.lastFocusedYearIndexPath = self.lastSelectedYearIndex
                         }
                     }
                 }
