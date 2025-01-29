@@ -21,7 +21,6 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private var lockMessageLabel: UILabel!
     private var purchaseButton: UIButton!
     private var playlistImagesCollectionView: UICollectionView!
-    private var selectedYearLabel: UILabel!
     private var loadingIndicator: UIActivityIndicatorView!
 
     // MARK: - Lifecycle Methods
@@ -117,17 +116,16 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         view.backgroundColor = .black
 
         // MTV logo imageView setup
-        let imageView = UIImageView(image: UIImage(named: "mtv_logo"))
+        let imageView = UIImageView(image: UIImage(named: "logoVector"))
         imageView.contentMode = .scaleAspectFill
         imageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(imageView)
 
-        selectedYearLabel = UILabel()
-        selectedYearLabel.textColor = UIColor(hex: "#A789FD")
-        selectedYearLabel.font = UIFont(name: "inter", size: 43) ?? UIFont.systemFont(ofSize: 43, weight: .light)
-        selectedYearLabel.textAlignment = .right
-        selectedYearLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(selectedYearLabel)
+        // Add size constraints
+        NSLayoutConstraint.activate([
+            imageView.widthAnchor.constraint(equalToConstant: 225),  // Set desired width
+            imageView.heightAnchor.constraint(equalToConstant: 75)   // Set desired height
+        ])
 
         purchaseButton = FocusableButton(type: .custom)
         purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
@@ -172,17 +170,13 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         view.addSubview(lockMessageLabel)
 
         NSLayoutConstraint.activate([
-            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 52),
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 112),
             imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 66),
             imageView.widthAnchor.constraint(equalToConstant: 145),
             imageView.heightAnchor.constraint(equalToConstant: 115),
-            selectedYearLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 50),
-            selectedYearLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor, constant: -32.5),
-
             purchaseButton.heightAnchor.constraint(equalToConstant: 50),
             purchaseButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 51),
             purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20),
-
             lockMessageLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             lockMessageLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             lockMessageLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
@@ -270,13 +264,11 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             // No playlist selected, hide collection view and lock message
             playlistImagesCollectionView.isHidden = true
             lockMessageLabel.isHidden = true
-            selectedYearLabel.text = ""
             return
         }
 
         let selectedPlaylist = playlists[selectedPlaylistIndex]
         let yearText = String(selectedPlaylist.fields.year)
-        selectedYearLabel.text = yearText // No lock icon when subscribed
 
         if isSubscribed {
             // User is subscribed, show videos
@@ -475,13 +467,12 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-
         let cell = tableView.dequeueReusableCell(withIdentifier: "PlaylistYear", for: indexPath)
         let playlist = playlists[indexPath.row]
         let yearText = String(playlist.fields.year)
         let lockIcon = (!isSubscribed && playlist.fields.isLocked == true) ? " 🔒" : ""
         cell.textLabel?.text = isSubscribed ? yearText : yearText + lockIcon
-        cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 26) ?? UIFont.systemFont(ofSize: 26, weight: .bold)
+        cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 30) ?? UIFont.systemFont(ofSize: 30, weight: .bold)
         cell.layer.cornerRadius = 10
 
         let bgColorView = UIView()
@@ -507,7 +498,6 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
 
         let selectedPlaylist = playlists[indexPath.row]
         let yearText = String(selectedPlaylist.fields.year)
-        selectedYearLabel.text = yearText // No lock icon when subscribed
 
         if isSubscribed {
             // User is subscribed, show videos

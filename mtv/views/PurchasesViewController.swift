@@ -1,11 +1,11 @@
-
 import Foundation
 import UIKit
 import RevenueCat
 
 class PurchasesViewController: UIViewController, PurchasesDelegate {
 
-    private var purchaseButton: UIButton!
+    private var monthlyButton: UIButton!
+    private var yearlyButton: UIButton!
     private var noThanksButton: UIButton!
     private var offeringLabel: UILabel!
 
@@ -35,7 +35,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
         // Second Line
         let secondLineLabel = UILabel()
-        secondLineLabel.text = "🚫 No subscription"
+        secondLineLabel.text = "🔓 Unlock all artists"
         secondLineLabel.textColor = UIColor(hex: "#A789FD")
         secondLineLabel.font = UIFont.boldSystemFont(ofSize: 25)
         stackView.addArrangedSubview(secondLineLabel)
@@ -52,34 +52,46 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
         // Icon ImageView
         let iconImageView = UIImageView()
-        iconImageView.image = UIImage(named: "mtv_logo")
+        iconImageView.image = UIImage(named: "logoVector")
         iconImageView.contentMode = .scaleAspectFit
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(iconImageView)
 
         // Offering Label
         offeringLabel = UILabel()
+        offeringLabel.text = "Choose Your Plan"
         offeringLabel.textColor = UIColor(hex: "#DCD2FF")
         offeringLabel.font = UIFont.boldSystemFont(ofSize: 26)
         offeringLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(offeringLabel)
 
-        // Purchase Button
-        purchaseButton = UIButton(type: .custom)
-        purchaseButton.setTitle("Purchase", for: .normal)
-        purchaseButton.setTitleColor(.white, for: .normal)
-        purchaseButton.backgroundColor = .clear
-        purchaseButton.layer.cornerRadius = 15
-        purchaseButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
-        purchaseButton.addTarget(self, action: #selector(purchaseButtonTapped), for: .primaryActionTriggered)
-        purchaseButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(purchaseButton)
+        // Monthly Button
+        monthlyButton = UIButton(type: .custom)
+        monthlyButton.setTitle("Monthly - $2.99/month", for: .normal)
+        monthlyButton.setTitleColor(.white, for: .normal)
+        monthlyButton.backgroundColor = .clear
+        monthlyButton.layer.cornerRadius = 15
+        monthlyButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        monthlyButton.addTarget(self, action: #selector(monthlyButtonTapped), for: .primaryActionTriggered)
+        monthlyButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(monthlyButton)
 
-        // "No Thanks" Button Styled as Text
-         noThanksButton = UIButton(type: .custom)
+        // Yearly Button
+        yearlyButton = UIButton(type: .custom)
+        yearlyButton.setTitle("Yearly - $24.99/year (Save 30%)", for: .normal)
+        yearlyButton.setTitleColor(.white, for: .normal)
+        yearlyButton.backgroundColor = .clear
+        yearlyButton.layer.cornerRadius = 15
+        yearlyButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        yearlyButton.addTarget(self, action: #selector(yearlyButtonTapped), for: .primaryActionTriggered)
+        yearlyButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(yearlyButton)
+
+        // "No Thanks" Button
+        noThanksButton = UIButton(type: .custom)
         noThanksButton.setTitle("No Thanks", for: .normal)
         noThanksButton.setTitleColor(.white, for: .normal)
-        noThanksButton.backgroundColor = .black  // Set initial background to white
+        noThanksButton.backgroundColor = .black
         noThanksButton.layer.cornerRadius = 15
         noThanksButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
         noThanksButton.addTarget(self, action: #selector(noThanksButtonTapped), for: .primaryActionTriggered)
@@ -102,15 +114,21 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             offeringLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             offeringLabel.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 40),
 
-            // Purchase Button Constraints
-            purchaseButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            purchaseButton.topAnchor.constraint(equalTo: offeringLabel.bottomAnchor, constant: 20),
-            purchaseButton.widthAnchor.constraint(equalToConstant: 400),
-            purchaseButton.heightAnchor.constraint(equalToConstant: 60),
+            // Monthly Button Constraints
+            monthlyButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            monthlyButton.topAnchor.constraint(equalTo: offeringLabel.bottomAnchor, constant: 20),
+            monthlyButton.widthAnchor.constraint(equalToConstant: 400),
+            monthlyButton.heightAnchor.constraint(equalToConstant: 60),
+
+            // Yearly Button Constraints
+            yearlyButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            yearlyButton.topAnchor.constraint(equalTo: monthlyButton.bottomAnchor, constant: 20),
+            yearlyButton.widthAnchor.constraint(equalToConstant: 400),
+            yearlyButton.heightAnchor.constraint(equalToConstant: 60),
 
             // "No Thanks" Button Constraints
             noThanksButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            noThanksButton.topAnchor.constraint(equalTo: purchaseButton.bottomAnchor, constant: 20),
+            noThanksButton.topAnchor.constraint(equalTo: yearlyButton.bottomAnchor, constant: 20),
             noThanksButton.widthAnchor.constraint(equalToConstant: 400),
             noThanksButton.heightAnchor.constraint(equalToConstant: 60),
         ])
@@ -124,25 +142,24 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             coordinator.addCoordinatedAnimations({
                 nextFocusedButton.backgroundColor = .yellow
                 nextFocusedButton.setTitleColor(.black, for: .normal)
-
             }, completion: nil)
         }
 
         // Focus lost
         if let previouslyFocusedButton = context.previouslyFocusedView as? UIButton {
             coordinator.addCoordinatedAnimations({
-                if previouslyFocusedButton == self.purchaseButton {
-                    // Change the purchase button appearance back when focus is lost
-                    previouslyFocusedButton.backgroundColor = .clear
-                    previouslyFocusedButton.setTitleColor(.white, for: .normal)
-                } else if previouslyFocusedButton == self.noThanksButton {
-                    // Change the no thanks button appearance back when focus is lost
-                    
-                    previouslyFocusedButton.backgroundColor = .clear
-                    previouslyFocusedButton.setTitleColor(.white, for: .normal)
-                }
+                previouslyFocusedButton.backgroundColor = .clear
+                previouslyFocusedButton.setTitleColor(.white, for: .normal)
             }, completion: nil)
         }
+    }
+
+    @objc private func monthlyButtonTapped() {
+        purchaseSubscription(identifier: "monthlyUnlock")
+    }
+
+    @objc private func yearlyButtonTapped() {
+        purchaseSubscription(identifier: "yearlyUnlock")
     }
 
     @objc private func noThanksButtonTapped() {
@@ -150,15 +167,6 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         self.dismiss(animated: true, completion: nil)
     }
 
-//    @objc private func noThanksButtonTapped() {
-//        self.navigationController?.popViewController(animated: true)
-//        // Navigate to PlayListViewController
-////        let playListViewController = PlayListViewController()
-////        self.navigationController?.pushViewController(playListViewController, animated: true)
-////        
-////        playListViewController.modalPresentationStyle = .fullScreen
-////        present(playListViewController, animated: true, completion: nil)
-//    }
     private func fetchOfferings() {
         Purchases.shared.getOfferings { [weak self] (offerings, error) in
             if let error = error {
@@ -184,26 +192,29 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         }
     }
 
-    @objc private func purchaseButtonTapped() {
+    private func purchaseSubscription(identifier: String) {
         Purchases.shared.getOfferings { [weak self] (offerings, error) in
             if let error = error {
                 self?.showAlert(title: "Error", message: error.localizedDescription)
-            } else if let offerings = offerings, let currentOffering = offerings.current, let package = currentOffering.availablePackages.first {
-                Purchases.shared.purchase(package: package) { (transaction, customerInfo, error, userCancelled) in
-                    if let error = error {
-                        self?.showAlert(title: "Purchase Failed", message: error.localizedDescription)
-                    } else if userCancelled {
-                        self?.showAlert(title: "Purchase Cancelled", message: "You cancelled the purchase.")
-                    } else if let customerInfo = customerInfo {
-                        print("Purchase successful: \(customerInfo)")
+                return
+            }
+            
+            guard let offerings = offerings,
+                  let currentOffering = offerings.current,
+                  let package = currentOffering.availablePackages.first(where: { $0.identifier == identifier }) else {
+                self?.showAlert(title: "Error", message: "Selected subscription package not found")
+                return
+            }
 
-                        // Notify PlaylistViewController that the subscription has changed
-                        NotificationCenter.default.post(name: Notification.Name("SubscriptionStatusChanged"), object: nil)
-
-                        self?.showAlert(title: "Purchase Successful", message: "Thank you for your purchase!")
-                        // Dismiss the view separately after showing the alert
-                        self?.dismiss(animated: true, completion: nil)
-                    }
+            Purchases.shared.purchase(package: package) { (transaction, customerInfo, error, userCancelled) in
+                if let error = error {
+                    self?.showAlert(title: "Purchase Failed", message: error.localizedDescription)
+                } else if userCancelled {
+                    self?.showAlert(title: "Purchase Cancelled", message: "You cancelled the purchase.")
+                } else if customerInfo != nil {
+                    NotificationCenter.default.post(name: Notification.Name("SubscriptionStatusChanged"), object: nil)
+                    self?.showAlert(title: "Purchase Successful", message: "Thank you for your purchase!")
+                    self?.dismiss(animated: true, completion: nil)
                 }
             }
         }
@@ -231,4 +242,5 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         }
     }
 }
+
 

@@ -8,6 +8,8 @@
 import UIKit
 import RevenueCat
 
+
+
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
@@ -16,7 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         Purchases.configure(withAPIKey: "appl_goRXxhJHqIfrgGhdFgBXrSiPTMZ")
-        print("In app subscrption configured")
+        print("In app subscription configured")
         return true
     }
 
