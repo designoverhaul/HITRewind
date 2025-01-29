@@ -7,7 +7,6 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     private var monthlyButton: UIButton!
     private var yearlyButton: UIButton!
     private var noThanksButton: UIButton!
-    private var offeringLabel: UILabel!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,22 +29,30 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         let firstLineLabel = UILabel()
         firstLineLabel.text = "🔓 Unlock all years"
         firstLineLabel.textColor = UIColor(hex: "#A789FD")
-        firstLineLabel.font = UIFont.boldSystemFont(ofSize: 25)
+        firstLineLabel.font = UIFont.boldSystemFont(ofSize: 31)
         stackView.addArrangedSubview(firstLineLabel)
 
         // Second Line
         let secondLineLabel = UILabel()
         secondLineLabel.text = "🔓 Unlock all artists"
         secondLineLabel.textColor = UIColor(hex: "#A789FD")
-        secondLineLabel.font = UIFont.boldSystemFont(ofSize: 25)
+        secondLineLabel.font = UIFont.boldSystemFont(ofSize: 31)
         stackView.addArrangedSubview(secondLineLabel)
 
         // Third Line
         let thirdLineLabel = UILabel()
         thirdLineLabel.text = "🚫 No ads"
         thirdLineLabel.textColor = UIColor(hex: "#A789FD")
-        thirdLineLabel.font = UIFont.boldSystemFont(ofSize: 25)
+        thirdLineLabel.font = UIFont.boldSystemFont(ofSize: 31)
         stackView.addArrangedSubview(thirdLineLabel)
+
+        // Fourth Line
+        let fourthLineLabel = UILabel()
+        fourthLineLabel.text = " ✅ Travel back in time"
+        fourthLineLabel.textColor = UIColor(hex: "#A789FD")
+        fourthLineLabel.font = UIFont.boldSystemFont(ofSize: 31)
+        stackView.addArrangedSubview(fourthLineLabel)
+
 
         // Add the stack view to the view
         view.addSubview(stackView)
@@ -57,20 +64,12 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(iconImageView)
 
-        // Offering Label
-        offeringLabel = UILabel()
-        offeringLabel.text = "Choose Your Plan"
-        offeringLabel.textColor = UIColor(hex: "#DCD2FF")
-        offeringLabel.font = UIFont.boldSystemFont(ofSize: 26)
-        offeringLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(offeringLabel)
-
         // Monthly Button
         monthlyButton = UIButton(type: .custom)
         monthlyButton.setTitle("Monthly - $2.99/month", for: .normal)
         monthlyButton.setTitleColor(.white, for: .normal)
         monthlyButton.backgroundColor = .clear
-        monthlyButton.layer.cornerRadius = 15
+        monthlyButton.layer.cornerRadius = 12
         monthlyButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
         monthlyButton.addTarget(self, action: #selector(monthlyButtonTapped), for: .primaryActionTriggered)
         monthlyButton.translatesAutoresizingMaskIntoConstraints = false
@@ -81,7 +80,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         yearlyButton.setTitle("Yearly - $24.99/year (Save 30%)", for: .normal)
         yearlyButton.setTitleColor(.white, for: .normal)
         yearlyButton.backgroundColor = .clear
-        yearlyButton.layer.cornerRadius = 15
+        yearlyButton.layer.cornerRadius = 12
         yearlyButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
         yearlyButton.addTarget(self, action: #selector(yearlyButtonTapped), for: .primaryActionTriggered)
         yearlyButton.translatesAutoresizingMaskIntoConstraints = false
@@ -89,10 +88,10 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
         // "No Thanks" Button
         noThanksButton = UIButton(type: .custom)
-        noThanksButton.setTitle("No Thanks", for: .normal)
+        noThanksButton.setTitle("No thanks", for: .normal)
         noThanksButton.setTitleColor(.white, for: .normal)
         noThanksButton.backgroundColor = .black
-        noThanksButton.layer.cornerRadius = 15
+        noThanksButton.layer.cornerRadius = 12
         noThanksButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
         noThanksButton.addTarget(self, action: #selector(noThanksButtonTapped), for: .primaryActionTriggered)
         noThanksButton.translatesAutoresizingMaskIntoConstraints = false
@@ -110,13 +109,9 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -100),
 
-            // Offering Label Constraints
-            offeringLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            offeringLabel.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 40),
-
             // Monthly Button Constraints
             monthlyButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            monthlyButton.topAnchor.constraint(equalTo: offeringLabel.bottomAnchor, constant: 20),
+            monthlyButton.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 40),
             monthlyButton.widthAnchor.constraint(equalToConstant: 400),
             monthlyButton.heightAnchor.constraint(equalToConstant: 60),
 
@@ -182,13 +177,22 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     private func displayOffering(offering: Offering) {
-        if let package = offering.availablePackages.first {
-            let currencyCode = package.storeProduct.currencyCode ?? "$"
-            let formattedPrice = (currencyCode == "USD") ? "$\(package.storeProduct.price)" : "\(currencyCode) \(package.storeProduct.price)"
-            let offeringText = "Hit Rewind Unlocked - \(formattedPrice)"
-
-           
-            offeringLabel.text = offeringText
+        // Find monthly and yearly packages
+        let monthlyPackage = offering.availablePackages.first { $0.identifier == "monthlyUnlock" }
+        let yearlyPackage = offering.availablePackages.first { $0.identifier == "yearlyUnlock" }
+        
+        // Update monthly button
+        if let monthlyPackage = monthlyPackage {
+            let currencyCode = monthlyPackage.storeProduct.currencyCode ?? "$"
+            let formattedPrice = (currencyCode == "USD") ? "$\(monthlyPackage.storeProduct.price)" : "\(currencyCode) \(monthlyPackage.storeProduct.price)"
+            monthlyButton.setTitle("Monthly - \(formattedPrice)/month", for: .normal)
+        }
+        
+        // Update yearly button
+        if let yearlyPackage = yearlyPackage {
+            let currencyCode = yearlyPackage.storeProduct.currencyCode ?? "$"
+            let formattedPrice = (currencyCode == "USD") ? "$\(yearlyPackage.storeProduct.price)" : "\(currencyCode) \(yearlyPackage.storeProduct.price)"
+            yearlyButton.setTitle("Yearly - \(formattedPrice)/year (Save 30%)", for: .normal)
         }
     }
 
