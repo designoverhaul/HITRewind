@@ -18,7 +18,6 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private var lastFocusedVideoIndexPath: IndexPath?
 
     private var playlistTableView: UITableView!
-    private var lockMessageLabel: UILabel!
     private var purchaseButton: UIButton!
     private var playlistImagesCollectionView: UICollectionView!
     private var loadingIndicator: UIActivityIndicatorView!
@@ -145,29 +144,10 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         }
 
         purchaseButton.contentHorizontalAlignment = .left
-        purchaseButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20) // Added right padding
+        purchaseButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
         purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered)
         purchaseButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(purchaseButton)
-
-
-           NSLayoutConstraint.activate([
-               // ... your existing constraints for purchaseButton ...
-               purchaseButton.heightAnchor.constraint(equalToConstant: 50),
-               purchaseButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 51),
-               purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20)
-           ])
-
-        // Lock message label setup
-        lockMessageLabel = UILabel()
-        lockMessageLabel.textColor = .white
-        lockMessageLabel.font = UIFont.systemFont(ofSize: 30, weight: .bold)
-        lockMessageLabel.textAlignment = .center
-        lockMessageLabel.numberOfLines = 0
-        lockMessageLabel.text = "This playlist is locked. Please subscribe to watch it."
-        lockMessageLabel.isHidden = true
-        lockMessageLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(lockMessageLabel)
 
         NSLayoutConstraint.activate([
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 112),
@@ -176,11 +156,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             imageView.heightAnchor.constraint(equalToConstant: 115),
             purchaseButton.heightAnchor.constraint(equalToConstant: 50),
             purchaseButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 51),
-            purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20),
-            lockMessageLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            lockMessageLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            lockMessageLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            lockMessageLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
+            purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20)
         ])
 
         // Playlist tableView setup
@@ -210,7 +186,6 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         playlistImagesCollectionView.dataSource = self
         playlistImagesCollectionView.delegate = self
         playlistImagesCollectionView.register(PlaylistImageCell.self, forCellWithReuseIdentifier: "PlaylistCell")
-        playlistImagesCollectionView.isHidden = true // Initially hidden
         view.addSubview(playlistImagesCollectionView)
         playlistImagesCollectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -260,35 +235,15 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     }
 
     private func updateUIForSelectedPlaylist() {
-        guard let selectedPlaylistIndex = selectedPlaylistIndex else {
-            // No playlist selected, hide collection view and lock message
+        guard selectedPlaylistIndex != nil else {
             playlistImagesCollectionView.isHidden = true
-            lockMessageLabel.isHidden = true
             return
         }
 
-        let selectedPlaylist = playlists[selectedPlaylistIndex]
-        let yearText = String(selectedPlaylist.fields.year)
-
-        if isSubscribed {
-            // User is subscribed, show videos
-            lockMessageLabel.isHidden = true
-            playlistImagesCollectionView.isHidden = false
-            updateVisibleVideoIndices()
-            playlistImagesCollectionView.reloadData()
-        } else {
-            if selectedPlaylist.fields.isLocked ?? false {
-                // Playlist is locked, show lock message
-                lockMessageLabel.isHidden = false
-                playlistImagesCollectionView.isHidden = true
-            } else {
-                // Playlist is unlocked, show videos
-                lockMessageLabel.isHidden = true
-                playlistImagesCollectionView.isHidden = false
-                updateVisibleVideoIndices()
-                playlistImagesCollectionView.reloadData()
-            }
-        }
+        // Always show videos
+        playlistImagesCollectionView.isHidden = false
+        updateVisibleVideoIndices()
+        playlistImagesCollectionView.reloadData()
     }
 
     private func selectFirstAvailablePlaylist() {
@@ -497,7 +452,6 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         lastSelectedYearIndex = indexPath // Update last selected index
 
         // Always show videos, regardless of lock status
-        lockMessageLabel.isHidden = true
         playlistImagesCollectionView.isHidden = false
         updateVisibleVideoIndices()
         playlistImagesCollectionView.reloadData()
