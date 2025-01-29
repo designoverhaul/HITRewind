@@ -496,29 +496,11 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         selectedPlaylistIndex = indexPath.row
         lastSelectedYearIndex = indexPath // Update last selected index
 
-        let selectedPlaylist = playlists[indexPath.row]
-        let yearText = String(selectedPlaylist.fields.year)
-
-        if isSubscribed {
-            // User is subscribed, show videos
-            lockMessageLabel.isHidden = true
-            playlistImagesCollectionView.isHidden = false
-            updateVisibleVideoIndices()
-            playlistImagesCollectionView.reloadData()
-        } else {
-            if selectedPlaylist.fields.isLocked ?? false {
-                // Playlist is locked, navigate to purchases screen
-                lockMessageLabel.isHidden = true
-                playlistImagesCollectionView.isHidden = true
-                navigateToPurchases()
-            } else {
-                // Playlist is unlocked, show videos
-                lockMessageLabel.isHidden = true
-                playlistImagesCollectionView.isHidden = false
-                updateVisibleVideoIndices()
-                playlistImagesCollectionView.reloadData()
-            }
-        }
+        // Always show videos, regardless of lock status
+        lockMessageLabel.isHidden = true
+        playlistImagesCollectionView.isHidden = false
+        updateVisibleVideoIndices()
+        playlistImagesCollectionView.reloadData()
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
@@ -599,6 +581,15 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         }
 
         guard let selectedPlaylistIndex = selectedPlaylistIndex, selectedPlaylistIndex < playlists.count else {
+            return
+        }
+
+        let selectedPlaylist = playlists[selectedPlaylistIndex]
+        
+        // Check if the playlist is locked and user is not subscribed
+        if !isSubscribed && (selectedPlaylist.fields.isLocked ?? false) {
+            // Show paywall for locked content
+            navigateToPurchases()
             return
         }
 
