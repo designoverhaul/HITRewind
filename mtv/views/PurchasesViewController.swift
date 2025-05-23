@@ -163,14 +163,24 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     private func fetchOfferings() {
+        print("DEBUG: Starting to fetch offerings")
         Purchases.shared.getOfferings { [weak self] (offerings, error) in
             if let error = error {
+                print("DEBUG: Error fetching offerings:", error)
                 self?.showAlert(title: "Error", message: error.localizedDescription)
-            } else if let offerings = offerings, let currentOffering = offerings.current {
-                DispatchQueue.main.async {
-                    self?.displayOffering(offering: currentOffering)
+            } else if let offerings = offerings {
+                print("DEBUG: All offerings:", offerings.all)
+                print("DEBUG: Current offering identifier:", offerings.current?.identifier ?? "none")
+                print("DEBUG: Available packages:", offerings.current?.availablePackages.map { $0.identifier } ?? [])
+                if let currentOffering = offerings.current {
+                    DispatchQueue.main.async {
+                        self?.displayOffering(offering: currentOffering)
+                    }
+                } else {
+                    print("DEBUG: No current offering available")
                 }
             } else {
+                print("DEBUG: No offerings available at all")
                 self?.showAlert(title: "No Offerings", message: "No offerings are currently available.")
             }
         }
@@ -197,25 +207,38 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     private func purchaseSubscription(identifier: String) {
+        print("DEBUG: Starting purchase for identifier:", identifier)
         Purchases.shared.getOfferings { [weak self] (offerings, error) in
             if let error = error {
+                print("DEBUG: Error getting offerings for purchase:", error)
                 self?.showAlert(title: "Error", message: error.localizedDescription)
                 return
             }
             
+            print("DEBUG: Purchase - All offerings:", offerings?.all ?? [:])
+            print("DEBUG: Purchase - Current offering:", offerings?.current?.identifier ?? "none")
+            print("DEBUG: Purchase - Available packages:", offerings?.current?.availablePackages.map { $0.identifier } ?? [])
+            
             guard let offerings = offerings,
                   let currentOffering = offerings.current,
                   let package = currentOffering.availablePackages.first(where: { $0.identifier == identifier }) else {
+                print("DEBUG: Purchase - Failed to find package. Offerings nil:", offerings == nil)
+                print("DEBUG: Purchase - Current offering nil:", offerings?.current == nil)
+                print("DEBUG: Purchase - Package not found in:", offerings?.current?.availablePackages.map { $0.identifier } ?? [])
                 self?.showAlert(title: "Error", message: "Selected subscription package not found")
                 return
             }
 
+            print("DEBUG: Found package:", package.identifier, "proceeding with purchase")
             Purchases.shared.purchase(package: package) { (transaction, customerInfo, error, userCancelled) in
                 if let error = error {
+                    print("DEBUG: Purchase failed with error:", error)
                     self?.showAlert(title: "Purchase Failed", message: error.localizedDescription)
                 } else if userCancelled {
+                    print("DEBUG: Purchase cancelled by user")
                     self?.showAlert(title: "Purchase Cancelled", message: "You cancelled the purchase.")
                 } else if customerInfo != nil {
+                    print("DEBUG: Purchase successful")
                     NotificationCenter.default.post(name: Notification.Name("SubscriptionStatusChanged"), object: nil)
                     self?.showAlert(title: "Purchase Successful", message: "Thank you for your purchase!")
                     self?.dismiss(animated: true, completion: nil)

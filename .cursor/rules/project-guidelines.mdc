@@ -1,0 +1,24 @@
+---
+description: Description of app functionality
+globs: 
+alwaysApply: false
+---
+
+# Music Videos Screen
+- It is a collection of YouTube music videos organized by year(in the sidebar)
+- It it use Airtable and YouTube API
+- This is working, complete, and live in the app store! Do not break it!!!
+
+# Live Shows Screen
+- It is a collection of YouTube live music concerts/shows 
+- Video are organized by artist. The artist should be listed in the sidebar(not years like the Music videos screen)
+- It is a copy of a Flutter/Dart app called Front Row(but we are not using categories)
+- Consult the Front Row project on this computer to get this screen working
+- Use the same template as the Music Videos screen except place artist names in the sidebar
+- Data from the Music Videos screen and Live Shows come from the same AirTable, but different tabs in the table. Let me know if we should the screensh should share access token or should we create new?
+- Under each video for this Live Shows screen you will pull the Title and year and durration below that. See the original dart/Flutter project for that design.
+- Video thumbnails should look the same for Music Videos and Live Shows screens.
+- Ask me if you have any questions about the differences
+
+# Settings
+- Comming Soon

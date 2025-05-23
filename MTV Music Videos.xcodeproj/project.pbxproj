@@ -32,6 +32,7 @@
 		1C4BD6572BA11176002C37C1 /* ImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6562BA11176002C37C1 /* ImageCell.swift */; };
 		1C4BD65A2BA1143B002C37C1 /* VideoDurationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */; };
 		1C7CA4642C71267600CE68EB /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C7CA4632C71267500CE68EB /* StoreKit.framework */; };
+		93F0A0792D8B1739000F385C /* Configuration.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 93F0A0782D8B1738000F385C /* Configuration.storekit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,6 +74,7 @@
 		1C4BD6562BA11176002C37C1 /* ImageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCell.swift; sourceTree = "<group>"; };
 		1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDurationService.swift; sourceTree = "<group>"; };
 		1C7CA4632C71267500CE68EB /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		93F0A0782D8B1738000F385C /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +125,7 @@
 				1C2643F52B9A671F006D5D69 /* mtvUITests */,
 				1C2643D62B9A671D006D5D69 /* Products */,
 				1C7CA4622C71267500CE68EB /* Frameworks */,
+				93F0A0782D8B1738000F385C /* Configuration.storekit */,
 			);
 			sourceTree = "<group>";
 		};
@@ -327,6 +330,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1C2643E32B9A671F006D5D69 /* LaunchScreen.storyboard in Resources */,
+				93F0A0792D8B1739000F385C /* Configuration.storekit in Resources */,
 				1C2269012BD4667F00F11B24 /* inter.ttf in Resources */,
 				1C46DE042C172B0000E10253 /* inter_light.ttf in Resources */,
 				1C2643E02B9A671F006D5D69 /* Assets.xcassets in Resources */,
