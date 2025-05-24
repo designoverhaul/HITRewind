@@ -127,11 +127,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(imageView)
 
-        // Add size constraints
-        NSLayoutConstraint.activate([
-            imageView.widthAnchor.constraint(equalToConstant: 225),  // Set desired width
-            imageView.heightAnchor.constraint(equalToConstant: 75)   // Set desired height
-        ])
+        // Size constraints are set in the main constraint activation below
 
         purchaseButton = FocusableButton(type: .custom)
         purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
@@ -176,10 +172,10 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         view.addSubview(purchaseButton)
 
         NSLayoutConstraint.activate([
-            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 112),
-            imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 66),
-            imageView.widthAnchor.constraint(equalToConstant: 145),
-            imageView.heightAnchor.constraint(equalToConstant: 115),
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 152),
+            imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 40),
+            imageView.widthAnchor.constraint(equalToConstant: 98),
+            imageView.heightAnchor.constraint(equalToConstant: 77),
             purchaseButton.heightAnchor.constraint(equalToConstant: 50),
             purchaseButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 51),
             purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20)
@@ -604,11 +600,6 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
             }
             cell.titleLabel.text = playlists[selectedPlaylistIndex].fields.videoTitles?[visibleIndex]
             cell.artistNameLabel.text = playlists[selectedPlaylistIndex].fields.artistNames?[visibleIndex]
-            getVideoDuration(videoUrl: videoURL) { duration in
-                DispatchQueue.main.async {
-                    cell.durationLabel.text = duration
-                }
-            }
         }
 
         return cell
@@ -712,34 +703,10 @@ extension PlayListViewController {
         return nil
     }
 
-    func getVideoDuration(videoUrl: String, completion: @escaping (String) -> Void) {
-        // Implement your method to get video duration
-        // Call completion(durationString)
-        completion("3:45") // Placeholder implementation
-    }
+
 }
 
-// MARK: - UIColor Extension
 
-extension UIColor {
-    convenience init(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-
-        var rgb: UInt64 = 0
-
-        // If scanning fails, default to clear color
-        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else {
-            self.init(red: 0, green: 0, blue: 0, alpha: 0)
-            return
-        }
-
-        self.init(red: CGFloat((rgb & 0xFF0000) >> 16) / 255.0,
-                  green: CGFloat((rgb & 0x00FF00) >> 8) / 255.0,
-                  blue: CGFloat(rgb & 0x0000FF) / 255.0,
-                  alpha: 1.0)
-    }
-}
 
 // MARK: - YouTubeVideoQuality
 

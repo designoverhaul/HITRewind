@@ -27,14 +27,7 @@ class PlaylistImageCell: UICollectionViewCell {
         return label
     }()
     
-    // Label for displaying the duration
-    let durationLabel: UILabel = {
-        let label = UILabel()
-        label.textColor = UIColor(hex: "#A789FD")
-        label.font = UIFont(name: "sf_pro-regular", size: 18) ?? UIFont.systemFont(ofSize: 18, weight: .regular)
-        label.textAlignment = .center
-        return label
-    }()
+
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -68,22 +61,15 @@ class PlaylistImageCell: UICollectionViewCell {
             titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 10)
         ])
         
-        // Add artistNameLabel to the left of the cell with fixed width
+        // Add artistNameLabel to the full width of the cell
         addSubview(artistNameLabel)
         artistNameLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             artistNameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            artistNameLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
-            artistNameLabel.widthAnchor.constraint(equalToConstant: 260) // Fixed width constraint
+            artistNameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            artistNameLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5)
         ])
         artistNameLabel.textAlignment = .left
-        // Add durationLabel to the right of the cell
-        addSubview(durationLabel)
-        durationLabel.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            durationLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-            durationLabel.centerYAnchor.constraint(equalTo: artistNameLabel.centerYAnchor)
-        ])
     }
 
 }
