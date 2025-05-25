@@ -278,12 +278,22 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     // MARK: - Data Fetching
     
     func fetchArtists() {
-        print("LiveShowsViewController: Starting to fetch artists from \(liveShowsUrl)")
-        sortAndArrangePlaylists(apiKey: apiKey, baseURLString: liveShowsUrl) { [weak self] result in
+        print("🚨🚨🚨 LIVE SHOWS PAGE: fetchArtists() method called 🚨🚨🚨")
+        print("🎵 LiveShowsViewController: Starting to fetch artists from \(liveShowsUrl)")
+        
+        // Fetch directly without using sortAndArrangePlaylists to avoid year-based sorting
+        fetchLiveShowsAlphabetically(apiKey: apiKey, baseURLString: liveShowsUrl) { [weak self] result in
             guard let self = self else { return }
             switch result {
             case .success(let artists):
-                print("LiveShowsViewController: Successfully fetched \(artists.count) artists")
+                print("🎵 LiveShowsViewController: Successfully fetched \(artists.count) artists")
+                
+                // Debug: Print the alphabetically sorted order (should already be sorted by the fetch function)
+                print("🚨🚨🚨 LIVE SHOWS ALPHABETICAL ORDER 🚨🚨🚨")
+                for (index, artist) in artists.enumerated() {
+                    print("🎤 \(index + 1). \(artist.fields.title)")
+                }
+                
                 self.artists = artists
                 DispatchQueue.main.async {
                     self.artistTableView.reloadData()

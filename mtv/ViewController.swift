@@ -268,7 +268,7 @@ extension LiveShowsTabViewController: UITableViewDataSource, UITableViewDelegate
                 // Back button
                 cell.textLabel?.text = "← Back to Categories"
                 cell.textLabel?.textColor = UIColor(hex: "#A789FD")
-                cell.textLabel?.font = UIFont.systemFont(ofSize: 22, weight: .medium)
+                cell.textLabel?.font = UIFont.systemFont(ofSize: 25, weight: .medium)
             } else {
                 // Artist name
                 let artistIndex = indexPath.row - 1
@@ -336,13 +336,30 @@ extension LiveShowsTabViewController: UITableViewDataSource, UITableViewDelegate
         coordinator.addCoordinatedAnimations({
             if let nextFocusedIndexPath = context.nextFocusedIndexPath {
                 if let nextFocusedCell = tableView.cellForRow(at: nextFocusedIndexPath) {
-                    nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
+                    // Check if this is the "Back to Categories" button (row 0 when showing artists)
+                    if self.isShowingArtists && nextFocusedIndexPath.row == 0 {
+                        // Special styling for back button: black text on purple background
+                        nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
+                        nextFocusedCell.textLabel?.textColor = .black
+                    } else {
+                        // Normal styling for artist names
+                        nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
+                        nextFocusedCell.textLabel?.textColor = .white
+                    }
                     nextFocusedCell.contentView.transform = CGAffineTransform.identity
                 }
             }
             if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
                 if let previouslyFocusedCell = tableView.cellForRow(at: previouslyFocusedIndexPath) {
                     previouslyFocusedCell.contentView.backgroundColor = UIColor.clear
+                    // Restore original text color
+                    if self.isShowingArtists && previouslyFocusedIndexPath.row == 0 {
+                        // Back button: restore purple text
+                        previouslyFocusedCell.textLabel?.textColor = UIColor(hex: "#A789FD")
+                    } else {
+                        // Artist names: restore white text
+                        previouslyFocusedCell.textLabel?.textColor = .white
+                    }
                     previouslyFocusedCell.contentView.transform = CGAffineTransform.identity
                 }
             }
@@ -390,7 +407,11 @@ extension LiveShowsTabViewController: UICollectionViewDataSource, UICollectionVi
             let selectedCategoryData = categories[indexPath.item]
             selectedCategory = selectedCategoryData
             selectedBannerIndex = indexPath.item // Track selected banner
-            currentArtists = selectedCategoryData.fields.artistNames ?? []
+            
+            // Sort artists alphabetically before displaying
+            let unsortedArtists = selectedCategoryData.fields.artistNames ?? []
+            currentArtists = unsortedArtists.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+            
             isShowingArtists = true
             
             // Update collection view to show selected state
@@ -536,12 +557,12 @@ class LiveShowVideoCell: UICollectionViewCell {
             imageView.heightAnchor.constraint(equalToConstant: 191), // Standard YouTube thumbnail aspect ratio
             
             // Title label
-            titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 10),
+            titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 4),
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
             
             // Year and Duration on same line
-            yearLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+            yearLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 0),
             yearLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
             yearLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
             
@@ -1074,6 +1095,83 @@ struct SearchFields: Codable {
     }
 }
 
+// MARK: - Focusable Search TextField
+class FocusableSearchTextField: UITextField {
+    
+    override var canBecomeFocused: Bool {
+        return true
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupTextField()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupTextField()
+    }
+    
+    private func setupTextField() {
+        // Remove all default borders and styling
+        borderStyle = .none
+        layer.masksToBounds = true
+        
+        // Ensure no internal views or borders
+        leftView = nil
+        rightView = nil
+        leftViewMode = .never
+        rightViewMode = .never
+        
+        // Clear any default appearance
+        clearButtonMode = .never
+    }
+    
+    override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+        super.didUpdateFocus(in: context, with: coordinator)
+        
+        coordinator.addCoordinatedAnimations({
+            if self.isFocused {
+                // Focused state: brighter purple background and centered glowing border
+                self.backgroundColor = UIColor(hex: "#A789FD").withAlphaComponent(0.3)
+                self.layer.borderColor = UIColor(hex: "#A789FD").cgColor
+                self.layer.borderWidth = 3
+                self.layer.shadowColor = UIColor(hex: "#A789FD").cgColor
+                self.layer.shadowOffset = CGSize.zero  // Center the glow
+                self.layer.shadowOpacity = 0.8
+                self.layer.shadowRadius = 15
+                self.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+            } else {
+                // Unfocused state: return to original styling
+                self.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+                self.layer.borderColor = UIColor(hex: "#A789FD").cgColor
+                self.layer.borderWidth = 1
+                self.layer.shadowOpacity = 0
+                self.transform = CGAffineTransform.identity
+            }
+        }, completion: nil)
+    }
+    
+    // Add proper text padding without using leftView
+    override func textRect(forBounds bounds: CGRect) -> CGRect {
+        return bounds.insetBy(dx: 20, dy: 0)
+    }
+    
+    override func editingRect(forBounds bounds: CGRect) -> CGRect {
+        return bounds.insetBy(dx: 20, dy: 0)
+    }
+    
+    override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
+        return bounds.insetBy(dx: 20, dy: 0)
+    }
+    
+    // Override to ensure no internal drawing
+    override func draw(_ rect: CGRect) {
+        // Don't call super.draw to avoid any default rendering
+        // The background and border are handled by layer properties
+    }
+}
+
 class SearchService {
     static let shared = SearchService()
     private let apiKey = "pat9HXwt4uUaLl3SC.3a38959399a2a1d101c726e5e3ce154b37661244db837be7698a27cd18fd764b"
@@ -1287,7 +1385,7 @@ class SearchResultCell: UICollectionViewCell {
     
     private let artistLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont(name: "sf_pro-regular", size: 21) ?? UIFont.systemFont(ofSize: 21, weight: .regular)
+        label.font = UIFont(name: "sf_pro-regular", size: 23) ?? UIFont.systemFont(ofSize: 23, weight: .regular)
         label.textColor = UIColor(hex: "#A789FD")
         label.numberOfLines = 1
         label.textAlignment = .left
@@ -1295,18 +1393,9 @@ class SearchResultCell: UICollectionViewCell {
         return label
     }()
     
-    private let yearLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont(name: "sf_pro-regular", size: 21) ?? UIFont.systemFont(ofSize: 21, weight: .regular)
-        label.textColor = UIColor(hex: "#A789FD")
-        label.textAlignment = .left
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
     private let typeIndicator: UILabel = {
         let label = UILabel()
-        label.font = UIFont(name: "sf_pro-regular", size: 21) ?? UIFont.systemFont(ofSize: 21, weight: .regular)
+        label.font = UIFont(name: "sf_pro-regular", size: 23) ?? UIFont.systemFont(ofSize: 23, weight: .regular)
         label.textColor = UIColor(hex: "#A789FD")
         label.textAlignment = .right
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -1336,7 +1425,6 @@ class SearchResultCell: UICollectionViewCell {
         contentView.addSubview(thumbnailImageView)
         contentView.addSubview(titleLabel)
         contentView.addSubview(artistLabel)
-        contentView.addSubview(yearLabel)
         contentView.addSubview(typeIndicator)
         
         NSLayoutConstraint.activate([
@@ -1347,22 +1435,19 @@ class SearchResultCell: UICollectionViewCell {
             thumbnailImageView.heightAnchor.constraint(equalToConstant: 242), // 430 * (9/16) ≈ 242 for 16:9 ratio
             
             // Title below thumbnail
-            titleLabel.topAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor, constant: 10),
+            titleLabel.topAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor, constant: 4),
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
             
-            // Artist below title
-            artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+            // Artist and Year on same line - Artist on left, Year on right
+            artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: -2),
             artistLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
-            artistLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
+            artistLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
             
-            // Year and Type indicator on same line at bottom
-            yearLabel.topAnchor.constraint(equalTo: artistLabel.bottomAnchor, constant: 2),
-            yearLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
-            yearLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
-            
-            typeIndicator.centerYAnchor.constraint(equalTo: yearLabel.centerYAnchor),
+            // Year indicator on same line as artist, positioned on the right
+            typeIndicator.centerYAnchor.constraint(equalTo: artistLabel.centerYAnchor),
             typeIndicator.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
+            typeIndicator.leadingAnchor.constraint(greaterThanOrEqualTo: artistLabel.trailingAnchor, constant: 10),
         ])
     }
     
@@ -1371,8 +1456,7 @@ class SearchResultCell: UICollectionViewCell {
         
         titleLabel.text = result.title
         artistLabel.text = result.artistName
-        yearLabel.text = result.year
-        typeIndicator.text = result.type == .video ? "Live" : "Top 100"
+        typeIndicator.text = result.year // Show year instead of Live/Top 100
         
         loadImage(from: result.videoImage)
     }
@@ -1418,7 +1502,6 @@ class SearchResultCell: UICollectionViewCell {
         thumbnailImageView.image = nil
         titleLabel.text = nil
         artistLabel.text = nil
-        yearLabel.text = nil
         typeIndicator.text = nil
     }
 }
@@ -1426,22 +1509,21 @@ class SearchResultCell: UICollectionViewCell {
 // MARK: - Search View Controller
 class SearchViewController: UIViewController {
     
-    private let searchTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "Search for artists..."
+    private let searchTextField: FocusableSearchTextField = {
+        let textField = FocusableSearchTextField()
+        textField.placeholder = "Search"
         textField.textColor = UIColor.white
         textField.backgroundColor = UIColor.black.withAlphaComponent(0.8)
         textField.layer.cornerRadius = 12
         textField.layer.borderWidth = 1
         textField.layer.borderColor = UIColor(hex: "#A789FD").cgColor
         textField.font = UIFont.systemFont(ofSize: 20, weight: .medium)
-        textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 1)) // Left padding
-        textField.leftViewMode = .always
+        textField.textAlignment = .left
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         // Ensure placeholder text is also visible
         textField.attributedPlaceholder = NSAttributedString(
-            string: "Search for artists...",
+            string: "Search",
             attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray]
         )
         
@@ -1450,7 +1532,7 @@ class SearchViewController: UIViewController {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Search Artists"
+        label.text = "Search"
         label.font = UIFont.boldSystemFont(ofSize: 32)
         label.textColor = .white
         label.textAlignment = .center
@@ -1460,8 +1542,8 @@ class SearchViewController: UIViewController {
     
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
-        layout.itemSize = CGSize(width: 450, height: 320)  // 4 columns with metadata below thumbnails
-        layout.minimumLineSpacing = 20  // Space below each video
+        layout.itemSize = CGSize(width: 450, height: 380)  // Increased height to prevent text cutoff
+        layout.minimumLineSpacing = 30  // Space below each video - increased for better separation
         layout.minimumInteritemSpacing = 10  // Space between columns
         layout.sectionInset = UIEdgeInsets(top: 20, left: 40, bottom: 20, right: 40)
         

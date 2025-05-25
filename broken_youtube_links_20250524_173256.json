@@ -1,0 +1,719 @@
+{
+  "timestamp": "2025-05-24 17:32:56",
+  "total_checked": 6447,
+  "broken_count": 89,
+  "broken_videos": [
+    {
+      "table": "Videos",
+      "record_id": "rec07eos9rI11cg0B",
+      "title": "Oklahoma",
+      "artist": "Guns N' Roses",
+      "url": "https://www.youtube.com/watch?v=bUZx2ZEUDPs",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec08RTNeN2ZL8QRI",
+      "title": "State of Mind Tour - New York",
+      "artist": "Nas",
+      "url": "https://www.youtube.com/watch?v=buTkpHVPNCk",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec0ZHEdiWyFwSN65",
+      "title": "Momentary Lapse of Reason Tour - Georgia",
+      "artist": "Pink Floyd",
+      "url": "https://www.youtube.com/watch?v=ByFEsSWZOJM",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec2T1CsIman44v5J",
+      "title": "The Doors - Hollywood Bowl",
+      "artist": "The Doors - Hollywood Bowl",
+      "url": "https://www.youtube.com/watch?v=Q76QBhKHQGc",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec3fA3uezB7lNzat",
+      "title": "NY State of Mind Tour - New Jersey - 9/29",
+      "artist": "Nas",
+      "url": "https://www.youtube.com/watch?v=oTAA4GlcY5s",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec3wpOeGa8niHyN7",
+      "title": "Coachella Valley Music & Arts Fest",
+      "artist": "Kendrick Lamar",
+      "url": "https://www.youtube.com/watch?v=IvHqaG3K1Ks",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec6BNj28yAmgPk48",
+      "title": "Alanis Morissette",
+      "artist": "Austin City Limits",
+      "url": "https://www.youtube.com/watch?v=FXN-e4yXe-U",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec6rGHPzPY0Tem9f",
+      "title": "Pitchfork Music Festival - 7/23",
+      "artist": "Bon Iver",
+      "url": "https://www.youtube.com/watch?v=TolZh65YsmM",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec70Hkyp4RoFfHmp",
+      "title": "The Wall - London",
+      "artist": "Pink Floyd",
+      "url": "https://www.youtube.com/watch?v=LclCKexMjAs",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec7Exb0jIj23ObsY",
+      "title": "Arrested Development",
+      "artist": "MTV Unplugged",
+      "url": "https://www.youtube.com/watch?v=gPPIhwSqeNE",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec7LlsvGFNXjjqnY",
+      "title": "Celebration Day",
+      "artist": "Led Zeppelin",
+      "url": "https://www.youtube.com/watch?v=ZpxWDuBzAjg",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rec8JJWYxwUssApQu",
+      "title": "Washington Square",
+      "artist": "Green Day",
+      "url": "https://www.youtube.com/watch?v=1d0G4I7yElg",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recBworHZwohpWT72",
+      "title": "Pink Floyd live at Pompeii",
+      "artist": "Pink Floyd - Pompii",
+      "url": "https://www.youtube.com/watch?v=fhDfmUnN1vY",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recCD8kz9Nz0qaR33",
+      "title": "Lollapalooza Fest - Chile",
+      "artist": "Pearl Jam",
+      "url": "https://www.youtube.com/watch?v=QfE7S056OR0",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recCqmS6yN3pVDyVW",
+      "title": "Sziget Fest",
+      "artist": "Billie Eilish",
+      "url": "https://www.youtube.com/watch?v=k20vZhSjmEk",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recD63AcEC5eyaeI5",
+      "title": "VH1 Storytellers",
+      "artist": "REM",
+      "url": "https://www.youtube.com/watch?v=9dKB41x1Db4",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recHoKQY0Vnk4h3C4",
+      "title": "Vertigo World Tour - Chicago",
+      "artist": "U2",
+      "url": "https://www.youtube.com/watch?v=MG4Gks7hzaA",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recLNGn47Vz6obnDv",
+      "title": "Whisky a Go Go Club",
+      "artist": "Eminem",
+      "url": "https://www.youtube.com/watch?v=eKnwfv9C6IU",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recLq2G4AIoupwF61",
+      "title": "The Sun Comes Out World Tour - Paris",
+      "artist": "Shakira",
+      "url": "https://www.youtube.com/watch?v=L-QIuDCEOBI",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recMogNOB1zAc9A5n",
+      "title": "Oral Fixation Tour",
+      "artist": "Shakira",
+      "url": "https://www.youtube.com/watch?v=bSZLZL4exqY",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recN5TOUfow5iiCOu",
+      "title": "My Bluegrass Heart Tour - New York - 4/13",
+      "artist": "Bela Fleck",
+      "url": "https://www.youtube.com/watch?v=ccb2xnqfgCU",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recOL19jB7oWM6ADP",
+      "title": "Synchronicity Concert",
+      "artist": "The Police",
+      "url": "https://www.youtube.com/watch?v=6FEMklkUpGQ",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recOLAr9A4s25DFX1",
+      "title": "Synchronicity II",
+      "artist": "The Police",
+      "url": "https://www.youtube.com/watch?v=qZ9GwWY5hF4",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recOjDHiO043Uka2D",
+      "title": "AVO Session - Switzerland",
+      "artist": "Herbie Hancock",
+      "url": "https://www.youtube.com/watch?v=bdEnTbYv008",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recOmjWisbUrgBPrn",
+      "title": "Helsingborg ",
+      "artist": "Kiss",
+      "url": "https://www.youtube.com/watch?v=QW7sRU_D-Qw",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recOtmLrFufoV4A3n",
+      "title": "Circus Krone  - Germany",
+      "artist": "AC/DC",
+      "url": "https://www.youtube.com/watch?v=hQacRvzAmh0",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recPD7BmIOQerydsm",
+      "title": "Live in Seattle",
+      "artist": "Pearl Jam",
+      "url": "https://www.youtube.com/watch?v=vP5Q6wWoAOA",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recPMTUrrQVTjCnw9",
+      "title": "Madison Square Garden - New York",
+      "artist": "Jay Z",
+      "url": "https://www.youtube.com/watch?v=Zc2UJ0nf71Q",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recPQo74eqv23AmFi",
+      "title": "Madison Square Garden",
+      "artist": "Marc Anthony",
+      "url": "https://www.youtube.com/watch?v=jHgxywmQpWw",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recQDMzdYJfGKqRnW",
+      "title": "Sun Devil Stadium - Arizona",
+      "artist": "U2",
+      "url": "https://www.youtube.com/watch?v=fLR1QtefLgo",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recQnFbMuY1U3WdYn",
+      "title": "Red Rocks - Colorado",
+      "artist": "Modest Mouse",
+      "url": "https://www.youtube.com/watch?v=xe8Ld5AFWGM",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recQqjxXk5hTgJGOq",
+      "title": "FLA Live Arena - Florida",
+      "artist": "blink-182",
+      "url": "https://www.youtube.com/watch?v=50fSDc0FZXI",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recSQvg3J5nhAoHGI",
+      "title": "Rebel Heart Tour - Sydney",
+      "artist": "Madonna",
+      "url": "https://www.youtube.com/watch?v=XY8hq2EfJfQ",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recTBSN2kn0nt4rtc",
+      "title": "REM",
+      "artist": "MTV Unplugged",
+      "url": "https://www.youtube.com/watch?v=AQah6B09fbo",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recTI0U1N2NC6449O",
+      "title": "Pompeii",
+      "artist": "Pink Floyd",
+      "url": "https://www.youtube.com/watch?v=fhDfmUnN1vY",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recTvxL3qj6i39Jid",
+      "title": "The Isle Of Wight Fest - UK",
+      "artist": "The Doors",
+      "url": "https://www.youtube.com/watch?v=51SAvWieaNc",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recWBpF7YPwafWUI3",
+      "title": " iHeartRadio Music Fest",
+      "artist": "Kelly Clarkson",
+      "url": "https://www.youtube.com/watch?v=uLVtMFqKkrM",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recWdb9Ccya9Een2m",
+      "title": "Seriously - New York",
+      "artist": "Phil Collins",
+      "url": "https://www.youtube.com/watch?v=yeIYVP0SD5A",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recX47jAfp06GK39t",
+      "title": "Austin City Limits",
+      "artist": "Rosalia",
+      "url": "https://www.youtube.com/watch?v=0WvHnaOijG0",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recY4ZGdnLhIRkBW6",
+      "title": "The Town Festival",
+      "artist": "Demi Lovato",
+      "url": "https://www.youtube.com/watch?v=LjAGIIoPa8g",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recY4rh6acoWKeQL8",
+      "title": "Ultra Europe",
+      "artist": "Martin Garrix",
+      "url": "https://www.youtube.com/watch?v=DN-rn5nQv-Q",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recYcjHwFNu1f28AN",
+      "title": "PowerHouse - New Jersey - 10/29",
+      "artist": "Nicki Minaj",
+      "url": "https://www.youtube.com/watch?v=SqQZZIEm0MY",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recYhKzek0eSf3j0W",
+      "title": "Merry Christmas to All! Tour - Canada",
+      "artist": "Mariah Carey",
+      "url": "https://www.youtube.com/watch?v=goixJDivz2c",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recZZHhOuA98k46qW",
+      "title": "Nora Jones",
+      "artist": "Austin City Limits",
+      "url": "https://www.youtube.com/watch?v=qP7k_dTUmWU",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recZnER6vBVMVVvHN",
+      "title": "HIStory World Tour - Kuala Lumpur",
+      "artist": "Michael Jackson",
+      "url": "https://www.youtube.com/watch?v=Nj3aNTCKtew",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recd1kqqO1HbDajxv",
+      "title": "Nashville",
+      "artist": "Guns N' Roses",
+      "url": "https://www.youtube.com/watch?v=qnUMwXDLSHE",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recdGFIbWcYRWiHYb",
+      "title": "Chicago - 2/24",
+      "artist": "Marc Anthony",
+      "url": "https://www.youtube.com/watch?v=mqCTWxmf_38",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recdLzxnAo7VCfl4F",
+      "title": "Download Fest",
+      "artist": "Guns N' Roses",
+      "url": "https://www.youtube.com/watch?v=AihtAfdjxNE",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recen1IBRGcirjNFD",
+      "title": "Pearl Jam",
+      "artist": "Austin City Limits",
+      "url": "https://www.youtube.com/watch?v=PlZgHM3KaAk",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recg0pl6iOxgTgebi",
+      "title": "Coachella",
+      "artist": "Travis Scott",
+      "url": "https://www.youtube.com/watch?v=yXGbr4KqTZY",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recg8tAj9hIeI12Pm",
+      "title": "Live in Miami",
+      "artist": "Bad Bunny",
+      "url": "https://www.youtube.com/watch?v=SdiAMEpDO9w",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rechoArNqw9BbLgcb",
+      "title": " Farewell Yellow Brick Road Tour - Munich - 4/27",
+      "artist": "Elton John",
+      "url": "https://www.youtube.com/watch?v=IMgUkJQXif0",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "reciK1DobQ3ZGwJFZ",
+      "title": "Wireless Fest - London",
+      "artist": "Nicki Minaj",
+      "url": "https://www.youtube.com/watch?v=e1wrZy67mCU",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "reckYFMZhhzbMt31c",
+      "title": " The Artists Den",
+      "artist": "Vampire Weekend",
+      "url": "https://www.youtube.com/watch?v=8e7ANxXe8pc",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recl8pNg3xxfb5fhS",
+      "title": "Rock in Rio - Lisboa - 6/25",
+      "artist": "Duran Duran",
+      "url": "https://www.youtube.com/watch?v=QaIttp4B9P0",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recmJikJZPh91skni",
+      "title": "Bonnaroo Festival",
+      "artist": "Beastie Boys",
+      "url": "https://www.youtube.com/watch?v=OF0TXZnUOh4",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recnGl2uX1HPNoqZw",
+      "title": " BBC Radio 2 ",
+      "artist": "Duran Duran",
+      "url": "https://www.youtube.com/watch?v=Yv9KcdLcgXU",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recpTXU8ZuxBnLZar",
+      "title": "Machala Vive",
+      "artist": "Juanes",
+      "url": "https://www.youtube.com/watch?v=lic6yHUq3bA",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recpWONR7KVBd03kj",
+      "title": "Coachella - California",
+      "artist": "Lady Gaga",
+      "url": "https://www.youtube.com/watch?v=4EaJhOOKvHQ",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recpqicjeCjlzm66r",
+      "title": "Armadillo World HQ - Texas",
+      "artist": "Talking Heads",
+      "url": "https://www.youtube.com/watch?v=VJALNvuY1r4",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recqpXZrcy3mZJnuc",
+      "title": "Grand Olympic Auditorium - California",
+      "artist": "Rage Against The Machine",
+      "url": "https://www.youtube.com/watch?v=dHTnVNB-hvo",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recrUeZyfLp4HzTfi",
+      "title": "Hard Rock Casino - Northern Indiana",
+      "artist": "The Killers",
+      "url": "https://www.youtube.com/watch?v=E6USXdsIk4g",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recsX8f10WnI5V1yc",
+      "title": "Capitol Theatre Passaic NJ",
+      "artist": "Bruce Springsteen",
+      "url": "https://www.youtube.com/watch?v=_3KZRuUEC8E",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recsY86S7hwTRuDWu",
+      "title": "Rolling Loud - Los Angeles",
+      "artist": "Future",
+      "url": "https://www.youtube.com/watch?v=bA9Q--TSCa4",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rect1MFPuU2BDfM0r",
+      "title": "Chicago",
+      "artist": "Guns N' Roses",
+      "url": "https://www.youtube.com/watch?v=bjGzOx615pY",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "rect94VyaDzjYJ9En",
+      "title": "East Berlin",
+      "artist": "Bruce Springsteen",
+      "url": "https://www.youtube.com/watch?v=VBCq37pc5Es",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recuBTkBWhCsW1ipe",
+      "title": "Capital's Summertime Ball - London - 6/11",
+      "artist": "Jonas Brothers",
+      "url": "https://www.youtube.com/watch?v=rf3oVIJRFvU",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recvmdbOid11HTVgP",
+      "title": "Austin City Limits",
+      "artist": "Juanes",
+      "url": "https://www.youtube.com/watch?v=wGPyKOha-Kg",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recvygn9tK1Y5ATcz",
+      "title": "Coachella",
+      "artist": "Drake",
+      "url": "https://www.youtube.com/watch?v=HU1pcltxisg",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recwlAq2j6ShJPeWM",
+      "title": "Netherlands",
+      "artist": "TIna Turner",
+      "url": "https://www.youtube.com/watch?v=hGtaoDN00DQ",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recxkXgkVl64EGD4i",
+      "title": "11:11 World Tour",
+      "artist": "Maluma",
+      "url": "https://www.youtube.com/watch?v=qFOFBLGxCUE",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "Videos",
+      "record_id": "recyRnHmFhRWZtuq5",
+      "title": "Red Rocks",
+      "artist": "Widespread Panic",
+      "url": "https://www.youtube.com/watch?v=0133pvz81rw",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "rec1zzos4eEm2rCoj",
+      "title": "Take Me Home",
+      "artist": "Cher ",
+      "url": "https://www.youtube.com/watch?v=mZ3giJ0BPOw",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "rec3HZeU6PdozDqf1",
+      "title": "Just the Two of Us",
+      "artist": "Grover Washington",
+      "url": "https://www.youtube.com/watch?v=EapcVSB7U4U&list=PLYosk6VjN4ibio4oR7P-u0OhVv4UnwtDP",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recH6g5YEOzbyWSZc",
+      "title": "Mr. Vain Recall",
+      "artist": "Culture Beat",
+      "url": "https://www.youtube.com/watch?v=qOSb4NXRdcc",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recHLqle6wbw7HlVT",
+      "title": "Just Between You And Me",
+      "artist": "Lou Gramm",
+      "url": "https://www.youtube.com/watch?v=0W1lb9hj8ps",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recQ4GNSrjPKjOZsc",
+      "title": "Take the Long Way Home ",
+      "artist": "Supertramp",
+      "url": "https://www.youtube.com/watch?v=8C_g_IZASPM",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recRLRcMAgihClbw0",
+      "title": "There She Goes",
+      "artist": "The La\u2019s",
+      "url": "https://www.youtube.com/watch?v=SoWNO5l_Tj8",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recRhpRYYZE4qzpyA",
+      "title": "Bonnie & Clyde",
+      "artist": "Beyonce feat Jay Z",
+      "url": "https://www.youtube.com/watch?v=copiznIfV3E",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recS5OeDGhDDBaQFe",
+      "title": "I Want You to Want Me",
+      "artist": "Cheap  Trick ",
+      "url": "https://www.youtube.com/watch?v=yY9IXaZ9ius",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recSe9hpqfg3169eN",
+      "title": "Hit The Quan ",
+      "artist": "King Imprint",
+      "url": "https://www.youtube.com/watch?v=7eFCSHOO6nY",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recTs9BOrq2RqY52y",
+      "title": "Untouched",
+      "artist": "The Veronicas",
+      "url": "https://www.youtube.com/watch?v=ykW4rtW2eu0",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recWWgHeDIbIyYqAT",
+      "title": "Because You Loved Me",
+      "artist": "Celine Dion",
+      "url": "https://www.youtube.com/watch?v=dUVgZSjhPqs",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recXhv8OdAydh1fgW",
+      "title": "Somebody's Baby",
+      "artist": "Jackson Browne",
+      "url": "https://www.youtube.com/watch?v=O76_5b-reUo",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recYeBtfvh4lTv4Ts",
+      "title": "Let's Go",
+      "artist": "The Cars",
+      "url": "https://www.youtube.com/watch?v=mOyLNI4SYV8",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recYt0DrnvrzxBzcN",
+      "title": "True",
+      "artist": "Spandau Ballet",
+      "url": "https://www.youtube.com/watch?v=hscFKrcruNE",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recc9oNpXUwabHLIz",
+      "title": "There You'll Be",
+      "artist": "Faith Hill",
+      "url": "https://www.youtube.com/watch?v=wbrRxl7Q2Yk",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recrZcGuXpNEVrvGo",
+      "title": "Come Undone",
+      "artist": "Duran Duran",
+      "url": "https://www.youtube.com/watch?v=ICnlyNUt_0o",
+      "error": "Video not found (HTTP 404)"
+    },
+    {
+      "table": "MTvVideos",
+      "record_id": "recuyUIjYWcoyvudZ",
+      "title": "Sugarcane",
+      "artist": "Shaggy",
+      "url": "https://www.youtube.com/watch?v=kRYLyI4CyhM",
+      "error": "Video not found (HTTP 404)"
+    }
+  ]
+}

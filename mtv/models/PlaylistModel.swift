@@ -63,6 +63,54 @@ enum PlaylistError: Error {
     case sortingError(String)
 }
 
+func fetchLiveShowsAlphabetically(apiKey: String, baseURLString: String, completion: @escaping (Result<[Playlist], Error>) -> Void) {
+    print("🔥🔥🔥 fetchLiveShowsAlphabetically called with URL: \(baseURLString) 🔥🔥🔥")
+    
+    guard let url = URL(string: baseURLString) else {
+        completion(.failure(NSError(domain: "Invalid URL", code: 0, userInfo: nil)))
+        return
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET"
+    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        guard let data = data, error == nil else {
+            completion(.failure(error ?? NSError(domain: "Failed to fetch data", code: 0, userInfo: nil)))
+            return
+        }
+
+        do {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            let jsonObject = try decoder.decode([String: [Playlist]].self, from: data)
+            
+            if var playlists = jsonObject["records"] {
+                print("🔥 BEFORE SORTING: \(playlists.map { $0.fields.title })")
+                
+                // Sort alphabetically by title (artist name) for Live Shows
+                playlists.sort { $0.fields.title.localizedCaseInsensitiveCompare($1.fields.title) == .orderedAscending }
+                
+                print("🔥 AFTER SORTING: \(playlists.map { $0.fields.title })")
+
+                // Handle nullable isLocked values
+                for i in 0..<playlists.count {
+                    playlists[i].fields.isLocked = playlists[i].fields.isLocked ?? false
+                }
+
+                completion(.success(playlists))
+            } else {
+                completion(.failure(NSError(domain: "Invalid JSON structure: No playlists found", code: 0, userInfo: nil)))
+            }
+        } catch {
+            completion(.failure(error))
+        }
+    }
+
+    task.resume()
+}
+
 func sortAndArrangePlaylists(apiKey: String, baseURLString: String, completion: @escaping (Result<[Playlist], Error>) -> Void) {
     fetchThePlaylists(apiKey: apiKey, baseURLString: baseURLString) { result in
         switch result {

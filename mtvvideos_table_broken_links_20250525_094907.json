@@ -1,0 +1,148 @@
+{
+  "timestamp": "2025-05-25 09:49:07",
+  "table": "MTvVideos",
+  "total_checked": 4330,
+  "broken_count": 20,
+  "broken_videos": [
+    {
+      "record_id": "rec1zzos4eEm2rCoj",
+      "title": "Take Me Home",
+      "artist": "Cher ",
+      "url": "https://www.youtube.com/watch?v=mZ3giJ0BPOw",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "rec3HZeU6PdozDqf1",
+      "title": "Just the Two of Us",
+      "artist": "Grover Washington",
+      "url": "https://www.youtube.com/watch?v=EapcVSB7U4U&list=PLYosk6VjN4ibio4oR7P-u0OhVv4UnwtDP",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recH6g5YEOzbyWSZc",
+      "title": "Mr. Vain Recall",
+      "artist": "Culture Beat",
+      "url": "https://www.youtube.com/watch?v=qOSb4NXRdcc",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recHLqle6wbw7HlVT",
+      "title": "Just Between You And Me",
+      "artist": "Lou Gramm",
+      "url": "https://www.youtube.com/watch?v=0W1lb9hj8ps",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recQ4GNSrjPKjOZsc",
+      "title": "Take the Long Way Home ",
+      "artist": "Supertramp",
+      "url": "https://www.youtube.com/watch?v=8C_g_IZASPM",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recRLRcMAgihClbw0",
+      "title": "There She Goes",
+      "artist": "The La\u2019s",
+      "url": "https://www.youtube.com/watch?v=SoWNO5l_Tj8",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recRhpRYYZE4qzpyA",
+      "title": "Bonnie & Clyde",
+      "artist": "Beyonce feat Jay Z",
+      "url": "https://www.youtube.com/watch?v=copiznIfV3E",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recSe9hpqfg3169eN",
+      "title": "Hit The Quan ",
+      "artist": "King Imprint",
+      "url": "https://www.youtube.com/watch?v=7eFCSHOO6nY",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recTs9BOrq2RqY52y",
+      "title": "Untouched",
+      "artist": "The Veronicas",
+      "url": "https://www.youtube.com/watch?v=ykW4rtW2eu0",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recWWgHeDIbIyYqAT",
+      "title": "Because You Loved Me",
+      "artist": "Celine Dion",
+      "url": "https://www.youtube.com/watch?v=dUVgZSjhPqs",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recXhv8OdAydh1fgW",
+      "title": "Somebody's Baby",
+      "artist": "Jackson Browne",
+      "url": "https://www.youtube.com/watch?v=O76_5b-reUo",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recYeBtfvh4lTv4Ts",
+      "title": "Let's Go",
+      "artist": "The Cars",
+      "url": "https://www.youtube.com/watch?v=mOyLNI4SYV8",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recYt0DrnvrzxBzcN",
+      "title": "True",
+      "artist": "Spandau Ballet",
+      "url": "https://www.youtube.com/watch?v=hscFKrcruNE",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recc9oNpXUwabHLIz",
+      "title": "There You'll Be",
+      "artist": "Faith Hill",
+      "url": "https://www.youtube.com/watch?v=wbrRxl7Q2Yk",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recd5IgMnobZ0HSBj",
+      "title": "My Heart Will Go On",
+      "artist": "Celine Dion",
+      "url": "https://www.youtube.com/watch?v=A3QAqZQYLIQ",
+      "error": "Request timed out"
+    },
+    {
+      "record_id": "recjHP1uUfESBAsT4",
+      "title": "Do You Remember Rock and Roll Radio?",
+      "artist": "Ramones",
+      "url": "https://www.youtube.com/watch?v=Gi9a7IdRiBI",
+      "error": "Request timed out"
+    },
+    {
+      "record_id": "recjJFI01MH7k8iaY",
+      "title": "Here's To The Night",
+      "artist": "Eve 6",
+      "url": "https://www.youtube.com/watch?v=X5DOGsoiW6c",
+      "error": "Request timed out"
+    },
+    {
+      "record_id": "recjJkdB97aeSNgO0",
+      "title": "Take My Breath Away",
+      "artist": "Berlin",
+      "url": "https://www.youtube.com/watch?v=Bx51eegLTY8",
+      "error": "Request timed out"
+    },
+    {
+      "record_id": "recrZcGuXpNEVrvGo",
+      "title": "Come Undone",
+      "artist": "Duran Duran",
+      "url": "https://www.youtube.com/watch?v=ICnlyNUt_0o",
+      "error": "HTTP 404"
+    },
+    {
+      "record_id": "recuyUIjYWcoyvudZ",
+      "title": "Sugarcane",
+      "artist": "Shaggy",
+      "url": "https://www.youtube.com/watch?v=kRYLyI4CyhM",
+      "error": "HTTP 404"
+    }
+  ]
+}
