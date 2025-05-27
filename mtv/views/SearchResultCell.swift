@@ -7,7 +7,7 @@ class SearchResultCell: UICollectionViewCell {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.layer.cornerRadius = 8
+        imageView.layer.cornerRadius = 12
         imageView.backgroundColor = UIColor.darkGray
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -15,17 +15,26 @@ class SearchResultCell: UICollectionViewCell {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.boldSystemFont(ofSize: 18)
         label.textColor = .white
+        // 30% smaller than 38: use 27
+        if let customFont = UIFont(name: "Anton-Regular", size: 27) {
+            label.font = customFont
+        } else {
+            print("⚠️ Anton-Regular font not found, using system bold.")
+            label.font = UIFont.systemFont(ofSize: 27, weight: .bold)
+        }
+        label.textAlignment = .left
         label.numberOfLines = 2
+        label.lineBreakMode = .byTruncatingTail
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
     private let artistLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 16)
         label.textColor = UIColor(hex: "#A789FD")
+        label.font = UIFont.systemFont(ofSize: 25, weight: .semibold)
+        label.textAlignment = .left
         label.numberOfLines = 1
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -33,20 +42,9 @@ class SearchResultCell: UICollectionViewCell {
     
     private let yearLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 14)
-        label.textColor = .lightGray
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let typeIndicator: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .white
-        label.backgroundColor = UIColor(hex: "#A789FD")
-        label.textAlignment = .center
-        label.layer.cornerRadius = 8
-        label.clipsToBounds = true
+        label.textColor = UIColor(hex: "#A789FD")
+        label.font = UIFont.systemFont(ofSize: 25, weight: .semibold)
+        label.textAlignment = .right
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -61,6 +59,14 @@ class SearchResultCell: UICollectionViewCell {
         return view
     }()
     
+    private let thumbnailContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = .clear
+        view.layer.cornerRadius = 12
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     // MARK: - Properties
     var searchResult: SearchResult? {
         didSet {
@@ -71,52 +77,63 @@ class SearchResultCell: UICollectionViewCell {
     // MARK: - Initialization
     override init(frame: CGRect) {
         super.init(frame: frame)
-        setupUI()
+        setupCell()
     }
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        setupUI()
+        setupCell()
     }
     
     // MARK: - Setup
-    private func setupUI() {
-        addSubview(containerView)
-        containerView.addSubview(thumbnailImageView)
-        containerView.addSubview(titleLabel)
-        containerView.addSubview(artistLabel)
-        containerView.addSubview(yearLabel)
-        containerView.addSubview(typeIndicator)
-        
+    private func setupCell() {
+        contentView.clipsToBounds = false
+        layer.masksToBounds = false
+        // Thumbnail container for glow
+        contentView.addSubview(thumbnailContainer)
+        thumbnailContainer.addSubview(thumbnailImageView)
+        // Meta info below image
+        contentView.addSubview(titleLabel)
+        contentView.addSubview(artistLabel)
+        contentView.addSubview(yearLabel)
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-            containerView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            containerView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
-            containerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
-            
-            thumbnailImageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-            thumbnailImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            thumbnailImageView.widthAnchor.constraint(equalToConstant: 120),
-            thumbnailImageView.heightAnchor.constraint(equalToConstant: 90),
-            
-            typeIndicator.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
-            typeIndicator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            typeIndicator.widthAnchor.constraint(equalToConstant: 60),
-            typeIndicator.heightAnchor.constraint(equalToConstant: 20),
-            
-            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: typeIndicator.leadingAnchor, constant: -8),
-            
-            artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
-            artistLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            artistLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
-            
-            yearLabel.topAnchor.constraint(equalTo: artistLabel.bottomAnchor, constant: 4),
-            yearLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            yearLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
-            yearLabel.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor, constant: -16)
+            // Thumbnail container (for glow)
+            thumbnailContainer.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
+            thumbnailContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
+            thumbnailContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
+            thumbnailContainer.heightAnchor.constraint(equalTo: thumbnailContainer.widthAnchor, multiplier: 9.0/16.0),
+            // Image view inside container
+            thumbnailImageView.topAnchor.constraint(equalTo: thumbnailContainer.topAnchor),
+            thumbnailImageView.leadingAnchor.constraint(equalTo: thumbnailContainer.leadingAnchor),
+            thumbnailImageView.trailingAnchor.constraint(equalTo: thumbnailContainer.trailingAnchor),
+            thumbnailImageView.bottomAnchor.constraint(equalTo: thumbnailContainer.bottomAnchor),
+            // Title label below thumbnail
+            titleLabel.topAnchor.constraint(equalTo: thumbnailContainer.bottomAnchor, constant: 12),
+            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            // Artist label below title
+            artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            artistLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            artistLabel.trailingAnchor.constraint(lessThanOrEqualTo: yearLabel.leadingAnchor, constant: -8),
+            artistLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 22),
+            // Year label inline with artist label, right-aligned
+            yearLabel.centerYAnchor.constraint(equalTo: artistLabel.centerYAnchor),
+            yearLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            yearLabel.leadingAnchor.constraint(greaterThanOrEqualTo: artistLabel.trailingAnchor, constant: 8),
+            // Bottom constraint for cell
+            artistLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -10)
         ])
+        // Compression/hugging priorities
+        artistLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        artistLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        yearLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        yearLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        // Clear content for reuse
+        titleLabel.text = nil
+        artistLabel.text = nil
+        yearLabel.text = nil
+        thumbnailContainer.transform = .identity
+        thumbnailContainer.layer.shadowOpacity = 0
     }
     
     private func configure() {
@@ -125,9 +142,6 @@ class SearchResultCell: UICollectionViewCell {
         titleLabel.text = result.title
         artistLabel.text = result.artistName
         yearLabel.text = result.year
-        
-        // Set type indicator
-        typeIndicator.text = result.type == .video ? "VIDEO" : "MTV"
         
         // Load thumbnail image
         loadImage(from: result.videoImage)
@@ -150,16 +164,17 @@ class SearchResultCell: UICollectionViewCell {
     // MARK: - Focus Management
     override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
         super.didUpdateFocus(in: context, with: coordinator)
-        
         coordinator.addCoordinatedAnimations({
             if self.isFocused {
-                self.containerView.layer.borderColor = UIColor(hex: "#A789FD").cgColor
-                self.containerView.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
-                self.containerView.backgroundColor = UIColor.black.withAlphaComponent(0.9)
+                self.contentView.backgroundColor = UIColor(hex: "292631")
+                self.contentView.layer.cornerRadius = 10
+                self.contentView.layer.masksToBounds = true
+                self.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
             } else {
-                self.containerView.layer.borderColor = UIColor.clear.cgColor
-                self.containerView.transform = CGAffineTransform.identity
-                self.containerView.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+                self.contentView.backgroundColor = .clear
+                self.contentView.layer.cornerRadius = 0
+                self.contentView.layer.masksToBounds = false
+                self.transform = CGAffineTransform.identity
             }
         }, completion: nil)
     }
@@ -175,7 +190,6 @@ class SearchResultCell: UICollectionViewCell {
         titleLabel.text = nil
         artistLabel.text = nil
         yearLabel.text = nil
-        typeIndicator.text = nil
     }
 }
 

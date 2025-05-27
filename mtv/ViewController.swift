@@ -202,9 +202,21 @@ class LiveShowsTabViewController: UIViewController {
                     self.categoryTableView.reloadData()
                     self.categoryCollectionView.reloadData()
                     self.hideLoadingIndicator()
-                    
-                    // Don't auto-select any category - let user choose from banner area
-                    // Sidebar starts with placeholder message
+                    // Pre-select the Pop category if available
+                    if let popIndex = self.categories.firstIndex(where: { $0.fields.categoryName.lowercased().contains("pop") }) {
+                        self.selectedCategory = self.categories[popIndex]
+                        self.selectedBannerIndex = popIndex
+                        let unsortedArtists = self.selectedCategory?.fields.artistNames ?? []
+                        self.currentArtists = unsortedArtists.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+                        self.isShowingArtists = true
+                        self.categoryTableView.reloadData()
+                        self.categoryCollectionView.reloadData()
+                        // Auto-select the back button initially
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            let backButtonIndexPath = IndexPath(row: 0, section: 0)
+                            self.categoryTableView.selectRow(at: backButtonIndexPath, animated: false, scrollPosition: .none)
+                        }
+                    }
                 }
             case .failure(let error):
                 print("Error fetching categories: \(error)")
@@ -255,6 +267,28 @@ class LiveShowsTabViewController: UIViewController {
         loadingIndicator?.stopAnimating()
         loadingIndicator?.removeFromSuperview()
     }
+    
+    // Handle remote back/menu button to show category grid
+    override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        if presses.contains(where: { $0.type == .menu || $0.type == .playPause }) {
+            // If currently showing artists or videos, go back to category grid
+            if isShowingArtists || isShowingVideos {
+                isShowingArtists = false
+                isShowingVideos = false
+                selectedCategory = nil
+                selectedArtist = nil
+                currentArtists = []
+                currentVideos = []
+                selectedCategoryIndex = nil
+                selectedBannerIndex = nil
+                categoryTableView.reloadData()
+                categoryCollectionView.reloadData()
+                updateCollectionViewLayout(forVideos: false)
+                return // Don't call super, we handled it
+            }
+        }
+        super.pressesBegan(presses, with: event)
+    }
 }
 
 // MARK: - TableView DataSource & Delegate (Sidebar)
@@ -274,7 +308,7 @@ extension LiveShowsTabViewController: UITableViewDataSource, UITableViewDelegate
         if isShowingArtists {
             if indexPath.row == 0 {
                 // Back button
-                cell.textLabel?.text = "← Back to Categories"
+                cell.textLabel?.text = "Back to Categories ->"
                 cell.textLabel?.textColor = UIColor(hex: "#A789FD")
                 cell.textLabel?.font = UIFont.systemFont(ofSize: 25, weight: .medium)
             } else {

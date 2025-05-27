@@ -7,7 +7,7 @@ class SearchViewController: UIViewController {
     // MARK: - UI Elements
     private let searchTextField: FocusableSearchTextField = {
         let textField = FocusableSearchTextField()
-        textField.placeholder = "Search for artists..."
+        textField.placeholder = "Search"
         textField.textColor = .white
         textField.backgroundColor = UIColor.black.withAlphaComponent(0.8)
         textField.layer.cornerRadius = 12
@@ -17,7 +17,7 @@ class SearchViewController: UIViewController {
         textField.textAlignment = .left
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.attributedPlaceholder = NSAttributedString(
-            string: "Search for artists...",
+            string: "Search",
             attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray]
         )
         return textField
@@ -25,7 +25,7 @@ class SearchViewController: UIViewController {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Search Artists"
+        label.text = "Search"
         label.font = UIFont.boldSystemFont(ofSize: 32)
         label.textColor = .white
         label.textAlignment = .center
@@ -35,11 +35,18 @@ class SearchViewController: UIViewController {
     
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
-        layout.itemSize = CGSize(width: 500, height: 140)
-        layout.minimumLineSpacing = 20
-        layout.minimumInteritemSpacing = 20
+        layout.scrollDirection = .vertical
+        layout.minimumInteritemSpacing = 30
+        layout.minimumLineSpacing = 40
+        // Calculate item size for 4 columns using full width
+        let screenWidth = UIScreen.main.bounds.width
+        let totalHorizontalPadding: CGFloat = 80 // 40 on each side
+        let totalSpacing: CGFloat = 3 * 30 // 3 spaces between 4 items
+        let availableWidth = screenWidth - totalHorizontalPadding - totalSpacing
+        let itemWidth = availableWidth / 4
+        let itemHeight: CGFloat = 380 // Match LegendaryShowsViewController
+        layout.itemSize = CGSize(width: itemWidth, height: itemHeight)
         layout.sectionInset = UIEdgeInsets(top: 20, left: 40, bottom: 20, right: 40)
-        
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -63,17 +70,6 @@ class SearchViewController: UIViewController {
         label.textColor = .lightGray
         label.textAlignment = .center
         label.isHidden = true
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let instructionLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Search for your favorite artists above"
-        label.font = UIFont.systemFont(ofSize: 18)
-        label.textColor = .lightGray
-        label.textAlignment = .center
-        label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -124,7 +120,6 @@ class SearchViewController: UIViewController {
         view.addSubview(collectionView)
         view.addSubview(loadingIndicator)
         view.addSubview(emptyStateLabel)
-        view.addSubview(instructionLabel)
         
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 40),
@@ -132,8 +127,8 @@ class SearchViewController: UIViewController {
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
             
             searchTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 30),
-            searchTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            searchTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            searchTextField.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            searchTextField.widthAnchor.constraint(equalToConstant: 600),
             searchTextField.heightAnchor.constraint(equalToConstant: 60),
             
             collectionView.topAnchor.constraint(equalTo: searchTextField.bottomAnchor, constant: 20),
@@ -145,12 +140,7 @@ class SearchViewController: UIViewController {
             loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             
             emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            
-            instructionLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            instructionLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            instructionLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            instructionLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
+            emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
     
@@ -193,7 +183,6 @@ class SearchViewController: UIViewController {
     private func showLoadingState() {
         loadingIndicator.startAnimating()
         emptyStateLabel.isHidden = true
-        instructionLabel.isHidden = true
         collectionView.isHidden = true
     }
     
@@ -206,18 +195,13 @@ class SearchViewController: UIViewController {
         
         if searchResults.isEmpty {
             if searchTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
-                // Show instruction if no search text
-                instructionLabel.isHidden = false
                 emptyStateLabel.isHidden = true
                 collectionView.isHidden = true
             } else {
-                // Show empty state if search returned no results
                 emptyStateLabel.isHidden = false
-                instructionLabel.isHidden = true
                 collectionView.isHidden = true
             }
         } else {
-            instructionLabel.isHidden = true
             emptyStateLabel.isHidden = true
             collectionView.isHidden = false
         }
