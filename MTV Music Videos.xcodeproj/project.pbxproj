@@ -32,6 +32,11 @@
 		1C4BD6572BA11176002C37C1 /* ImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6562BA11176002C37C1 /* ImageCell.swift */; };
 		1C4BD65A2BA1143B002C37C1 /* VideoDurationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */; };
 		1C7CA4642C71267600CE68EB /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C7CA4632C71267500CE68EB /* StoreKit.framework */; };
+		935711312DE5E76200A002E0 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711282DE5E76200A002E0 /* SettingsViewController.swift */; };
+		935711362DE5E8A200A002E0 /* LiveMusicViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711332DE5E8A200A002E0 /* LiveMusicViewController.swift */; };
+		935711372DE5E8A200A002E0 /* SearchResultCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711342DE5E8A200A002E0 /* SearchResultCell.swift */; };
+		935711382DE5E8A200A002E0 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711352DE5E8A200A002E0 /* SearchViewController.swift */; };
+		935711392DE5E8A200A002E0 /* LegendaryShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711322DE5E8A200A002E0 /* LegendaryShowsViewController.swift */; };
 		93F0A0792D8B1739000F385C /* Configuration.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 93F0A0782D8B1738000F385C /* Configuration.storekit */; };
 /* End PBXBuildFile section */
 
@@ -75,6 +80,11 @@
 		1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDurationService.swift; sourceTree = "<group>"; };
 		1C7CA4632C71267500CE68EB /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		5D2C03F6B52246A0B392B74A58573D16 /* LiveShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveShowsViewController.swift; sourceTree = "<group>"; };
+		935711282DE5E76200A002E0 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		935711322DE5E8A200A002E0 /* LegendaryShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendaryShowsViewController.swift; sourceTree = "<group>"; };
+		935711332DE5E8A200A002E0 /* LiveMusicViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMusicViewController.swift; sourceTree = "<group>"; };
+		935711342DE5E8A200A002E0 /* SearchResultCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultCell.swift; sourceTree = "<group>"; };
+		935711352DE5E8A200A002E0 /* SearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
 		93F0A0782D8B1738000F385C /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -185,7 +195,12 @@
 		1C2644082B9A715A006D5D69 /* views */ = {
 			isa = PBXGroup;
 			children = (
+				935711282DE5E76200A002E0 /* SettingsViewController.swift */,
 				1C26440E2B9A7680006D5D69 /* PlayListViewController.swift */,
+				935711322DE5E8A200A002E0 /* LegendaryShowsViewController.swift */,
+				935711332DE5E8A200A002E0 /* LiveMusicViewController.swift */,
+				935711342DE5E8A200A002E0 /* SearchResultCell.swift */,
+				935711352DE5E8A200A002E0 /* SearchViewController.swift */,
 				1C4BD6562BA11176002C37C1 /* ImageCell.swift */,
 				1C30A4852C6237B8005C3E83 /* PurchasesViewController.swift */,
 				5D2C03F6B52246A0B392B74A58573D16 /* LiveShowsViewController.swift */,
@@ -369,6 +384,11 @@
 				1C26440F2B9A7680006D5D69 /* PlayListViewController.swift in Sources */,
 				1C2643DB2B9A671D006D5D69 /* ViewController.swift in Sources */,
 				1C2644072B9A7023006D5D69 /* PlaylistModel.swift in Sources */,
+				935711312DE5E76200A002E0 /* SettingsViewController.swift in Sources */,
+				935711362DE5E8A200A002E0 /* LiveMusicViewController.swift in Sources */,
+				935711372DE5E8A200A002E0 /* SearchResultCell.swift in Sources */,
+				935711382DE5E8A200A002E0 /* SearchViewController.swift in Sources */,
+				935711392DE5E8A200A002E0 /* LegendaryShowsViewController.swift in Sources */,
 				1C2643D92B9A671D006D5D69 /* AppDelegate.swift in Sources */,
 				1C30A4862C6237B8005C3E83 /* PurchasesViewController.swift in Sources */,
 				1C4BD6572BA11176002C37C1 /* ImageCell.swift in Sources */,

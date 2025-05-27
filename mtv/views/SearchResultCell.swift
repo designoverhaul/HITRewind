@@ -7,8 +7,8 @@ class SearchResultCell: UICollectionViewCell {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.layer.cornerRadius = 12
-        imageView.backgroundColor = UIColor.systemGray6
+        imageView.layer.cornerRadius = 8
+        imageView.backgroundColor = UIColor.darkGray
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()

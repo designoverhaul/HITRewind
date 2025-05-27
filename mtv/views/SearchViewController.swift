@@ -5,26 +5,22 @@ import AVKit
 class SearchViewController: UIViewController {
     
     // MARK: - UI Elements
-    private let searchBar: UISearchBar = {
-        let searchBar = UISearchBar()
-        searchBar.placeholder = "Search for artists..."
-        searchBar.searchBarStyle = .minimal
-        searchBar.tintColor = UIColor(hex: "#A789FD")
-        searchBar.barTintColor = .black
-        searchBar.backgroundColor = .black
-        
-        // Customize text field appearance
-        if let textField = searchBar.value(forKey: "searchField") as? UITextField {
-            textField.textColor = .white
-            textField.backgroundColor = UIColor.black.withAlphaComponent(0.8)
-            textField.layer.cornerRadius = 12
-            textField.layer.borderWidth = 1
-            textField.layer.borderColor = UIColor(hex: "#A789FD").cgColor
-            textField.font = UIFont.systemFont(ofSize: 18)
-        }
-        
-        searchBar.translatesAutoresizingMaskIntoConstraints = false
-        return searchBar
+    private let searchTextField: FocusableSearchTextField = {
+        let textField = FocusableSearchTextField()
+        textField.placeholder = "Search for artists..."
+        textField.textColor = .white
+        textField.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+        textField.layer.cornerRadius = 12
+        textField.layer.borderWidth = 1
+        textField.layer.borderColor = UIColor(hex: "#A789FD").cgColor
+        textField.font = UIFont.systemFont(ofSize: 18)
+        textField.textAlignment = .left
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.attributedPlaceholder = NSAttributedString(
+            string: "Search for artists...",
+            attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray]
+        )
+        return textField
     }()
     
     private let titleLabel: UILabel = {
@@ -95,11 +91,21 @@ class SearchViewController: UIViewController {
     ]
     
     // MARK: - Lifecycle
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        // Custom initialization if needed for tvOS
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        // Custom initialization if needed for tvOS
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupCollectionView()
-        setupSearchBar()
+        setupSearchTextField()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -114,7 +120,7 @@ class SearchViewController: UIViewController {
         view.backgroundColor = .black
         
         view.addSubview(titleLabel)
-        view.addSubview(searchBar)
+        view.addSubview(searchTextField)
         view.addSubview(collectionView)
         view.addSubview(loadingIndicator)
         view.addSubview(emptyStateLabel)
@@ -125,12 +131,12 @@ class SearchViewController: UIViewController {
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
             
-            searchBar.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 30),
-            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
-            searchBar.heightAnchor.constraint(equalToConstant: 60),
+            searchTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 30),
+            searchTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            searchTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            searchTextField.heightAnchor.constraint(equalToConstant: 60),
             
-            collectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 20),
+            collectionView.topAnchor.constraint(equalTo: searchTextField.bottomAnchor, constant: 20),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
@@ -153,8 +159,9 @@ class SearchViewController: UIViewController {
         collectionView.delegate = self
     }
     
-    private func setupSearchBar() {
-        searchBar.delegate = self
+    private func setupSearchTextField() {
+        searchTextField.delegate = self
+        searchTextField.addTarget(self, action: #selector(searchTextChanged(_:)), for: .editingChanged)
     }
     
     // MARK: - Search Methods
@@ -198,7 +205,7 @@ class SearchViewController: UIViewController {
         collectionView.reloadData()
         
         if searchResults.isEmpty {
-            if searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
+            if searchTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
                 // Show instruction if no search text
                 instructionLabel.isHidden = false
                 emptyStateLabel.isHidden = true
@@ -235,7 +242,6 @@ class SearchViewController: UIViewController {
                     let player = AVPlayer(url: streamURL)
                     let playerViewController = AVPlayerViewController()
                     playerViewController.player = player
-                    playerViewController.delegate = self
                     
                     self?.present(playerViewController, animated: true) {
                         player.play()
@@ -258,14 +264,8 @@ class SearchViewController: UIViewController {
     
     private func getVideoWithFixedPatterns(videoIdentifier: String, completion: @escaping (XCDYouTubeVideo?, Error?) -> Void) {
         XCDYouTubeClient.default().getVideoWithIdentifier(videoIdentifier) { video, error in
-            if let error = error as NSError?, error.code == XCDYouTubeErrorCode.useCipherSignature.rawValue {
-                // Apply custom patterns if signature error occurs
-                XCDYouTubeClient.default().setLanguageIdentifier("en")
-                for pattern in self.safeCustomPatterns {
-                    XCDYouTubeClient.default().setCustomPatternMatching(pattern, forKey: "patternMatchingKey")
-                }
-                
-                XCDYouTubeClient.default().getVideoWithIdentifier(videoIdentifier, completion: completion)
+            if let error = error as NSError?, error.code == -1000 { // Use numeric error code instead of useCipherSignature
+                XCDYouTubeClient.default().getVideoWithIdentifier(videoIdentifier, completionHandler: completion)
             } else {
                 completion(video, error)
             }
@@ -275,29 +275,18 @@ class SearchViewController: UIViewController {
     // MARK: - Focus Management
     override var preferredFocusEnvironments: [UIFocusEnvironment] {
         if searchResults.isEmpty {
-            return [searchBar]
+            return [searchTextField]
         } else {
             return [collectionView]
         }
     }
-}
-
-// MARK: - UISearchBarDelegate
-extension SearchViewController: UISearchBarDelegate {
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        // Cancel previous timer
-        searchTimer?.invalidate()
-        
-        // Start new timer with 0.5 second delay to avoid too many API calls
-        searchTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
-            self?.performSearch(query: searchText)
-        }
-    }
     
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.resignFirstResponder()
-        if let text = searchBar.text {
-            performSearch(query: text)
+    @objc private func searchTextChanged(_ textField: UITextField) {
+        searchTimer?.invalidate()
+        searchTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            if let text = textField.text {
+                self?.performSearch(query: text)
+            }
         }
     }
 }
@@ -325,7 +314,16 @@ extension SearchViewController: UICollectionViewDelegate {
 
 // MARK: - AVPlayerViewControllerDelegate
 extension SearchViewController: AVPlayerViewControllerDelegate {
-    func playerViewController(_ playerViewController: AVPlayerViewController, willEndFullScreenPresentationWithAnimationCoordinator coordinator: UIViewControllerTransitionCoordinator) {
-        // Handle player dismissal if needed
+    // Methods not available on tvOS
+}
+
+// MARK: - UITextFieldDelegate
+extension SearchViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        if let text = textField.text {
+            performSearch(query: text)
+        }
+        return true
     }
 } 
