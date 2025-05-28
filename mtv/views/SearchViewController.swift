@@ -3,7 +3,7 @@ import XCDYouTubeKit
 import AVKit
 import RevenueCat
 
-class SearchViewController: UIViewController {
+class SearchViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UITextFieldDelegate {
     
     // MARK: - UI Elements
     private let searchTextField: FocusableSearchTextField = {
@@ -75,6 +75,13 @@ class SearchViewController: UIViewController {
         return label
     }()
     
+    private let logoImageView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: "logoVector"))
+        imageView.contentMode = .scaleAspectFill
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+    
     // MARK: - Properties
     private var searchResults: [SearchResult] = []
     private var searchTimer: Timer?
@@ -101,22 +108,16 @@ class SearchViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupUI()
-        setupCollectionView()
-        setupSearchTextField()
-        checkSubscriptionStatus()
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        // Set focus to search bar initially
-        setNeedsFocusUpdate()
-        updateFocusIfNeeded()
-    }
-    
-    // MARK: - Setup
-    private func setupUI() {
         view.backgroundColor = .black
+        
+        // Add logo to the top left
+        view.addSubview(logoImageView)
+        NSLayoutConstraint.activate([
+            logoImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 152),
+            logoImageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 40),
+            logoImageView.widthAnchor.constraint(equalToConstant: 98),
+            logoImageView.heightAnchor.constraint(equalToConstant: 77)
+        ])
         
         view.addSubview(titleLabel)
         view.addSubview(searchTextField)
@@ -145,8 +146,20 @@ class SearchViewController: UIViewController {
             emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
+        
+        setupCollectionView()
+        setupSearchTextField()
+        checkSubscriptionStatus()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // Set focus to search bar initially
+        setNeedsFocusUpdate()
+        updateFocusIfNeeded()
+    }
+    
+    // MARK: - Setup
     private func setupCollectionView() {
         collectionView.dataSource = self
         collectionView.delegate = self
@@ -298,7 +311,7 @@ class SearchViewController: UIViewController {
 }
 
 // MARK: - UICollectionViewDataSource
-extension SearchViewController: UICollectionViewDataSource {
+extension SearchViewController {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return searchResults.count
     }
@@ -311,7 +324,7 @@ extension SearchViewController: UICollectionViewDataSource {
 }
 
 // MARK: - UICollectionViewDelegate
-extension SearchViewController: UICollectionViewDelegate {
+extension SearchViewController {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         requireSubscription(on: self) { [weak self] (isSubscribed: Bool) in
             guard let self = self, isSubscribed else { return }
@@ -327,7 +340,7 @@ extension SearchViewController: AVPlayerViewControllerDelegate {
 }
 
 // MARK: - UITextFieldDelegate
-extension SearchViewController: UITextFieldDelegate {
+extension SearchViewController {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         if let text = textField.text {

@@ -25,7 +25,7 @@ class ViewController: UIViewController {
         // Create Live Shows tab (Artist-based screen)
         let liveShowsController = LiveShowsTabViewController()
         liveShowsController.tabBarItem = UITabBarItem(
-            title: "Live Shows", 
+            title: "Live", 
             image: UIImage(systemName: "music.mic"),
             tag: 1
         )
@@ -46,8 +46,18 @@ class ViewController: UIViewController {
             tag: 3
         )
         
+        // Create Settings tab
+        let settingsController = SettingsViewController()
+        settingsController.tabBarItem = UITabBarItem(
+            title: nil,
+            image: nil,
+            selectedImage: nil
+        )
+        // Use only the gear emoji as the tab bar item
+        settingsController.tabBarItem.title = "⚙️"
+        
         // Add controllers to tab bar (Legendary Shows after Live Shows)
-        tabBarController.viewControllers = [musicVideosController, liveShowsController, legendaryShowsController, searchController]
+        tabBarController.viewControllers = [musicVideosController, liveShowsController, legendaryShowsController, searchController, settingsController]
         
         // Set up the tab bar appearance for tvOS
         tabBarController.tabBar.isTranslucent = true
@@ -57,6 +67,12 @@ class ViewController: UIViewController {
         // Add as child view controller
         addChild(tabBarController)
         tabBarController.view.frame = view.bounds
+        // Offset the tab bar to the right to avoid overlapping the logo
+        let leftMargin: CGFloat = 250 // Adjust as needed to match logo width + padding
+        let tabBarHeight = tabBarController.tabBar.frame.height
+        let tabBarY = tabBarController.tabBar.frame.origin.y
+        let tabBarWidth = view.bounds.width - leftMargin
+        tabBarController.tabBar.frame = CGRect(x: leftMargin, y: tabBarY, width: tabBarWidth, height: tabBarHeight)
         view.addSubview(tabBarController.view)
         tabBarController.didMove(toParent: self)
     }

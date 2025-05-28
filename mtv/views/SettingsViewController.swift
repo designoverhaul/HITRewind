@@ -5,16 +5,102 @@ class SettingsViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .black
         
-        let label = UILabel()
-        label.text = "Settings Coming Soon"
-        label.textColor = .white
-        label.font = UIFont.systemFont(ofSize: 30)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
-        
+        // Add logo to the top left
+        let logoImageView = UIImageView(image: UIImage(named: "logoVector"))
+        logoImageView.contentMode = .scaleAspectFill
+        logoImageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(logoImageView)
         NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            logoImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 152),
+            logoImageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 40),
+            logoImageView.widthAnchor.constraint(equalToConstant: 98),
+            logoImageView.heightAnchor.constraint(equalToConstant: 77)
         ])
+        
+        // Container view for centering and width constraint
+        let containerView = UIView()
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(containerView)
+        
+        // Title label
+        let titleLabel = UILabel()
+        titleLabel.text = "Terms of Service"
+        titleLabel.textColor = .white
+        titleLabel.font = UIFont.systemFont(ofSize: 48, weight: .bold)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(titleLabel)
+        
+        // Disclaimer label (larger font)
+        let disclaimerLabel = UILabel()
+        disclaimerLabel.text = "No unauthorized duplication, reproduction, distribution, or downloading of music, videos, or any other copyrighted content available on this Apple TV application is permitted. Any such activities constitute a violation of applicable copyright laws and intellectual property rights. Users are strictly prohibited from engaging in or facilitating the unauthorized copying, sharing, or downloading of protected materials. Violation of these terms may result in termination of access to the application."
+        disclaimerLabel.textColor = UIColor(white: 0.7, alpha: 1.0)
+        disclaimerLabel.font = UIFont.systemFont(ofSize: 18)
+        disclaimerLabel.numberOfLines = 0
+        disclaimerLabel.textAlignment = .center
+        disclaimerLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(disclaimerLabel)
+
+        // EULA title label (bold)
+        let eulaTitleLabel = UILabel()
+        eulaTitleLabel.text = "LICENSED APPLICATION END USER LICENSE AGREEMENT"
+        eulaTitleLabel.textColor = UIColor(white: 0.7, alpha: 1.0)
+        eulaTitleLabel.font = UIFont.boldSystemFont(ofSize: 18)
+        eulaTitleLabel.textAlignment = .center
+        eulaTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(eulaTitleLabel)
+
+        // EULA link label (styled as a link)
+        let eulaLinkLabel = UILabel()
+        let urlString = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+        let attributedString = NSMutableAttributedString(string: urlString)
+        attributedString.addAttribute(.foregroundColor, value: UIColor.systemBlue, range: NSRange(location: 0, length: urlString.count))
+        attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: NSRange(location: 0, length: urlString.count))
+        eulaLinkLabel.attributedText = attributedString
+        eulaLinkLabel.font = UIFont.systemFont(ofSize: 16)
+        eulaLinkLabel.textAlignment = .center
+        eulaLinkLabel.translatesAutoresizingMaskIntoConstraints = false
+        eulaLinkLabel.isUserInteractionEnabled = true
+        containerView.addSubview(eulaLinkLabel)
+
+        // Layout constraints
+        NSLayoutConstraint.activate([
+            // Logo constraints already set above
+            // Container centered and 50% of screen width, below logo
+            containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            containerView.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 40),
+            containerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.5),
+
+            // Title at top of container, centered
+            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor),
+            titleLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+
+            // Disclaimer below title
+            disclaimerLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 40),
+            disclaimerLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            disclaimerLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+
+            // EULA title below disclaimer
+            eulaTitleLabel.topAnchor.constraint(equalTo: disclaimerLabel.bottomAnchor, constant: 40),
+            eulaTitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            eulaTitleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+
+            // EULA link below EULA title
+            eulaLinkLabel.topAnchor.constraint(equalTo: eulaTitleLabel.bottomAnchor, constant: 10),
+            eulaLinkLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            eulaLinkLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            eulaLinkLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+        ])
+        
+        // Add a gear icon to the top right, if this view controller were embedded in a UINavigationController
+        // For tvOS, a more common pattern is to have settings as a main tab, as implemented.
+        // If a gear icon is truly needed in the top-right of THIS specific view:
+        // let gearButton = UIBarButtonItem(image: UIImage(systemName: "gearshape.fill"), style: .plain, target: self, action: #selector(settingsButtonTapped))
+        // self.navigationItem.rightBarButtonItem = gearButton
+        // However, this view controller is not currently in a navigation stack by default.
+    }
+
+    @objc func settingsButtonTapped() {
+        // Handle settings button tap
+        print("Settings button tapped")
     }
 } 
