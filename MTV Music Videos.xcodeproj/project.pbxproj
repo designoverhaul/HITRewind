@@ -37,6 +37,8 @@
 		935711372DE5E8A200A002E0 /* SearchResultCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711342DE5E8A200A002E0 /* SearchResultCell.swift */; };
 		935711382DE5E8A200A002E0 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711352DE5E8A200A002E0 /* SearchViewController.swift */; };
 		935711392DE5E8A200A002E0 /* LegendaryShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711322DE5E8A200A002E0 /* LegendaryShowsViewController.swift */; };
+		9357113D2DE62A3D00A002E0 /* YouTubeExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9357113B2DE62A3D00A002E0 /* YouTubeExtensions.swift */; };
+		9357113E2DE62A3D00A002E0 /* PaywallGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9357113A2DE62A3D00A002E0 /* PaywallGate.swift */; };
 		93F0A0792D8B1739000F385C /* Configuration.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 93F0A0782D8B1738000F385C /* Configuration.storekit */; };
 /* End PBXBuildFile section */
 
@@ -85,6 +87,8 @@
 		935711332DE5E8A200A002E0 /* LiveMusicViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMusicViewController.swift; sourceTree = "<group>"; };
 		935711342DE5E8A200A002E0 /* SearchResultCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultCell.swift; sourceTree = "<group>"; };
 		935711352DE5E8A200A002E0 /* SearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
+		9357113A2DE62A3D00A002E0 /* PaywallGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallGate.swift; sourceTree = "<group>"; };
+		9357113B2DE62A3D00A002E0 /* YouTubeExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeExtensions.swift; sourceTree = "<group>"; };
 		93F0A0782D8B1738000F385C /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -153,6 +157,7 @@
 		1C2643D72B9A671D006D5D69 /* mtv */ = {
 			isa = PBXGroup;
 			children = (
+				9357113C2DE62A3D00A002E0 /* common */,
 				1C2268FF2BD4667100F11B24 /* Fonts */,
 				1C4BD6582BA11428002C37C1 /* Services */,
 				1C26440B2B9A719B006D5D69 /* constants */,
@@ -230,6 +235,15 @@
 				1C7CA4632C71267500CE68EB /* StoreKit.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		9357113C2DE62A3D00A002E0 /* common */ = {
+			isa = PBXGroup;
+			children = (
+				9357113A2DE62A3D00A002E0 /* PaywallGate.swift */,
+				9357113B2DE62A3D00A002E0 /* YouTubeExtensions.swift */,
+			);
+			path = common;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -388,6 +402,8 @@
 				935711362DE5E8A200A002E0 /* LiveMusicViewController.swift in Sources */,
 				935711372DE5E8A200A002E0 /* SearchResultCell.swift in Sources */,
 				935711382DE5E8A200A002E0 /* SearchViewController.swift in Sources */,
+				9357113D2DE62A3D00A002E0 /* YouTubeExtensions.swift in Sources */,
+				9357113E2DE62A3D00A002E0 /* PaywallGate.swift in Sources */,
 				935711392DE5E8A200A002E0 /* LegendaryShowsViewController.swift in Sources */,
 				1C2643D92B9A671D006D5D69 /* AppDelegate.swift in Sources */,
 				1C30A4862C6237B8005C3E83 /* PurchasesViewController.swift in Sources */,

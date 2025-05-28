@@ -441,9 +441,16 @@ extension LiveShowsTabViewController: UICollectionViewDataSource, UICollectionVi
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if isShowingVideos {
-            // Video selected - play the video
+            // Video selected - require subscription before playing
             let selectedVideo = currentVideos[indexPath.item]
-            playLiveShowVideo(url: selectedVideo.fields.url)
+            requireSubscription(on: self) { [weak self] isSubscribed in
+                guard let self = self else { return }
+                if isSubscribed {
+                    self.playLiveShowVideo(url: selectedVideo.fields.url)
+                } else {
+                    // Paywall will be shown by requireSubscription
+                }
+            }
         } else {
             // Banner selected - switch sidebar to show artists for this category
             let selectedCategoryData = categories[indexPath.item]

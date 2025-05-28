@@ -2,10 +2,10 @@ import Foundation
 import XCDYouTubeKit
 
 // Define YouTube video quality constants if not already defined
-enum YouTubeVideoQuality {
+struct YouTubeVideoQuality {
     static let hd720 = NSNumber(value: XCDYouTubeVideoQuality.HD720.rawValue)
-    static let medium360 = NSNumber(value: XCDYouTubeVideoQuality.Medium360.rawValue)
-    static let small240 = NSNumber(value: XCDYouTubeVideoQuality.Small240.rawValue)
+    static let medium360 = NSNumber(value: XCDYouTubeVideoQuality.medium360.rawValue)
+    static let small240 = NSNumber(value: XCDYouTubeVideoQuality.small240.rawValue)
 }
 
 // Extend XCDYouTubeClient to provide a fixed version that handles the hostname.split error
@@ -30,4 +30,18 @@ extension XCDYouTubeClient {
             completionHandler: completion
         )
     }
+}
+
+// Extract YouTube video ID from a URL
+func extractYouTubeVideoID(from videoURL: String) -> String? {
+    guard let url = URL(string: videoURL),
+          let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems else {
+        return nil
+    }
+    for queryItem in queryItems {
+        if queryItem.name.lowercased() == "v" {
+            return queryItem.value
+        }
+    }
+    return nil
 } 

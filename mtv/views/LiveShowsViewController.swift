@@ -1,6 +1,9 @@
+#error("This is the LiveShowsViewController being compiled!")
+
 import UIKit
 import XCDYouTubeKit
 import AVKit
+import RevenueCat
 
 class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate {
     
@@ -36,6 +39,7 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        print("LiveShowsViewController viewDidLoad CALLED - THIS IS THE ONE!")
         setupUI()
         showLoadingIndicator()
         fetchArtists()
@@ -43,6 +47,8 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
         
         // Add observer for subscription status change
         NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil)
+        
+        print("LiveShowsViewController loaded. Delegate is: \(String(describing: artistVideosCollectionView.delegate))")
     }
     
     deinit {
@@ -130,7 +136,7 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
         view.addSubview(imageView)
         
         purchaseButton = FocusableButton(type: .custom)
-        purchaseButton.setTitle("🔓 Unlock All Artists", for: .normal)
+        purchaseButton.setTitle("🔓 Unlock All Music", for: .normal)
         purchaseButton.setTitleColor(.white, for: .normal)
         purchaseButton.backgroundColor = .black
         
@@ -182,7 +188,7 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
         artistTableView.cellLayoutMarginsFollowReadableWidth = false
         artistTableView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            artistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -51),
+            artistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 80),
             artistTableView.topAnchor.constraint(equalTo: purchaseButton.bottomAnchor, constant: 30),
             artistTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             artistTableView.widthAnchor.constraint(equalToConstant: 400)
@@ -213,12 +219,24 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     // MARK: - Subscription Management
     
     private func checkSubscriptionStatus(completion: (() -> Void)? = nil) {
-        // Always treat user as subscribed without using RevenueCat
-        self.isSubscribed = true
-        DispatchQueue.main.async {
-            self.purchaseButton.setTitle("👍 Unlocked", for: .normal)
-            self.purchaseButton.isEnabled = false
-            completion?()
+        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
+            guard let self = self else { return }
+            if let customerInfo = customerInfo {
+                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
+                self.isSubscribed = !activeEntitlements.isEmpty
+                DispatchQueue.main.async {
+                    self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
+                    self.purchaseButton.isEnabled = !self.isSubscribed
+                    completion?()
+                }
+            } else {
+                self.isSubscribed = false
+                DispatchQueue.main.async {
+                    self.purchaseButton.setTitle("🔓 Unlock All Music", for: .normal)
+                    self.purchaseButton.isEnabled = true
+                    completion?()
+                }
+            }
         }
     }
     
@@ -493,13 +511,17 @@ extension LiveShowsViewController: UITableViewDataSource, UITableViewDelegate {
         cell.textLabel?.text = isSubscribed ? artistName : artistName + lockIcon
         cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 30) ?? UIFont.systemFont(ofSize: 30, weight: .bold)
         cell.layer.cornerRadius = 10
-        
+        // Set default text color to white
+        cell.textLabel?.textColor = .white
+        // If this cell is selected, set text color to black
+        if tableView.indexPathForSelectedRow == indexPath {
+            cell.textLabel?.textColor = .black
+        }
         let bgColorView = UIView()
         bgColorView.backgroundColor = UIColor.black
         cell.selectedBackgroundView = bgColorView
         cell.layer.borderWidth = 0
         cell.layer.borderColor = UIColor.clear.cgColor
-        
         print("LiveShowsViewController: Configured cell for artist at index \(indexPath.row): \(artistName)")
         return cell
     }
@@ -508,14 +530,17 @@ extension LiveShowsViewController: UITableViewDataSource, UITableViewDelegate {
         if let previousSelectedIndex = selectedArtistIndex,
            let previousSelectedCell = tableView.cellForRow(at: IndexPath(row: previousSelectedIndex, section: 0)) {
             previousSelectedCell.layer.borderWidth = 0
+            // Reset text color to white for previously selected cell
+            previousSelectedCell.textLabel?.textColor = .white
         }
         if let selectedCell = tableView.cellForRow(at: indexPath) {
             selectedCell.layer.borderWidth = 2
             selectedCell.layer.borderColor = purpleColor.cgColor
+            // Set text color to black for selected cell
+            selectedCell.textLabel?.textColor = .black
         }
         selectedArtistIndex = indexPath.row
         lastSelectedArtistIndex = indexPath // Update last selected index
-        
         // Always show videos, regardless of lock status
         artistVideosCollectionView.isHidden = false
         updateVisibleVideoIndices()
@@ -526,6 +551,8 @@ extension LiveShowsViewController: UITableViewDataSource, UITableViewDelegate {
         let deselectedCell = tableView.cellForRow(at: indexPath)
         deselectedCell?.layer.borderWidth = 0
         deselectedCell?.layer.borderColor = UIColor.clear.cgColor
+        // Reset text color to white for deselected cell
+        deselectedCell?.textLabel?.textColor = .white
     }
     
     func tableView(_ tableView: UITableView, didUpdateFocusIn context: UITableViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
@@ -604,33 +631,20 @@ extension LiveShowsViewController: UICollectionViewDataSource, UICollectionViewD
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        print("LiveShowsViewController: didSelectItemAt CALLED")
         if let previouslySelectedIndexPath = collectionView.indexPathsForSelectedItems?.first {
             if let previouslySelectedCell = collectionView.cellForItem(at: previouslySelectedIndexPath) as? PlaylistImageCell {
                 previouslySelectedCell.transform = CGAffineTransform.identity
                 previouslySelectedCell.backgroundColor = .clear
             }
         }
-        
-        guard let selectedArtistIndex = selectedArtistIndex, selectedArtistIndex < artists.count else {
-            return
-        }
-        
-        let selectedArtist = artists[selectedArtistIndex]
-        
-        // Check if the artist is locked and user is not subscribed
-        if !isSubscribed && (selectedArtist.fields.isLocked ?? false) {
-            // Show paywall for locked content
-            navigateToPurchases()
-            return
-        }
-        
-        let videoURL = artists[selectedArtistIndex].fields.videoUrls?[visibleVideoIndices[indexPath.item]]
-        
-        if extractYouTubeVideoID(from: videoURL ?? "") != nil {
-            let playlist = generatePlaylistFromSelectedVideo(selectedIndexPath: indexPath)
-            playVideoPlaylist(videoIdentifiers: playlist)
-        } else {
-            print("Invalid YouTube video URL \(String(describing: videoURL))")
+
+        requireSubscription(on: self) { isSubscribed in
+            if isSubscribed {
+                // Play video
+            } else {
+                // Paywall will be shown by requireSubscription
+            }
         }
     }
     
@@ -639,7 +653,7 @@ extension LiveShowsViewController: UICollectionViewDataSource, UICollectionViewD
             if let nextFocusedIndexPath = context.nextFocusedIndexPath {
                 self.lastFocusedVideoIndexPath = nextFocusedIndexPath
                 if let nextFocusedCell = collectionView.cellForItem(at: nextFocusedIndexPath) as? PlaylistImageCell {
-                    nextFocusedCell.backgroundColor = self.darkGrayColor
+                    nextFocusedCell.backgroundColor = UIColor(hex: "292631")
                     nextFocusedCell.layer.cornerRadius = 10
                     nextFocusedCell.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
                 }
@@ -688,21 +702,6 @@ extension LiveShowsViewController: UICollectionViewDataSource, UICollectionViewD
 // MARK: - Helper Methods
 
 extension LiveShowsViewController {
-    func extractYouTubeVideoID(from videoURL: String) -> String? {
-        guard let url = URL(string: videoURL),
-              let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems else {
-            return nil
-        }
-        
-        for queryItem in queryItems {
-            if queryItem.name.lowercased() == "v" {
-                return queryItem.value
-            }
-        }
-        
-        return nil
-    }
-    
     func getVideoDuration(videoUrl: String, completion: @escaping (String) -> Void) {
         // Implement your method to get video duration
         // Call completion(durationString)

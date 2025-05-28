@@ -544,19 +544,12 @@ extension LegendaryShowsViewController: UICollectionViewDelegate {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedShow = legendaryShows[indexPath.item]
-        
-        // All videos are now paywall-gated - check subscription status
-        if !isSubscribed {
-            // Show paywall for all content when not subscribed
-            print("🌟 LegendaryShowsViewController: User not subscribed, showing paywall")
-            navigateToPurchases()
-            return
-        }
-        
-        // User is subscribed, proceed with video playback
-        if let url = selectedShow.fields.url {
-            print("🌟 LegendaryShowsViewController: User subscribed, playing video: \(selectedShow.fields.title ?? "Unknown")")
-            playVideo(with: url)
+        requireSubscription(on: self) { [weak self] isSubscribed in
+            guard let self = self, isSubscribed else { return }
+            if let url = selectedShow.fields.url {
+                print("🌟 LegendaryShowsViewController: User subscribed, playing video: \(selectedShow.fields.title ?? "Unknown")")
+                self.playVideo(with: url)
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 import UIKit
 import XCDYouTubeKit
 import AVKit
+import RevenueCat
 
 class SearchViewController: UIViewController {
     
@@ -78,6 +79,7 @@ class SearchViewController: UIViewController {
     private var searchResults: [SearchResult] = []
     private var searchTimer: Timer?
     private let searchService = SearchService.shared
+    private var isSubscribed: Bool = false
     
     // Custom patterns to work around window.location.hostname.split error (same as PlayListViewController)
     private let safeCustomPatterns = [
@@ -102,6 +104,7 @@ class SearchViewController: UIViewController {
         setupUI()
         setupCollectionView()
         setupSearchTextField()
+        checkSubscriptionStatus()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -273,6 +276,25 @@ class SearchViewController: UIViewController {
             }
         }
     }
+    
+    private func checkSubscriptionStatus(completion: (() -> Void)? = nil) {
+        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
+            guard let self = self else { return }
+            if let customerInfo = customerInfo {
+                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
+                self.isSubscribed = !activeEntitlements.isEmpty
+            } else {
+                self.isSubscribed = false
+            }
+            completion?()
+        }
+    }
+    
+    private func navigateToPurchases() {
+        let purchasesViewController = PurchasesViewController()
+        purchasesViewController.modalPresentationStyle = .fullScreen
+        present(purchasesViewController, animated: true, completion: nil)
+    }
 }
 
 // MARK: - UICollectionViewDataSource
@@ -291,8 +313,11 @@ extension SearchViewController: UICollectionViewDataSource {
 // MARK: - UICollectionViewDelegate
 extension SearchViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let result = searchResults[indexPath.item]
-        playVideo(with: result.url)
+        requireSubscription(on: self) { [weak self] (isSubscribed: Bool) in
+            guard let self = self, isSubscribed else { return }
+            let result = self.searchResults[indexPath.item]
+            self.playVideo(with: result.url)
+        }
     }
 }
 

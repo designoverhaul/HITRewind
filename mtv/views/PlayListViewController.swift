@@ -25,7 +25,6 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private var lastFocusedVideoIndexPath: IndexPath?
 
     private var playlistTableView: UITableView!
-    private var purchaseButton: UIButton!
     private var playlistImagesCollectionView: UICollectionView!
     private var loadingIndicator: UIActivityIndicatorView!
 
@@ -91,7 +90,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                   let firstYearCell = playlistTableView.cellForRow(at: firstAvailableIndex) {
             return [firstYearCell]
         } else {
-            return [purchaseButton] // Fallback focus
+            return [] // No fallback focus on purchaseButton
         }
     }
 
@@ -127,60 +126,6 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(imageView)
 
-        // Size constraints are set in the main constraint activation below
-
-        purchaseButton = FocusableButton(type: .custom)
-        purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
-        purchaseButton.setTitleColor(.white, for: .normal)
-        purchaseButton.backgroundColor = .black
-
-        // Set the font to bold using the same font
-        if let font = UIFont(name: "Inter", size: 25) {
-            let fontDescriptor = font.fontDescriptor.withSymbolicTraits(.traitBold)
-            if let boldFontDescriptor = fontDescriptor {
-                purchaseButton.titleLabel?.font = UIFont(descriptor: boldFontDescriptor, size: 28)
-            } else {
-                purchaseButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 30)
-            }
-        } else {
-            purchaseButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 30)
-        }
-
-        if #available(tvOS 15.0, *) {
-            var configuration = UIButton.Configuration.plain()
-            configuration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
-            configuration.titleAlignment = .leading
-            purchaseButton.configuration = configuration
-        } else {
-            // Fall back to deprecated method for older versions
-            #if compiler(>=5.5)
-            // Suppress the deprecation warning with @available
-            @available(tvOS, deprecated: 15.0, message: "Use UIButton.Configuration instead")
-            func setButtonContentEdgeInsets() {
-                purchaseButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
-                purchaseButton.contentHorizontalAlignment = .left
-            }
-            setButtonContentEdgeInsets()
-            #else
-            purchaseButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
-            purchaseButton.contentHorizontalAlignment = .left
-            #endif
-        }
-
-        purchaseButton.addTarget(self, action: #selector(navigateToPurchases), for: .primaryActionTriggered)
-        purchaseButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(purchaseButton)
-
-        NSLayoutConstraint.activate([
-            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 152),
-            imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 40),
-            imageView.widthAnchor.constraint(equalToConstant: 98),
-            imageView.heightAnchor.constraint(equalToConstant: 77),
-            purchaseButton.heightAnchor.constraint(equalToConstant: 50),
-            purchaseButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 51),
-            purchaseButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20)
-        ])
-
         // Playlist tableView setup
         playlistTableView = UITableView()
         playlistTableView.dataSource = self
@@ -190,8 +135,12 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         playlistTableView.cellLayoutMarginsFollowReadableWidth = false
         playlistTableView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 152),
+            imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 40),
+            imageView.widthAnchor.constraint(equalToConstant: 98),
+            imageView.heightAnchor.constraint(equalToConstant: 77),
             playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -51),
-            playlistTableView.topAnchor.constraint(equalTo: purchaseButton.bottomAnchor, constant: 30),
+            playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 50), // Adjusted spacing
             playlistTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             playlistTableView.widthAnchor.constraint(equalToConstant: 400)
         ])
@@ -199,9 +148,9 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         // Playlist images collectionView setup
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
-        layout.minimumInteritemSpacing = 20
-        layout.minimumLineSpacing = 40
-        layout.itemSize = CGSize(width: 340, height: 240)
+        layout.minimumInteritemSpacing = 16
+        layout.minimumLineSpacing = 32
+        layout.itemSize = CGSize(width: 408, height: 288)
 
         playlistImagesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         playlistImagesCollectionView.backgroundColor = .clear
@@ -228,18 +177,8 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                 let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
                 if !activeEntitlements.isEmpty {
                     self.isSubscribed = true
-                    DispatchQueue.main.async {
-                        self.purchaseButton.setTitle("👍 Unlocked", for: .normal)
-                        
-                        self.purchaseButton.isEnabled = false
-                    }
                 } else {
                     self.isSubscribed = false
-                    DispatchQueue.main.async {
-                        self.purchaseButton.setTitle("🔓 Unlock All Years", for: .normal)
-                        
-                        self.purchaseButton.isEnabled = true
-                    }
                 }
             } else if let error = error {
                 print("Error fetching customer info: \(error.localizedDescription)")
@@ -285,15 +224,6 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         lastSelectedYearIndex = nil
         lastFocusedYearIndexPath = nil
         updateUIForSelectedPlaylist()
-    }
-
-    @objc private func navigateToPurchases() {
-        // Save the currently focused index paths before navigating to the payment screen
-        lastSelectedYearIndex = playlistTableView.indexPathForSelectedRow
-
-        let purchasesViewController = PurchasesViewController()
-        purchasesViewController.modalPresentationStyle = .fullScreen
-        present(purchasesViewController, animated: true, completion: nil)
     }
 
     // MARK: - Data Fetching
@@ -509,8 +439,7 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PlaylistYear", for: indexPath)
         let playlist = playlists[indexPath.row]
         let yearText = String(playlist.fields.year)
-        let lockIcon = (!isSubscribed && playlist.fields.isLocked == true) ? " 🔒" : ""
-        cell.textLabel?.text = isSubscribed ? yearText : yearText + lockIcon
+        cell.textLabel?.text = yearText
         cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 30) ?? UIFont.systemFont(ofSize: 30, weight: .bold)
         cell.layer.cornerRadius = 10
 
@@ -617,22 +546,15 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
             return
         }
 
-        let selectedPlaylist = playlists[selectedPlaylistIndex]
-        
-        // Check if the playlist is locked and user is not subscribed
-        if !isSubscribed && (selectedPlaylist.fields.isLocked ?? false) {
-            // Show paywall for locked content
-            navigateToPurchases()
-            return
-        }
-
-        let videoURL = playlists[selectedPlaylistIndex].fields.videoUrls?[visibleVideoIndices[indexPath.item]]
-
-        if extractYouTubeVideoID(from: videoURL ?? "") != nil {
-            let playlist = generatePlaylistFromSelectedVideo(selectedIndexPath: indexPath)
-            playVideoPlaylist(videoIdentifiers: playlist)
-        } else {
-            print("Invalid YouTube video URL \(String(describing: videoURL))")
+        requireSubscription(on: self) { [weak self] isSubscribed in
+            guard let self = self, isSubscribed else { return }
+            let videoURL = self.playlists[selectedPlaylistIndex].fields.videoUrls?[self.visibleVideoIndices[indexPath.item]]
+            if self.extractYouTubeVideoID(from: videoURL ?? "") != nil {
+                let playlist = self.generatePlaylistFromSelectedVideo(selectedIndexPath: indexPath)
+                self.playVideoPlaylist(videoIdentifiers: playlist)
+            } else {
+                print("Invalid YouTube video URL \(String(describing: videoURL))")
+            }
         }
     }
 
@@ -702,31 +624,4 @@ extension PlayListViewController {
 
         return nil
     }
-
-
-}
-
-
-
-// MARK: - YouTubeVideoQuality
-
-struct YouTubeVideoQuality {
-    static let hd720 = NSNumber(value: XCDYouTubeVideoQuality.HD720.rawValue)
-    static let medium360 = NSNumber(value: XCDYouTubeVideoQuality.medium360.rawValue)
-    static let small240 = NSNumber(value: XCDYouTubeVideoQuality.small240.rawValue)
-}
-
-func extractYouTubeVideoID(from videoURL: String) -> String? {
-    guard let url = URL(string: videoURL),
-          let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems else {
-        return nil
-    }
-
-    for queryItem in queryItems {
-        if queryItem.name.lowercased() == "v" {
-            return queryItem.value
-        }
-    }
-
-    return nil
 }

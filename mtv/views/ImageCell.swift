@@ -32,11 +32,21 @@ class PlaylistImageCell: UICollectionViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
+        // Ensure subviews are not interactive
+        imageView.isUserInteractionEnabled = false
+        titleLabel.isUserInteractionEnabled = false
+        artistNameLabel.isUserInteractionEnabled = false
+        // Add any other subviews here as needed
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setupUI()
+        // Ensure subviews are not interactive
+        imageView.isUserInteractionEnabled = false
+        titleLabel.isUserInteractionEnabled = false
+        artistNameLabel.isUserInteractionEnabled = false
+        // Add any other subviews here as needed
     }
     
     private func setupUI() {
@@ -47,7 +57,7 @@ class PlaylistImageCell: UICollectionViewCell {
             imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
             imageView.topAnchor.constraint(equalTo: topAnchor, constant: 10),
-            imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -80)
+            imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -60)
         ])
         imageView.layer.cornerRadius = 8 // Adjust the corner radius as needed
         imageView.layer.masksToBounds = true

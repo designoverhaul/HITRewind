@@ -7,10 +7,25 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     private var monthlyButton: UIButton!
     private var yearlyButton: UIButton!
     private var noThanksButton: UIButton!
+    private var weeklyButton: UIButton!
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .black
+        // Set background image
+        if let bgImage = UIImage(named: "background") {
+            let bgImageView = UIImageView(image: bgImage)
+            bgImageView.contentMode = .scaleAspectFill
+            bgImageView.translatesAutoresizingMaskIntoConstraints = false
+            view.insertSubview(bgImageView, at: 0)
+            NSLayoutConstraint.activate([
+                bgImageView.topAnchor.constraint(equalTo: view.topAnchor),
+                bgImageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                bgImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                bgImageView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            ])
+        } else {
+            view.backgroundColor = .black
+        }
         Purchases.shared.delegate = self
         setupUI()
         fetchOfferings()
@@ -27,26 +42,33 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
         // First Line
         let firstLineLabel = UILabel()
-        firstLineLabel.text = "🔓 Unlock all years"
+        firstLineLabel.text = ""
         firstLineLabel.textColor = UIColor(hex: "#A789FD")
         firstLineLabel.font = UIFont.boldSystemFont(ofSize: 31)
         stackView.addArrangedSubview(firstLineLabel)
 
         // Second Line
         let secondLineLabel = UILabel()
-        secondLineLabel.text = "🔓 Unlock all artists"
+        secondLineLabel.text = "🔓 Unlock all music"
         secondLineLabel.textColor = UIColor(hex: "#A789FD")
         secondLineLabel.font = UIFont.boldSystemFont(ofSize: 31)
         stackView.addArrangedSubview(secondLineLabel)
 
-        // Third Line
+        // New Third Line: Unlock all categories
+        let unlockCategoriesLabel = UILabel()
+        unlockCategoriesLabel.text = "🔓 Unlock all categories"
+        unlockCategoriesLabel.textColor = UIColor(hex: "#A789FD")
+        unlockCategoriesLabel.font = UIFont.boldSystemFont(ofSize: 31)
+        stackView.addArrangedSubview(unlockCategoriesLabel)
+
+        // Third Line (now fourth)
         let thirdLineLabel = UILabel()
         thirdLineLabel.text = "🚫 No ads"
         thirdLineLabel.textColor = UIColor(hex: "#A789FD")
         thirdLineLabel.font = UIFont.boldSystemFont(ofSize: 31)
         stackView.addArrangedSubview(thirdLineLabel)
 
-        // Fourth Line
+        // Fourth Line (now fifth)
         let fourthLineLabel = UILabel()
         fourthLineLabel.text = " ✅ Travel back in time"
         fourthLineLabel.textColor = UIColor(hex: "#A789FD")
@@ -64,9 +86,20 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(iconImageView)
 
+        // Weekly Button
+        weeklyButton = UIButton(type: .custom)
+        weeklyButton.setTitle("Weekly - $3.99/week", for: .normal)
+        weeklyButton.setTitleColor(.white, for: .normal)
+        weeklyButton.backgroundColor = .clear
+        weeklyButton.layer.cornerRadius = 12
+        weeklyButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        weeklyButton.addTarget(self, action: #selector(weeklyButtonTapped), for: .primaryActionTriggered)
+        weeklyButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(weeklyButton)
+
         // Monthly Button
         monthlyButton = UIButton(type: .custom)
-        monthlyButton.setTitle("Monthly - $2.99/month", for: .normal)
+        monthlyButton.setTitle("Monthly - $6.99/month", for: .normal)
         monthlyButton.setTitleColor(.white, for: .normal)
         monthlyButton.backgroundColor = .clear
         monthlyButton.layer.cornerRadius = 12
@@ -77,7 +110,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
         // Yearly Button
         yearlyButton = UIButton(type: .custom)
-        yearlyButton.setTitle("Yearly - $24.99/year (Save 30%)", for: .normal)
+        yearlyButton.setTitle("Yearly - $44.99/year (Save 30%)", for: .normal)
         yearlyButton.setTitleColor(.white, for: .normal)
         yearlyButton.backgroundColor = .clear
         yearlyButton.layer.cornerRadius = 12
@@ -109,9 +142,15 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -100),
 
+            // Weekly Button Constraints
+            weeklyButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            weeklyButton.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 40),
+            weeklyButton.widthAnchor.constraint(equalToConstant: 400),
+            weeklyButton.heightAnchor.constraint(equalToConstant: 60),
+
             // Monthly Button Constraints
             monthlyButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            monthlyButton.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 40),
+            monthlyButton.topAnchor.constraint(equalTo: weeklyButton.bottomAnchor, constant: 20),
             monthlyButton.widthAnchor.constraint(equalToConstant: 400),
             monthlyButton.heightAnchor.constraint(equalToConstant: 60),
 
@@ -162,6 +201,10 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         self.dismiss(animated: true, completion: nil)
     }
 
+    @objc private func weeklyButtonTapped() {
+        purchaseSubscription(identifier: "weeklyunlocked")
+    }
+
     private func fetchOfferings() {
         print("DEBUG: Starting to fetch offerings")
         Purchases.shared.getOfferings { [weak self] (offerings, error) in
@@ -187,9 +230,17 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     private func displayOffering(offering: Offering) {
-        // Find monthly and yearly packages
-        let monthlyPackage = offering.availablePackages.first { $0.identifier == "monthlyUnlock" }
-        let yearlyPackage = offering.availablePackages.first { $0.identifier == "yearlyUnlock" }
+        // Find weekly, monthly, and yearly packages by product identifier
+        let weeklyPackage = offering.availablePackages.first { $0.storeProduct.productIdentifier == "weeklyunlocked" }
+        let monthlyPackage = offering.availablePackages.first { $0.storeProduct.productIdentifier == "monthlyUnlock" }
+        let yearlyPackage = offering.availablePackages.first { $0.storeProduct.productIdentifier == "yearlyUnlock" }
+        
+        // Update weekly button
+        if let weeklyPackage = weeklyPackage {
+            let currencyCode = weeklyPackage.storeProduct.currencyCode ?? "$"
+            let formattedPrice = (currencyCode == "USD") ? "$\(weeklyPackage.storeProduct.price)" : "\(currencyCode) \(weeklyPackage.storeProduct.price)"
+            weeklyButton.setTitle("Weekly - \(formattedPrice)/week", for: .normal)
+        }
         
         // Update monthly button
         if let monthlyPackage = monthlyPackage {
@@ -217,14 +268,14 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             
             print("DEBUG: Purchase - All offerings:", offerings?.all ?? [:])
             print("DEBUG: Purchase - Current offering:", offerings?.current?.identifier ?? "none")
-            print("DEBUG: Purchase - Available packages:", offerings?.current?.availablePackages.map { $0.identifier } ?? [])
+            print("DEBUG: Purchase - Available packages:", offerings?.current?.availablePackages.map { $0.storeProduct.productIdentifier } ?? [])
             
             guard let offerings = offerings,
                   let currentOffering = offerings.current,
-                  let package = currentOffering.availablePackages.first(where: { $0.identifier == identifier }) else {
+                  let package = currentOffering.availablePackages.first(where: { $0.storeProduct.productIdentifier == identifier }) else {
                 print("DEBUG: Purchase - Failed to find package. Offerings nil:", offerings == nil)
                 print("DEBUG: Purchase - Current offering nil:", offerings?.current == nil)
-                print("DEBUG: Purchase - Package not found in:", offerings?.current?.availablePackages.map { $0.identifier } ?? [])
+                print("DEBUG: Purchase - Package not found in:", offerings?.current?.availablePackages.map { $0.storeProduct.productIdentifier } ?? [])
                 self?.showAlert(title: "Error", message: "Selected subscription package not found")
                 return
             }
