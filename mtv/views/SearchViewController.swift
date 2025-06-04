@@ -1,7 +1,8 @@
 import UIKit
-import XCDYouTubeKit
+// import XCDYouTubeKit // Removed
+import YouTubeKit // Added
 import AVKit
-import RevenueCat
+// import RevenueCat // Temporarily commented out
 
 class SearchViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UITextFieldDelegate {
     
@@ -86,14 +87,8 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
     private var searchResults: [SearchResult] = []
     private var searchTimer: Timer?
     private let searchService = SearchService.shared
-    private var isSubscribed: Bool = false
-    
-    // Custom patterns to work around window.location.hostname.split error (same as PlayListViewController)
-    private let safeCustomPatterns = [
-        "\\b[cs]\\s*&&\\s*[adf]\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\(",
-        "\\b[a-zA-Z0-9]+\\s*&&\\s*[a-zA-Z0-9]+\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\(",
-        "(?:\\b|[^a-zA-Z0-9$])([a-zA-Z0-9$]{2})\\s*=\\s*function\\(\\s*a\\s*\\)\\s*\\{\\s*a\\s*=\\s*a\\.split\\(\\s*\"\"\\s*\\)"
-    ]
+    // private var isSubscribed: Bool = false // Temporarily commented out
+    private var isSubscribed: Bool = true // Assume subscribed for debugging
     
     // MARK: - Lifecycle
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -149,7 +144,8 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         
         setupCollectionView()
         setupSearchTextField()
-        checkSubscriptionStatus()
+        // checkSubscriptionStatus() // Temporarily commented out
+        print("SearchViewController: checkSubscriptionStatus bypassed.")
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -235,24 +231,229 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
             showErrorAlert(message: "Invalid video URL")
             return
         }
-        
-        getVideoWithFixedPatterns(videoIdentifier: videoId) { [weak self] video, error in
-            DispatchQueue.main.async {
-                if let video = video, let streamURL = video.streamURL {
-                    let player = AVPlayer(url: streamURL)
-                    let playerViewController = AVPlayerViewController()
-                    playerViewController.player = player
-                    
-                    self?.present(playerViewController, animated: true) {
-                        player.play()
+
+        print("SearchViewController (views): Attempting to play video with ID: \(videoId) using YouTubeKit")
+        let loadingIndicatorView = UIActivityIndicatorView(style: .large)
+        loadingIndicatorView.color = .white
+        loadingIndicatorView.center = self.view.center
+        self.view.addSubview(loadingIndicatorView)
+        loadingIndicatorView.startAnimating()
+
+        let playerViewController = AVPlayerViewController()
+        playerViewController.delegate = self
+        playerViewController.modalPresentationStyle = .fullScreen
+
+        Task { @MainActor in
+            defer {
+                loadingIndicatorView.stopAnimating()
+                loadingIndicatorView.removeFromSuperview()
+            }
+            do {
+                let youtube = YouTube(videoID: videoId)
+                let streams = try await youtube.streams
+                
+                var streamURL: URL? = streams
+                    .filterVideoAndAudio()
+                    .filter { $0.isNativelyPlayable }
+                    .highestResolutionStream()?
+                    .url
+                
+                if streamURL == nil { // Fallback
+                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
+                }
+
+                if let finalStreamURL = streamURL {
+                    print("🌟 SearchViewController: YouTubeKit Stream URL: \(finalStreamURL)")
+                    let avPlayer = AVPlayer(url: finalStreamURL)
+                    playerViewController.player = avPlayer
+                    self.present(playerViewController, animated: true) {
+                        avPlayer.play()
                     }
                 } else {
-                    self?.showErrorAlert(message: "Failed to load video")
+                    print("🚫 SearchViewController: YouTubeKit - finalStreamURL is nil for video ID: \(videoId)")
+                    self.showErrorAlert(message: "Failed to load video stream (URL is nil).")
                 }
+            } catch {
+                print("🌟 YouTubeKit playback error for video ID \(videoId): \(error.localizedDescription)")
+                self.showErrorAlert(message: "Failed to load video: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func handlePotentialPlaylist(with url: String) {
+        if isPlaylistURL(url) {
+            playPlaylist(with: url)
+        } else {
+            playVideo(with: url) // This is for single videos
+        }
+    }
+
+    private func isPlaylistURL(_ url: String) -> Bool {
+        return url.contains("playlist?list=") || url.contains("&list=")
+    }
+
+    private func playPlaylist(with url: String) {
+        guard let playlistId = extractPlaylistId(from: url) else {
+            print("🌟 Could not extract playlist ID from URL: \(url)")
+            showErrorAlert(message: "Invalid playlist URL.")
+            return
+        }
+        
+        print("🌟 Playing playlist with ID: \(playlistId)")
+        
+        let loadingIndicatorView = UIActivityIndicatorView(style: .large)
+        loadingIndicatorView.color = .white
+        loadingIndicatorView.center = view.center
+        self.view.addSubview(loadingIndicatorView)
+        loadingIndicatorView.startAnimating()
+        
+        fetchPlaylistVideoIds(playlistId: playlistId) { [weak self] videoIds in
+            DispatchQueue.main.async {
+                loadingIndicatorView.stopAnimating()
+                loadingIndicatorView.removeFromSuperview()
+                
+                if videoIds.isEmpty {
+                    print("🌟 No videos found in playlist")
+                    self?.showErrorAlert(message: "No videos found in the playlist.")
+                    return
+                }
+                
+                print("🌟 Starting playlist playback with \(videoIds.count) videos")
+                self?.playVideoPlaylist(videoIdentifiers: videoIds)
             }
         }
     }
     
+    private func extractPlaylistId(from url: String) -> String? {
+        guard let urlComponents = URLComponents(string: url),
+              let queryItems = urlComponents.queryItems else {
+            return nil
+        }
+        return queryItems.first(where: { $0.name == "list" })?.value
+    }
+
+    private func fetchPlaylistVideoIds(playlistId: String, completion: @escaping ([String]) -> Void) {
+        // Using the API key found in LegendaryShowsViewController
+        let apiKey = "AIzaSyChKL0fUHEfc1AlKe0ks53Y2wT78gxLiJE"
+        let urlString = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=\(playlistId)&key=\(apiKey)"
+        
+        guard let url = URL(string: urlString) else {
+            print("🌟 Invalid YouTube API URL for playlist items")
+            completion([])
+            return
+        }
+        
+        print("🌟 Fetching playlist videos from: \(urlString)")
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("🌟 Error fetching playlist items: \(error.localizedDescription)")
+                completion([])
+                return
+            }
+            
+            guard let data = data else {
+                print("🌟 No data received from YouTube API for playlist items")
+                completion([])
+                return
+            }
+            
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let items = json["items"] as? [[String: Any]] {
+                    
+                    let videoIds = items.compactMap { item -> String? in
+                        guard let snippet = item["snippet"] as? [String: Any],
+                              let resourceId = snippet["resourceId"]as? [String: Any],
+                              let videoId = resourceId["videoId"] as? String else {
+                            return nil
+                        }
+                        return videoId
+                    }
+                    print("🌟 Successfully extracted \(videoIds.count) video IDs from playlist")
+                    completion(videoIds)
+                } else {
+                    print("🌟 Failed to parse YouTube API response for playlist items")
+                    completion([])
+                }
+            } catch {
+                print("🌟 Error parsing YouTube API response for playlist items: \(error.localizedDescription)")
+                completion([])
+            }
+        }.resume()
+    }
+
+    func playVideoPlaylist(videoIdentifiers: [String], currentIndex: Int = 0) {
+        guard currentIndex < videoIdentifiers.count else {
+            print("🌟 Playlist finished - all videos played")
+            return
+        }
+        
+        let loadingIndicatorView = UIActivityIndicatorView(style: .large)
+        loadingIndicatorView.color = .white
+        loadingIndicatorView.center = view.center
+        self.view.addSubview(loadingIndicatorView)
+        loadingIndicatorView.startAnimating()
+        
+        let playerViewController = AVPlayerViewController()
+        playerViewController.delegate = self
+        playerViewController.modalPresentationStyle = .fullScreen
+        
+        let currentVideoIdentifier = videoIdentifiers[currentIndex]
+        
+        print("🌟 Starting playlist video \(currentIndex + 1)/\(videoIdentifiers.count) - ID: \(currentVideoIdentifier) using YouTubeKit")
+        
+        Task { @MainActor in
+            defer {
+                loadingIndicatorView.stopAnimating()
+                loadingIndicatorView.removeFromSuperview()
+            }
+            
+            do {
+                let video = YouTube(videoID: currentVideoIdentifier)
+                let streams = try await video.streams
+                
+                var streamURL: URL? = streams
+                    .filterVideoAndAudio()
+                    .filter { $0.isNativelyPlayable }
+                    .highestResolutionStream()?
+                    .url
+
+                if streamURL == nil {
+                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
+                }
+                
+                if let finalStreamURL = streamURL {
+                    print("🌟 SearchViewController (Playlist): YouTubeKit Stream URL for playlist video: \(finalStreamURL)")
+                    let avPlayer = AVPlayer(url: finalStreamURL)
+                    playerViewController.player = avPlayer
+                    
+                    self.present(playerViewController, animated: true) {
+                        avPlayer.play()
+                        
+                        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem, queue: .main) { [weak self, weak playerViewController] _ in
+                            NotificationCenter.default.removeObserver(self as Any, name: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem)
+                            
+                            playerViewController?.dismiss(animated: true) {
+                                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                            }
+                        }
+                    }
+                } else {
+                    print("🚫 SearchViewController (Playlist): YouTubeKit - finalStreamURL is nil for video ID \(currentVideoIdentifier)")
+                    self.showErrorAlert(message: "Failed to load stream for video \(currentVideoIdentifier) (URL is nil).")
+                    // Skip to next video
+                    self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                }
+            } catch {
+                print("🌟 YouTubeKit playback error for video \(currentIndex + 1) (ID: \(currentVideoIdentifier)): \(error.localizedDescription)")
+                self.showErrorAlert(message: "Playback error for video \(currentVideoIdentifier): \(error.localizedDescription)")
+                // Skip to next video on error
+                self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+            }
+        }
+    }
+
     private func extractVideoId(from url: String) -> String? {
         guard let urlComponents = URLComponents(string: url),
               let queryItems = urlComponents.queryItems else {
@@ -260,16 +461,6 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         }
         
         return queryItems.first(where: { $0.name == "v" })?.value
-    }
-    
-    private func getVideoWithFixedPatterns(videoIdentifier: String, completion: @escaping (XCDYouTubeVideo?, Error?) -> Void) {
-        XCDYouTubeClient.default().getVideoWithIdentifier(videoIdentifier) { video, error in
-            if let error = error as NSError?, error.code == -1000 { // Use numeric error code instead of useCipherSignature
-                XCDYouTubeClient.default().getVideoWithIdentifier(videoIdentifier, completionHandler: completion)
-            } else {
-                completion(video, error)
-            }
-        }
     }
     
     // MARK: - Focus Management
@@ -290,17 +481,17 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         }
     }
     
-    private func checkSubscriptionStatus(completion: (() -> Void)? = nil) {
-        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
-            guard let self = self else { return }
-            if let customerInfo = customerInfo {
-                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
-                self.isSubscribed = !activeEntitlements.isEmpty
-            } else {
-                self.isSubscribed = false
-            }
-            completion?()
-        }
+    // MARK: - Subscription Check
+    private func checkSubscriptionStatus() {
+        // Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in // Temporarily commented out
+        //     if let customerInfo = customerInfo {
+        //         self?.isSubscribed = customerInfo.entitlements.all.contains { $0.value.isActive }
+        //     } else {
+        //         self?.isSubscribed = false
+        //     }
+        // }
+        print("SearchViewController: checkSubscriptionStatus called - Bypassed, assuming subscribed.")
+        isSubscribed = true // Assume subscribed
     }
     
     private func navigateToPurchases() {
@@ -326,10 +517,29 @@ extension SearchViewController {
 // MARK: - UICollectionViewDelegate
 extension SearchViewController {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        requireSubscription(on: self) { [weak self] (isSubscribed: Bool) in
-            guard let self = self, isSubscribed else { return }
-            let result = self.searchResults[indexPath.item]
-            self.playVideo(with: result.url)
+        let selectedResult = searchResults[indexPath.item]
+        
+        // requireSubscription(on: self) { [weak self] isSubscribed in // Temporarily commented out
+        //     guard let self = self, isSubscribed else { return }
+            
+        //     let videoURL = selectedResult.url // url is not optional
+        //     switch selectedResult.type {
+        //     case .video:
+        //         self.playVideo(with: videoURL)
+        //     case .mtvVideo: // Assuming mtvVideo can also be a playlist or single video
+        //         self.handlePotentialPlaylist(with: videoURL)
+        //     // No default needed if all enum cases are handled
+        //     }
+        // }
+        print("SearchViewController: collectionView.didSelectItemAt - Bypassing requireSubscription.")
+        let videoURL = selectedResult.url // url is not optional
+        switch selectedResult.type {
+        case .video: // Direct enum case matching
+            // self.playVideo(with: videoURL) // Changed to handle potential playlists
+            self.handlePotentialPlaylist(with: videoURL)
+        case .mtvVideo: // Direct enum case matching
+            self.handlePotentialPlaylist(with: videoURL)
+        // No default needed if all enum cases are covered by SearchResultType
         }
     }
 }

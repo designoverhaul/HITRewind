@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D4CDD6EFE0520DEE01DC950 /* Pods_MTV_Music_VideosTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB85DAC23F7B0CF3D9CF52A0 /* Pods_MTV_Music_VideosTests.framework */; };
 		1C0B177C2C6BFC2A005E2B06 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = 1C0B177B2C6BFC2A005E2B06 /* ReceiptParser */; };
 		1C0B177E2C6BFC2A005E2B06 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 1C0B177D2C6BFC2A005E2B06 /* RevenueCat */; };
 		1C0B17802C6BFC2A005E2B06 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1C0B177F2C6BFC2A005E2B06 /* RevenueCatUI */; };
@@ -24,7 +25,6 @@
 		1C2644072B9A7023006D5D69 /* PlaylistModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2644062B9A7023006D5D69 /* PlaylistModel.swift */; };
 		1C26440D2B9A71A7006D5D69 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C26440C2B9A71A7006D5D69 /* Constants.swift */; };
 		1C26440F2B9A7680006D5D69 /* PlayListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C26440E2B9A7680006D5D69 /* PlayListViewController.swift */; };
-		1C2644122B9A76AC006D5D69 /* XCDYouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */; };
 		1C30A4862C6237B8005C3E83 /* PurchasesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C30A4852C6237B8005C3E83 /* PurchasesViewController.swift */; };
 		1C46DE042C172B0000E10253 /* inter_light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C46DE032C172B0000E10253 /* inter_light.ttf */; };
 		1C46DE052C172B0000E10253 /* inter_light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1C46DE032C172B0000E10253 /* inter_light.ttf */; };
@@ -32,6 +32,8 @@
 		1C4BD6572BA11176002C37C1 /* ImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6562BA11176002C37C1 /* ImageCell.swift */; };
 		1C4BD65A2BA1143B002C37C1 /* VideoDurationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */; };
 		1C7CA4642C71267600CE68EB /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C7CA4632C71267500CE68EB /* StoreKit.framework */; };
+		898334CF6CA0B0ECCB087FE2 /* Pods_MTV_Music_Videos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D4EA308E5DB7245767AE8FDB /* Pods_MTV_Music_Videos.framework */; };
+		919DBB8F963D4962F475D057 /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F42B89F7B367C791D0A462A /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework */; };
 		935711312DE5E76200A002E0 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711282DE5E76200A002E0 /* SettingsViewController.swift */; };
 		935711362DE5E8A200A002E0 /* LiveMusicViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711332DE5E8A200A002E0 /* LiveMusicViewController.swift */; };
 		935711372DE5E8A200A002E0 /* SearchResultCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711342DE5E8A200A002E0 /* SearchResultCell.swift */; };
@@ -39,6 +41,8 @@
 		935711392DE5E8A200A002E0 /* LegendaryShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935711322DE5E8A200A002E0 /* LegendaryShowsViewController.swift */; };
 		9357113D2DE62A3D00A002E0 /* YouTubeExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9357113B2DE62A3D00A002E0 /* YouTubeExtensions.swift */; };
 		9357113E2DE62A3D00A002E0 /* PaywallGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9357113A2DE62A3D00A002E0 /* PaywallGate.swift */; };
+		936D0C622DF0D1280093E0EB /* YouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 936D0C612DF0D1280093E0EB /* YouTubeKit */; };
+		93F01C5B2DF0EC6E00CE4BD6 /* DebugPlayerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F01C5A2DF0EC6E00CE4BD6 /* DebugPlayerViewController.swift */; };
 		93F0A0792D8B1739000F385C /* Configuration.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 93F0A0782D8B1738000F385C /* Configuration.storekit */; };
 /* End PBXBuildFile section */
 
@@ -60,6 +64,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		077D8D00C0914AC124C355AC /* Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig"; path = "Target Support Files/Pods-MTV Music Videos-MTV Music VideosUITests/Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig"; sourceTree = "<group>"; };
+		10ECC28D9CD7BA55D1EEF5D8 /* Pods-MTV Music VideosTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music VideosTests.release.xcconfig"; path = "Target Support Files/Pods-MTV Music VideosTests/Pods-MTV Music VideosTests.release.xcconfig"; sourceTree = "<group>"; };
+		182D2B0BB8DB19F934693699 /* Pods-MTV Music Videos.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music Videos.release.xcconfig"; path = "Target Support Files/Pods-MTV Music Videos/Pods-MTV Music Videos.release.xcconfig"; sourceTree = "<group>"; };
+		18CB20F35363C13C05D0233A /* Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig"; path = "Target Support Files/Pods-MTV Music Videos-MTV Music VideosUITests/Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig"; sourceTree = "<group>"; };
 		1C2268F72BD460D900F11B24 /* MTV-Music-Videos-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "MTV-Music-Videos-Info.plist"; sourceTree = "<group>"; };
 		1C2269002BD4667F00F11B24 /* inter.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = inter.ttf; sourceTree = "<group>"; };
 		1C2643D52B9A671D006D5D69 /* MTV Music Videos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MTV Music Videos.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -81,6 +89,8 @@
 		1C4BD6562BA11176002C37C1 /* ImageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCell.swift; sourceTree = "<group>"; };
 		1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDurationService.swift; sourceTree = "<group>"; };
 		1C7CA4632C71267500CE68EB /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		37E93F1545AF85C7F7ADA3AA /* Pods-MTV Music VideosTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music VideosTests.debug.xcconfig"; path = "Target Support Files/Pods-MTV Music VideosTests/Pods-MTV Music VideosTests.debug.xcconfig"; sourceTree = "<group>"; };
+		3F42B89F7B367C791D0A462A /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5D2C03F6B52246A0B392B74A58573D16 /* LiveShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveShowsViewController.swift; sourceTree = "<group>"; };
 		935711282DE5E76200A002E0 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		935711322DE5E8A200A002E0 /* LegendaryShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendaryShowsViewController.swift; sourceTree = "<group>"; };
@@ -89,7 +99,11 @@
 		935711352DE5E8A200A002E0 /* SearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
 		9357113A2DE62A3D00A002E0 /* PaywallGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallGate.swift; sourceTree = "<group>"; };
 		9357113B2DE62A3D00A002E0 /* YouTubeExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeExtensions.swift; sourceTree = "<group>"; };
+		93F01C5A2DF0EC6E00CE4BD6 /* DebugPlayerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPlayerViewController.swift; sourceTree = "<group>"; };
 		93F0A0782D8B1738000F385C /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
+		A116809135A9FDCA827A62AA /* Pods-MTV Music Videos.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music Videos.debug.xcconfig"; path = "Target Support Files/Pods-MTV Music Videos/Pods-MTV Music Videos.debug.xcconfig"; sourceTree = "<group>"; };
+		D4EA308E5DB7245767AE8FDB /* Pods_MTV_Music_Videos.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MTV_Music_Videos.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB85DAC23F7B0CF3D9CF52A0 /* Pods_MTV_Music_VideosTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MTV_Music_VideosTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,11 +111,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				936D0C622DF0D1280093E0EB /* YouTubeKit in Frameworks */,
 				1C0B17802C6BFC2A005E2B06 /* RevenueCatUI in Frameworks */,
 				1C0B177C2C6BFC2A005E2B06 /* ReceiptParser in Frameworks */,
 				1C7CA4642C71267600CE68EB /* StoreKit.framework in Frameworks */,
-				1C2644122B9A76AC006D5D69 /* XCDYouTubeKit in Frameworks */,
 				1C0B177E2C6BFC2A005E2B06 /* RevenueCat in Frameworks */,
+				898334CF6CA0B0ECCB087FE2 /* Pods_MTV_Music_Videos.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,6 +124,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D4CDD6EFE0520DEE01DC950 /* Pods_MTV_Music_VideosTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -116,6 +132,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				919DBB8F963D4962F475D057 /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +158,7 @@
 				1C2643D62B9A671D006D5D69 /* Products */,
 				1C7CA4622C71267500CE68EB /* Frameworks */,
 				93F0A0782D8B1738000F385C /* Configuration.storekit */,
+				D3767BF4B764524C0C3C4AE7 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -204,6 +222,7 @@
 				1C26440E2B9A7680006D5D69 /* PlayListViewController.swift */,
 				935711322DE5E8A200A002E0 /* LegendaryShowsViewController.swift */,
 				935711332DE5E8A200A002E0 /* LiveMusicViewController.swift */,
+				93F01C5A2DF0EC6E00CE4BD6 /* DebugPlayerViewController.swift */,
 				935711342DE5E8A200A002E0 /* SearchResultCell.swift */,
 				935711352DE5E8A200A002E0 /* SearchViewController.swift */,
 				1C4BD6562BA11176002C37C1 /* ImageCell.swift */,
@@ -233,6 +252,9 @@
 			isa = PBXGroup;
 			children = (
 				1C7CA4632C71267500CE68EB /* StoreKit.framework */,
+				D4EA308E5DB7245767AE8FDB /* Pods_MTV_Music_Videos.framework */,
+				3F42B89F7B367C791D0A462A /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework */,
+				FB85DAC23F7B0CF3D9CF52A0 /* Pods_MTV_Music_VideosTests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -246,6 +268,19 @@
 			path = common;
 			sourceTree = "<group>";
 		};
+		D3767BF4B764524C0C3C4AE7 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				A116809135A9FDCA827A62AA /* Pods-MTV Music Videos.debug.xcconfig */,
+				182D2B0BB8DB19F934693699 /* Pods-MTV Music Videos.release.xcconfig */,
+				077D8D00C0914AC124C355AC /* Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig */,
+				18CB20F35363C13C05D0233A /* Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig */,
+				37E93F1545AF85C7F7ADA3AA /* Pods-MTV Music VideosTests.debug.xcconfig */,
+				10ECC28D9CD7BA55D1EEF5D8 /* Pods-MTV Music VideosTests.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -253,6 +288,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1C2643FC2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music Videos" */;
 			buildPhases = (
+				40375B7807731F111A82AC1D /* [CP] Check Pods Manifest.lock */,
 				1C2643D12B9A671D006D5D69 /* Sources */,
 				1C2643D22B9A671D006D5D69 /* Frameworks */,
 				1C2643D32B9A671D006D5D69 /* Resources */,
@@ -263,10 +299,10 @@
 			);
 			name = "MTV Music Videos";
 			packageProductDependencies = (
-				1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */,
 				1C0B177B2C6BFC2A005E2B06 /* ReceiptParser */,
 				1C0B177D2C6BFC2A005E2B06 /* RevenueCat */,
 				1C0B177F2C6BFC2A005E2B06 /* RevenueCatUI */,
+				936D0C612DF0D1280093E0EB /* YouTubeKit */,
 			);
 			productName = mtv;
 			productReference = 1C2643D52B9A671D006D5D69 /* MTV Music Videos.app */;
@@ -276,6 +312,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1C2643FF2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music VideosTests" */;
 			buildPhases = (
+				73A03521B9F5C485ABF50CBA /* [CP] Check Pods Manifest.lock */,
 				1C2643E42B9A671F006D5D69 /* Sources */,
 				1C2643E52B9A671F006D5D69 /* Frameworks */,
 				1C2643E62B9A671F006D5D69 /* Resources */,
@@ -294,6 +331,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1C2644022B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music VideosUITests" */;
 			buildPhases = (
+				7B03D0F95EDFF983E820E9FC /* [CP] Check Pods Manifest.lock */,
 				1C2643EE2B9A671F006D5D69 /* Sources */,
 				1C2643EF2B9A671F006D5D69 /* Frameworks */,
 				1C2643F02B9A671F006D5D69 /* Resources */,
@@ -341,8 +379,8 @@
 			);
 			mainGroup = 1C2643CC2B9A671D006D5D69;
 			packageReferences = (
-				1C2644102B9A76AC006D5D69 /* XCRemoteSwiftPackageReference "XCDYouTubeKit" */,
 				1C30A4842C6235AF005C3E83 /* XCRemoteSwiftPackageReference "purchases-ios" */,
+				936D0C602DF0D1280093E0EB /* XCRemoteSwiftPackageReference "YouTubeKit" */,
 			);
 			productRefGroup = 1C2643D62B9A671D006D5D69 /* Products */;
 			projectDirPath = "";
@@ -389,6 +427,75 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		40375B7807731F111A82AC1D /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-MTV Music Videos-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		73A03521B9F5C485ABF50CBA /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-MTV Music VideosTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		7B03D0F95EDFF983E820E9FC /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-MTV Music Videos-MTV Music VideosUITests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		1C2643D12B9A671D006D5D69 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -407,6 +514,7 @@
 				935711392DE5E8A200A002E0 /* LegendaryShowsViewController.swift in Sources */,
 				1C2643D92B9A671D006D5D69 /* AppDelegate.swift in Sources */,
 				1C30A4862C6237B8005C3E83 /* PurchasesViewController.swift in Sources */,
+				93F01C5B2DF0EC6E00CE4BD6 /* DebugPlayerViewController.swift in Sources */,
 				1C4BD6572BA11176002C37C1 /* ImageCell.swift in Sources */,
 				1C4BD65A2BA1143B002C37C1 /* VideoDurationService.swift in Sources */,
 			);
@@ -585,6 +693,7 @@
 		};
 		1C2643FD2B9A671F006D5D69 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A116809135A9FDCA827A62AA /* Pods-MTV Music Videos.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -613,6 +722,7 @@
 		};
 		1C2643FE2B9A671F006D5D69 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 182D2B0BB8DB19F934693699 /* Pods-MTV Music Videos.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -641,6 +751,7 @@
 		};
 		1C2644002B9A671F006D5D69 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37E93F1545AF85C7F7ADA3AA /* Pods-MTV Music VideosTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -660,6 +771,7 @@
 		};
 		1C2644012B9A671F006D5D69 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 10ECC28D9CD7BA55D1EEF5D8 /* Pods-MTV Music VideosTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -679,6 +791,7 @@
 		};
 		1C2644032B9A671F006D5D69 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 077D8D00C0914AC124C355AC /* Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -696,6 +809,7 @@
 		};
 		1C2644042B9A671F006D5D69 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 18CB20F35363C13C05D0233A /* Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -753,20 +867,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		1C2644102B9A76AC006D5D69 /* XCRemoteSwiftPackageReference "XCDYouTubeKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/cbg-dev-k/XCDYouTubeKit";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.16.0;
-			};
-		};
 		1C30A4842C6235AF005C3E83 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RevenueCat/purchases-ios.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 5.2.2;
+			};
+		};
+		936D0C602DF0D1280093E0EB /* XCRemoteSwiftPackageReference "YouTubeKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/alexeichhorn/YouTubeKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.2.7;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -787,10 +901,10 @@
 			package = 1C30A4842C6235AF005C3E83 /* XCRemoteSwiftPackageReference "purchases-ios" */;
 			productName = RevenueCatUI;
 		};
-		1C2644112B9A76AC006D5D69 /* XCDYouTubeKit */ = {
+		936D0C612DF0D1280093E0EB /* YouTubeKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 1C2644102B9A76AC006D5D69 /* XCRemoteSwiftPackageReference "XCDYouTubeKit" */;
-			productName = XCDYouTubeKit;
+			package = 936D0C602DF0D1280093E0EB /* XCRemoteSwiftPackageReference "YouTubeKit" */;
+			productName = YouTubeKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

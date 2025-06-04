@@ -1,0 +1,24 @@
+{
+  "originHash" : "d5ab603d848cb5e2ab4b19b038a810ac05ca910cef9be9d0c55b7e9407c3ab19",
+  "pins" : [
+    {
+      "identity" : "purchases-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RevenueCat/purchases-ios.git",
+      "state" : {
+        "revision" : "0959f74ac36f16fed5375ab0902dbe023830c5e2",
+        "version" : "5.26.0"
+      }
+    },
+    {
+      "identity" : "youtubekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/alexeichhorn/YouTubeKit.git",
+      "state" : {
+        "revision" : "e1895c72f0edff9acd6b41977d2ad9c6245e8306",
+        "version" : "0.2.7"
+      }
+    }
+  ],
+  "version" : 3
+}

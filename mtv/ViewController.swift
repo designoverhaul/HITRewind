@@ -1,7 +1,9 @@
 import UIKit
 import AVKit
 import AVFoundation
-import XCDYouTubeKit
+// import XCDYouTubeKit // Removed
+import YouTubeKit // Added
+// import RevenueCat // Temporarily commented out if present
 
 class ViewController: UIViewController {
 
@@ -506,7 +508,7 @@ extension LiveShowsTabViewController: UICollectionViewDataSource, UICollectionVi
             return
         }
         
-        playVideoWithIdentifier(videoIdentifier: videoIdentifier)
+        playVideo(videoIdentifier: videoIdentifier)
     }
     
     private func extractVideoIdentifier(from url: String) -> String {
@@ -525,39 +527,54 @@ extension LiveShowsTabViewController: UICollectionViewDataSource, UICollectionVi
         return ""
     }
     
-    private func playVideoWithIdentifier(videoIdentifier: String) {
+    private func playVideo(videoIdentifier: String) {
+        print("SearchViewController: Attempting to play video with ID: \\(videoIdentifier) using YouTubeKit")
         let loadingIndicator = UIActivityIndicatorView(style: .large)
         loadingIndicator.color = .white
-        loadingIndicator.center = view.center
-        view.addSubview(loadingIndicator)
+        loadingIndicator.center = self.view.center // Assuming 'self' is SearchViewController
+        self.view.addSubview(loadingIndicator)
         loadingIndicator.startAnimating()
-        
+
         let playerViewController = AVPlayerViewController()
-        
-        XCDYouTubeClient.default().getVideoWithIdentifier(videoIdentifier) { [weak self] (video: XCDYouTubeVideo?, error: Error?) in
-            loadingIndicator.stopAnimating()
-            loadingIndicator.removeFromSuperview()
-            
-            guard let video = video else {
-                print("YouTube video loading error: \(error?.localizedDescription ?? "Unknown error")")
-                return
+        // playerViewController.delegate = self // Set delegate if SearchViewController conforms to AVPlayerViewControllerDelegate
+
+        Task { @MainActor in
+            defer {
+                loadingIndicator.stopAnimating()
+                loadingIndicator.removeFromSuperview()
             }
-            
-            let streamURLs = video.streamURLs
-            guard let streamURL = (streamURLs[XCDYouTubeVideoQualityHTTPLiveStreaming] ??
-                                   streamURLs[YouTubeVideoQuality.hd720] ??
-                                   streamURLs[YouTubeVideoQuality.medium360] ??
-                                   streamURLs[YouTubeVideoQuality.small240]) else {
-                print("No suitable stream URL quality found")
-                return
-            }
-            
-            DispatchQueue.main.async {
-                let player = AVPlayer(url: streamURL)
-                playerViewController.player = player
-                self?.present(playerViewController, animated: true) {
-                    player.play()
+            do {
+                let video = YouTube(videoID: videoIdentifier)
+                let streams = try await video.streams
+                
+                var streamURL: URL? = streams
+                    .filterVideoAndAudio()
+                    .filter { $0.isNativelyPlayable }
+                    .highestResolutionStream()?
+                    .url
+                
+                if streamURL == nil { // Fallback
+                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
                 }
+
+                guard let finalStreamURL = streamURL else {
+                    print("🌟 No suitable stream URL found with YouTubeKit for video ID: \\(videoIdentifier)")
+                    // Optionally, show an error to the user
+                    return
+                }
+                
+                print("🌟 YouTubeKit Stream URL: \\(finalStreamURL)")
+                let avPlayer = AVPlayer(url: finalStreamURL)
+                playerViewController.player = avPlayer
+                
+                // Ensure 'self' here refers to the SearchViewController instance to present the player
+                // If SearchViewController is not the one presenting, adjust accordingly.
+                self.present(playerViewController, animated: true) {
+                    avPlayer.play()
+                }
+            } catch {
+                print("🌟 YouTubeKit playback error for video ID \\(videoIdentifier): \\(error.localizedDescription)")
+                // Optionally, show an error to the user
             }
         }
     }

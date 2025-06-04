@@ -1,24 +1,18 @@
 import UIKit
-import RevenueCat
-import XCDYouTubeKit
+// import RevenueCat // Temporarily commented out
 import AVKit
+import YouTubeKit
 
 class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
     // MARK: - Properties
 
-    // Custom patterns to work around window.location.hostname.split error
-    private let safeCustomPatterns = [
-        "\\b[cs]\\s*&&\\s*[adf]\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\(",
-        "\\b[a-zA-Z0-9]+\\s*&&\\s*[a-zA-Z0-9]+\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\(",
-        "(?:\\b|[^a-zA-Z0-9$])([a-zA-Z0-9$]{2})\\s*=\\s*function\\(\\s*a\\s*\\)\\s*\\{\\s*a\\s*=\\s*a\\.split\\(\\s*\"\"\\s*\\)"
-    ]
-
     private var playlists: [Playlist] = []
     private var selectedPlaylistIndex: Int?
     private var visibleVideoIndices: [Int] = []
     private var lastSelectedYearIndex: IndexPath?
-    private var isSubscribed: Bool = false
+    // private var isSubscribed: Bool = false // Temporarily commented out
+    private var isSubscribed: Bool = true // Assume subscribed for debugging
 
     // Store last focused index paths
     private var lastFocusedYearIndexPath: IndexPath?
@@ -35,10 +29,11 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         setupUI()
         showLoadingIndicator()
         fetchPlaylists()
-        checkSubscriptionStatus()
+        // checkSubscriptionStatus() // Temporarily commented out
+        print("PlayListViewController: checkSubscriptionStatus bypassed.")
 
         // Add observer for subscription status change
-        NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil)
+        // NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil) // Temporarily commented out
     }
 
     deinit {
@@ -48,21 +43,22 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        checkSubscriptionStatus {
-            // After subscription status is updated
-            if let lastSelectedIndex = self.lastSelectedYearIndex {
-                self.playlistTableView.scrollToRow(at: lastSelectedIndex, at: .middle, animated: false)
-                self.playlistImagesCollectionView.reloadData()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    self.playlistTableView.selectRow(at: lastSelectedIndex, animated: false, scrollPosition: .none)
-                    self.selectedPlaylistIndex = lastSelectedIndex.row
-                    self.updateUIForSelectedPlaylist()
-                }
-            } else {
-                // Try to select the first available playlist
-                self.selectFirstAvailablePlaylist()
+        // checkSubscriptionStatus { // Temporarily commented out
+        // After subscription status is updated
+        print("PlayListViewController: viewWillAppear - subscription check bypassed.")
+        if let lastSelectedIndex = self.lastSelectedYearIndex {
+            self.playlistTableView.scrollToRow(at: lastSelectedIndex, at: .middle, animated: false)
+            self.playlistImagesCollectionView.reloadData()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.playlistTableView.selectRow(at: lastSelectedIndex, animated: false, scrollPosition: .none)
+                self.selectedPlaylistIndex = lastSelectedIndex.row
+                self.updateUIForSelectedPlaylist()
             }
+        } else {
+            // Try to select the first available playlist
+            self.selectFirstAvailablePlaylist()
         }
+        // } // End of commented out checkSubscriptionStatus completion
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -170,29 +166,37 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     // MARK: - Subscription Management
 
     private func checkSubscriptionStatus(completion: (() -> Void)? = nil) {
-        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
-            guard let self = self else { return }
+        // Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in // Temporarily commented out
+        //     guard let self = self else { return }
 
-            if let customerInfo = customerInfo {
-                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
-                if !activeEntitlements.isEmpty {
-                    self.isSubscribed = true
-                } else {
-                    self.isSubscribed = false
-                }
-            } else if let error = error {
-                print("Error fetching customer info: \(error.localizedDescription)")
-            }
-            DispatchQueue.main.async {
-                completion?()
-            }
+        //     if let customerInfo = customerInfo {
+        //         let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
+        //         if !activeEntitlements.isEmpty {
+        //             self.isSubscribed = true
+        //         } else {
+        //             self.isSubscribed = false
+        //         }
+        //     } else if let error = error {
+        //         print("Error fetching customer info: \(error.localizedDescription)")
+        //     }
+        //     DispatchQueue.main.async {
+        //         completion?()
+        //     }
+        // }
+        print("PlayListViewController: checkSubscriptionStatus called - Bypassed, assuming subscribed.")
+        isSubscribed = true // Assume subscribed
+        DispatchQueue.main.async {
+            completion?()
         }
     }
 
     @objc private func subscriptionStatusChanged() {
-        checkSubscriptionStatus {
-            self.updateUIForSelectedPlaylist()
-        }
+        // checkSubscriptionStatus { // Temporarily commented out
+        //     self.updateUIForSelectedPlaylist()
+        // }
+        print("PlayListViewController: subscriptionStatusChanged called - Bypassed.")
+        isSubscribed = true // Assume subscribed
+        self.updateUIForSelectedPlaylist()
     }
 
     private func updateUIForSelectedPlaylist() {
@@ -210,7 +214,8 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private func selectFirstAvailablePlaylist() {
         // Try to select the first unlocked playlist
         for (index, playlist) in playlists.enumerated() {
-            if isSubscribed || !(playlist.fields.isLocked ?? false) {
+            // if isSubscribed || !(playlist.fields.isLocked ?? false) { // Original logic
+            if true { // Simplified for debugging: assume all playlists are available
                 selectedPlaylistIndex = index
                 lastSelectedYearIndex = IndexPath(row: index, section: 0)
                 lastFocusedYearIndexPath = lastSelectedYearIndex // Update the last focused year index path
@@ -287,144 +292,116 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
 
     // MARK: - Video Playback
 
-    // Helper method to get video with fixed patterns to avoid the hostname.split error
-    private func getVideoWithFixedPatterns(videoIdentifier: String, completion: @escaping (XCDYouTubeVideo?, Error?) -> Void) {
-        XCDYouTubeClient.default().getVideoWithIdentifier(
-            videoIdentifier, 
-            cookies: nil, 
-            customPatterns: safeCustomPatterns, 
-            completionHandler: completion
-        )
-    }
+    // This is the method for playing a single video, which can be kept or removed if not used directly.
+    // func playSingleVideoWithYouTubeKit(videoIdentifier: String) { ... current playVideoWithYouTubeKit logic ... }
 
+    // New method to play a playlist of videos sequentially using YouTubeKit
     func playVideoPlaylist(videoIdentifiers: [String], currentIndex: Int = 0) {
         guard currentIndex < videoIdentifiers.count else {
+            print("🌟 PlayListViewController: Playlist finished - all videos played")
             return
         }
-        
-        let loadingIndicator = UIActivityIndicatorView(style: .large)
-        loadingIndicator.color = .white
-        loadingIndicator.center = view.center
-        view.addSubview(loadingIndicator)
-        loadingIndicator.startAnimating()
-        
+
+        let currentVideoIdentifier = videoIdentifiers[currentIndex]
+        guard !currentVideoIdentifier.isEmpty else {
+            print("🌟 PlayListViewController: Empty video ID at index \(currentIndex), skipping.")
+            // Skip to next video
+            self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+            return
+        }
+
+        print("🌟 PlayListViewController: Starting playlist video \(currentIndex + 1)/\(videoIdentifiers.count) - ID: \(currentVideoIdentifier) using YouTubeKit")
+
+        let loadingIndicatorView = UIActivityIndicatorView(style: .large)
+        loadingIndicatorView.color = .white
+        loadingIndicatorView.center = self.view.center
+        self.view.addSubview(loadingIndicatorView)
+        loadingIndicatorView.startAnimating()
+
         let playerViewController = AVPlayerViewController()
         playerViewController.delegate = self
-        
-        let currentVideoIdentifier = videoIdentifiers[currentIndex]
-        
-        print("Starting YouTube video playback for ID: \(currentVideoIdentifier)")
-        
-        // Use our local method instead of the extension
-        getVideoWithFixedPatterns(videoIdentifier: currentVideoIdentifier) { [weak self, playerViewController] (video: XCDYouTubeVideo?, error: Error?) in
-            loadingIndicator.stopAnimating()
-            loadingIndicator.removeFromSuperview()
+        playerViewController.modalPresentationStyle = .fullScreen
 
-            if let error = error {
-                print("YouTube playback error: \(error.localizedDescription)")
-                if let nsError = error as NSError? {
-                    print("Error domain: \(nsError.domain), code: \(nsError.code)")
-                    print("Error details: \(nsError.userInfo)")
-                }
-                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
-                return
+        Task { @MainActor in
+            defer {
+                loadingIndicatorView.stopAnimating()
+                loadingIndicatorView.removeFromSuperview()
             }
-            
-            guard let video = video else {
-                print("YouTube video object is nil but no error reported")
-                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
-                return
-            }
-            
-            print("Got video with title: \(video.title)")
-            print("Stream URLs available: \(video.streamURLs.keys)")
-            
-            let streamURLs = video.streamURLs
-            if let streamURL = (streamURLs[XCDYouTubeVideoQualityHTTPLiveStreaming] ??
-                                streamURLs[YouTubeVideoQuality.hd720] ??
-                                streamURLs[YouTubeVideoQuality.medium360] ??
-                                streamURLs[YouTubeVideoQuality.small240]) {
+            do {
+                let youtube = YouTube(videoID: currentVideoIdentifier)
+                let streams = try await youtube.streams
                 
-                print("Selected stream URL: \(streamURL)")
+                var streamURL: URL? = streams
+                    .filterVideoAndAudio()
+                    .filter { $0.isNativelyPlayable }
+                    .highestResolutionStream()?
+                    .url
+                
+                if streamURL == nil {
+                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
+                }
 
-                DispatchQueue.main.async {
-                    let avPlayer = AVPlayer(url: streamURL)
+                if let finalStreamURL = streamURL {
+                    print("🌟 PlayListViewController (Playlist): YouTubeKit Stream URL: \(finalStreamURL) for video ID: \(currentVideoIdentifier)")
+                    let avPlayer = AVPlayer(url: finalStreamURL)
                     playerViewController.player = avPlayer
-                    self?.present(playerViewController, animated: true) {
+
+                    self.present(playerViewController, animated: true) {
                         avPlayer.play()
-                        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem, queue: nil) { [weak self] _ in
-                            playerViewController.dismiss(animated: true) {
+
+                        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem, queue: .main) { [weak self, weak playerViewController] _ in
+                            NotificationCenter.default.removeObserver(self as Any, name: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem)
+
+                            playerViewController?.dismiss(animated: true) {
                                 self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                             }
                         }
                     }
+                } else {
+                    print("🚫 PlayListViewController (Playlist): YouTubeKit - finalStreamURL is nil for video ID \(currentVideoIdentifier)")
+                    // Show an alert and skip to the next video
+                    let alert = UIAlertController(title: "Playback Error", message: "Could not load video stream for playlist item (URL is nil).", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                        self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                    }))
+                    self.present(alert, animated: true, completion: nil)
                 }
-            } else {
-                print("No suitable stream URL found")
-                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
-                return
+            } catch {
+                print("🌟 YouTubeKit playback error for video ID \(currentVideoIdentifier): \(error.localizedDescription)")
+                // Skip to next video on error
+                self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
             }
         }
     }
 
-    func playVideo(videoIdentifier: String?) {
-        guard let videoIdentifier = videoIdentifier else { return }
-        
-        let playerViewController = AVPlayerViewController()
-        playerViewController.delegate = self
-        
-        print("Starting single YouTube video playback for ID: \(videoIdentifier)")
+    // The method previously named playVideoWithYouTubeKit can be removed if playVideoPlaylist covers all needs,
+    // or renamed if it serves a distinct purpose for single video play.
+    // For now, I'll assume playVideoPlaylist is the primary method to be called from didSelectItemAt.
+    // The old playVideoWithYouTubeKit method is effectively replaced by the logic within playVideoPlaylist.
 
-        DispatchQueue.main.async {
-            self.present(playerViewController, animated: true, completion: nil)
+    func playVideo(videoIdentifier: String?) {
+        // Check subscription status before playing
+        print("Play video starts")
+        // requireSubscription(on: self) { [weak self] isSubscribed in // Temporarily commented out
+        //     guard let self = self, isSubscribed else {
+        //         // Handle not subscribed case if necessary, perhaps by returning or showing a message
+        //         return
+        //     }
+            
+        //     guard let videoIdentifier = videoIdentifier, !videoIdentifier.isEmpty else {
+        //         print("Video identifier is nil or empty.")
+        //         // Handle invalid video identifier, perhaps show an alert
+        //         return
+        //     }
+            
+        //     self.playVideoPlaylist(videoIdentifiers: [videoIdentifier], currentIndex: 0)
+        // }
+        print("PlayListViewController: playVideo - Bypassing requireSubscription.")
+        guard let videoIdentifier = videoIdentifier, !videoIdentifier.isEmpty else {
+            print("Video identifier is nil or empty.")
+            return
         }
-        
-        // Use our local method instead of the extension
-        getVideoWithFixedPatterns(videoIdentifier: videoIdentifier) { [weak playerViewController] (video: XCDYouTubeVideo?, error: Error?) in
-            if let error = error {
-                print("YouTube playback error: \(error.localizedDescription)")
-                if let nsError = error as NSError? {
-                    print("Error domain: \(nsError.domain), code: \(nsError.code)")
-                    print("Error details: \(nsError.userInfo)")
-                }
-                DispatchQueue.main.async {
-                    self.dismiss(animated: true, completion: nil)
-                }
-                return
-            }
-            
-            guard let video = video else {
-                print("YouTube video object is nil but no error reported")
-                DispatchQueue.main.async {
-                    self.dismiss(animated: true, completion: nil)
-                }
-                return
-            }
-            
-            print("Got video with title: \(video.title)")
-            
-            let streamURLs = video.streamURLs
-            if let streamURL = (streamURLs[XCDYouTubeVideoQualityHTTPLiveStreaming] ??
-                                streamURLs[YouTubeVideoQuality.hd720] ??
-                                streamURLs[YouTubeVideoQuality.medium360] ??
-                                streamURLs[YouTubeVideoQuality.small240]) {
-                
-                print("Selected stream URL: \(streamURL)")
-                
-                DispatchQueue.main.async {
-                    playerViewController?.player?.automaticallyWaitsToMinimizeStalling = false
-                    let avPlayer = AVPlayer(url: streamURL)
-                    playerViewController?.player = avPlayer
-                    avPlayer.play()
-                }
-            } else {
-                print("No suitable stream URL found")
-                DispatchQueue.main.async {
-                    self.dismiss(animated: true, completion: nil)
-                }
-            }
-        }
-        print("Play video ends")
+        self.playVideoPlaylist(videoIdentifiers: [videoIdentifier], currentIndex: 0)
     }
 }
 
@@ -535,26 +512,43 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if let previouslySelectedIndexPath = collectionView.indexPathsForSelectedItems?.first {
-            if let previouslySelectedCell = collectionView.cellForItem(at: previouslySelectedIndexPath) as? PlaylistImageCell {
-                previouslySelectedCell.transform = CGAffineTransform.identity
-                previouslySelectedCell.backgroundColor = .clear
-            }
-        }
+        // Store last focused index path for videos
+        lastFocusedVideoIndexPath = indexPath
 
-        guard let selectedPlaylistIndex = selectedPlaylistIndex, selectedPlaylistIndex < playlists.count else {
-            return
-        }
+        if collectionView == playlistImagesCollectionView {
+            guard let selectedPlaylistIndex = selectedPlaylistIndex, selectedPlaylistIndex < playlists.count else { return }
+            let playlist = playlists[selectedPlaylistIndex]
+            let videoIndexInVisible = indexPath.item // Index in the currently visible (and potentially filtered) set of videos
 
-        requireSubscription(on: self) { [weak self] isSubscribed in
-            guard let self = self, isSubscribed else { return }
-            let videoURL = self.playlists[selectedPlaylistIndex].fields.videoUrls?[self.visibleVideoIndices[indexPath.item]]
-            if self.extractYouTubeVideoID(from: videoURL ?? "") != nil {
-                let playlist = self.generatePlaylistFromSelectedVideo(selectedIndexPath: indexPath)
-                self.playVideoPlaylist(videoIdentifiers: playlist)
-            } else {
-                print("Invalid YouTube video URL \(String(describing: videoURL))")
+            // Ensure videoIndexInVisible is valid for visibleVideoIndices
+            guard videoIndexInVisible < visibleVideoIndices.count else {
+                print("Error: videoIndexInVisible is out of bounds for visibleVideoIndices.")
+                return
             }
+            let actualVideoIndex = visibleVideoIndices[videoIndexInVisible] // Actual index in the full video list for the playlist
+
+            // Use mtvVideos which should contain the YouTube video IDs
+            guard let allVideoIds = playlist.fields.mtvVideos, !allVideoIds.isEmpty else {
+                print("Error: No video IDs found in playlist.fields.mtvVideos.")
+                return
+            }
+
+            // Ensure actualVideoIndex is valid for allVideoIds
+            guard actualVideoIndex < allVideoIds.count else {
+                print("Error: actualVideoIndex is out of bounds for allVideoIds.")
+                return
+            }
+
+            // Temporarily commented out subscription check
+            // requireSubscription(on: self) { [weak self] isSubscribed in
+            //     guard let self = self, isSubscribed else { return }
+            //
+            //     // Play the whole playlist starting from the selected video
+            //     self.playVideoPlaylist(videoIdentifiers: allVideoIds, currentIndex: actualVideoIndex)
+            // }
+            print("PlayListViewController: collectionView.didSelectItemAt - Bypassing requireSubscription.")
+            // Play the whole playlist starting from the selected video
+            self.playVideoPlaylist(videoIdentifiers: allVideoIds, currentIndex: actualVideoIndex)
         }
     }
 

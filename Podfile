@@ -6,8 +6,8 @@ target 'MTV Music Videos' do
   use_frameworks!
 
   # Pods for MTV Music Videos
-pod 'RevenueCat'
-pod 'XCDYouTubeKit'
+  # pod 'RevenueCat' # Temporarily commented out for debugging YouTubeKit
+  # pod 'XCDYouTubeKit' # Replaced with YouTubeKit
 
   target 'MTV Music VideosTests' do
     inherit! :search_paths
@@ -19,4 +19,3 @@ pod 'XCDYouTubeKit'
   end
 
 end
-q

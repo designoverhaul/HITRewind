@@ -1,8 +1,8 @@
 import Foundation
 import UIKit
-import RevenueCat
+// import RevenueCat // Temporarily commented out
 
-class PurchasesViewController: UIViewController, PurchasesDelegate {
+class PurchasesViewController: UIViewController /*, PurchasesDelegate // Temporarily commented out */ {
 
     private var monthlyButton: UIButton!
     private var yearlyButton: UIButton!
@@ -26,10 +26,12 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         } else {
             view.backgroundColor = .black
         }
-        Purchases.shared.delegate = self
+        // Purchases.shared.delegate = self // Temporarily commented out
+        print("PurchasesViewController: RevenueCat delegate assignment bypassed.")
         setupUI()
-        fetchOfferings()
-        fetchCustomerInfo()
+        // fetchOfferings() // Temporarily commented out
+        // fetchCustomerInfo() // Temporarily commented out
+        print("PurchasesViewController: RevenueCat fetchOfferings and fetchCustomerInfo bypassed.")
     }
 
     private func setupUI() {
@@ -189,11 +191,13 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     @objc private func monthlyButtonTapped() {
-        purchaseSubscription(identifier: "monthlyUnlock")
+        // purchaseSubscription(identifier: "monthlyUnlock") // Temporarily commented out
+        print("PurchasesViewController: monthlyButtonTapped - Purchase bypassed.")
     }
 
     @objc private func yearlyButtonTapped() {
-        purchaseSubscription(identifier: "yearlyUnlock")
+        // purchaseSubscription(identifier: "yearlyUnlock") // Temporarily commented out
+        print("PurchasesViewController: yearlyButtonTapped - Purchase bypassed.")
     }
 
     @objc private func noThanksButtonTapped() {
@@ -202,123 +206,164 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     @objc private func weeklyButtonTapped() {
-        purchaseSubscription(identifier: "weeklyunlocked")
+        // purchaseSubscription(identifier: "weeklyunlocked") // Temporarily commented out
+        print("PurchasesViewController: weeklyButtonTapped - Purchase bypassed.")
     }
 
     private func fetchOfferings() {
-        print("DEBUG: Starting to fetch offerings")
-        Purchases.shared.getOfferings { [weak self] (offerings, error) in
-            if let error = error {
-                print("DEBUG: Error fetching offerings:", error)
-                self?.showAlert(title: "Error", message: error.localizedDescription)
-            } else if let offerings = offerings {
-                print("DEBUG: All offerings:", offerings.all)
-                print("DEBUG: Current offering identifier:", offerings.current?.identifier ?? "none")
-                print("DEBUG: Available packages:", offerings.current?.availablePackages.map { $0.identifier } ?? [])
-                if let currentOffering = offerings.current {
-                    DispatchQueue.main.async {
-                        self?.displayOffering(offering: currentOffering)
-                    }
-                } else {
-                    print("DEBUG: No current offering available")
-                }
-            } else {
-                print("DEBUG: No offerings available at all")
-                self?.showAlert(title: "No Offerings", message: "No offerings are currently available.")
-            }
-        }
+        print("DEBUG: Starting to fetch offerings - Currently Bypassed")
+        // Purchases.shared.getOfferings { [weak self] (offerings, error) in
+        //     if let error = error {
+        //         print("DEBUG: Error fetching offerings:", error)
+        //         self?.showAlert(title: "Error", message: error.localizedDescription)
+        //     } else if let offerings = offerings {
+        //         print("DEBUG: All offerings:", offerings.all)
+        //         print("DEBUG: Current offering identifier:", offerings.current?.identifier ?? "none")
+        //         print("DEBUG: Available packages:", offerings.current?.availablePackages.map { $0.identifier } ?? [])
+        //         if let currentOffering = offerings.current {
+        //             DispatchQueue.main.async {
+        //                 self?.displayOffering(offering: currentOffering)
+        //             }
+        //         } else {
+        //             print("DEBUG: No current offering available")
+        //         }
+        //     } else {
+        //         print("DEBUG: No offerings available at all")
+        //         self?.showAlert(title: "No Offerings", message: "No offerings are currently available.")
+        //     }
+        // }
     }
 
-    private func displayOffering(offering: Offering) {
-        // Find weekly, monthly, and yearly packages by product identifier
-        let weeklyPackage = offering.availablePackages.first { $0.storeProduct.productIdentifier == "weeklyunlocked" }
-        let monthlyPackage = offering.availablePackages.first { $0.storeProduct.productIdentifier == "monthlyUnlock" }
-        let yearlyPackage = offering.availablePackages.first { $0.storeProduct.productIdentifier == "yearlyUnlock" }
-        
-        // Update weekly button
-        if let weeklyPackage = weeklyPackage {
-            let currencyCode = weeklyPackage.storeProduct.currencyCode ?? "$"
-            let formattedPrice = (currencyCode == "USD") ? "$\(weeklyPackage.storeProduct.price)" : "\(currencyCode) \(weeklyPackage.storeProduct.price)"
-            weeklyButton.setTitle("Weekly - \(formattedPrice)/week", for: .normal)
-        }
-        
-        // Update monthly button
-        if let monthlyPackage = monthlyPackage {
-            let currencyCode = monthlyPackage.storeProduct.currencyCode ?? "$"
-            let formattedPrice = (currencyCode == "USD") ? "$\(monthlyPackage.storeProduct.price)" : "\(currencyCode) \(monthlyPackage.storeProduct.price)"
-            monthlyButton.setTitle("Monthly - \(formattedPrice)/month", for: .normal)
-        }
-        
-        // Update yearly button
-        if let yearlyPackage = yearlyPackage {
-            let currencyCode = yearlyPackage.storeProduct.currencyCode ?? "$"
-            let formattedPrice = (currencyCode == "USD") ? "$\(yearlyPackage.storeProduct.price)" : "\(currencyCode) \(yearlyPackage.storeProduct.price)"
-            yearlyButton.setTitle("Yearly - \(formattedPrice)/year (Save 30%)", for: .normal)
-        }
+    // private func displayOffering(offering: Offering) { // Temporarily commented out, depends on RevenueCat.Offering
+    private func displayOffering() { // Stubbed displayOffering
+        print("PurchasesViewController: displayOffering called - Prices will be static for now.")
+        // Static button titles as RevenueCat is disabled
+        weeklyButton.setTitle("Weekly - Price N/A", for: .normal)
+        monthlyButton.setTitle("Monthly - Price N/A", for: .normal)
+        yearlyButton.setTitle("Yearly - Price N/A", for: .normal)
+
+        // // Find weekly, monthly, and yearly packages by product identifier
+        // let weeklyPackage = offering.availablePackages.first { $0.storeProduct.productIdentifier == "weeklyunlocked" }
+        // let monthlyPackage = offering.availablePackages.first { $0.storeProduct.productIdentifier == "monthlyUnlock" }
+        // let yearlyPackage = offering.availablePackages.first { $0.storeProduct.productIdentifier == "yearlyUnlock" }
+        // 
+        // // Update weekly button
+        // if let weeklyPackage = weeklyPackage {
+        //     let currencyCode = weeklyPackage.storeProduct.currencyCode ?? "$"
+        //     let formattedPrice = (currencyCode == "USD") ? "$\(weeklyPackage.storeProduct.price)" : "\(currencyCode) \(weeklyPackage.storeProduct.price)"
+        //     weeklyButton.setTitle("Weekly - \(formattedPrice)/week", for: .normal)
+        // }
+        // 
+        // // Update monthly button
+        // if let monthlyPackage = monthlyPackage {
+        //     let currencyCode = monthlyPackage.storeProduct.currencyCode ?? "$"
+        //     let formattedPrice = (currencyCode == "USD") ? "$\(monthlyPackage.storeProduct.price)" : "\(currencyCode) \(monthlyPackage.storeProduct.price)"
+        //     monthlyButton.setTitle("Monthly - \(formattedPrice)/month", for: .normal)
+        // }
+        // 
+        // // Update yearly button
+        // if let yearlyPackage = yearlyPackage {
+        //     let currencyCode = yearlyPackage.storeProduct.currencyCode ?? "$"
+        //     let formattedPrice = (currencyCode == "USD") ? "$\(yearlyPackage.storeProduct.price)" : "\(currencyCode) \(yearlyPackage.storeProduct.price)"
+        //     let isSubscribedYearly = // Logic to check if subscribed to yearly
+        //     if isSubscribedYearly {
+        //         yearlyButton.setTitle("Subscribed (Yearly)", for: .normal)
+        //         yearlyButton.isEnabled = false // Disable if already subscribed
+        //     } else {
+        //         yearlyButton.setTitle("Yearly - \(formattedPrice)/year (Save 30%)", for: .normal)
+        //     }
+        // }
     }
 
     private func purchaseSubscription(identifier: String) {
-        print("DEBUG: Starting purchase for identifier:", identifier)
-        Purchases.shared.getOfferings { [weak self] (offerings, error) in
-            if let error = error {
-                print("DEBUG: Error getting offerings for purchase:", error)
-                self?.showAlert(title: "Error", message: error.localizedDescription)
-                return
-            }
-            
-            print("DEBUG: Purchase - All offerings:", offerings?.all ?? [:])
-            print("DEBUG: Purchase - Current offering:", offerings?.current?.identifier ?? "none")
-            print("DEBUG: Purchase - Available packages:", offerings?.current?.availablePackages.map { $0.storeProduct.productIdentifier } ?? [])
-            
-            guard let offerings = offerings,
-                  let currentOffering = offerings.current,
-                  let package = currentOffering.availablePackages.first(where: { $0.storeProduct.productIdentifier == identifier }) else {
-                print("DEBUG: Purchase - Failed to find package. Offerings nil:", offerings == nil)
-                print("DEBUG: Purchase - Current offering nil:", offerings?.current == nil)
-                print("DEBUG: Purchase - Package not found in:", offerings?.current?.availablePackages.map { $0.storeProduct.productIdentifier } ?? [])
-                self?.showAlert(title: "Error", message: "Selected subscription package not found")
-                return
-            }
-
-            print("DEBUG: Found package:", package.identifier, "proceeding with purchase")
-            Purchases.shared.purchase(package: package) { (transaction, customerInfo, error, userCancelled) in
-                if let error = error {
-                    print("DEBUG: Purchase failed with error:", error)
-                    self?.showAlert(title: "Purchase Failed", message: error.localizedDescription)
-                } else if userCancelled {
-                    print("DEBUG: Purchase cancelled by user")
-                    self?.showAlert(title: "Purchase Cancelled", message: "You cancelled the purchase.")
-                } else if customerInfo != nil {
-                    print("DEBUG: Purchase successful")
-                    NotificationCenter.default.post(name: Notification.Name("SubscriptionStatusChanged"), object: nil)
-                    self?.showAlert(title: "Purchase Successful", message: "Thank you for your purchase!")
-                    self?.dismiss(animated: true, completion: nil)
-                }
-            }
-        }
+        print("DEBUG: purchaseSubscription called with identifier: \(identifier) - Currently Bypassed")
+        // Purchases.shared.getOfferings { (offerings, error) in
+        //     guard let offerings = offerings, error == nil else {
+        //         self.showAlert(title: "Error", message: "Could not fetch offerings: \(error?.localizedDescription ?? "Unknown error")")
+        //         return
+        //     }
+        //     // Find the package with the matching identifier
+        //     let packageToPurchase = offerings.all.values.flatMap { $0.availablePackages }.first { $0.storeProduct.productIdentifier == identifier }
+        //     guard let package = packageToPurchase else {
+        //         self.showAlert(title: "Error", message: "Package not found for identifier: \(identifier)")
+        //         return
+        //     }
+        //     // Purchase the package
+        //     Purchases.shared.purchase(package: package) { (transaction, customerInfo, error, userCancelled) in
+        //         if let error = error {
+        //             print("DEBUG: Purchase error: \(error.localizedDescription)")
+        //             self.showAlert(title: "Error", message: error.localizedDescription)
+        //         } else if let customerInfo = customerInfo, customerInfo.entitlements.all.values.contains(where: { $0.isActive }) {
+        //             print("DEBUG: Purchase successful. Entitlements: \(customerInfo.entitlements.all.values.filter { $0.isActive }.map { $0.identifier })")
+        //             NotificationCenter.default.post(name: Notification.Name("SubscriptionStatusChanged"), object: nil)
+        //             self.dismiss(animated: true, completion: nil)
+        //         } else if userCancelled {
+        //             print("DEBUG: User cancelled the purchase process.")
+        //         } else {
+        //             print("DEBUG: Purchase failed for unknown reason or no active entitlements.")
+        //             self.showAlert(title: "Purchase Failed", message: "The purchase could not be completed or no entitlements were activated.")
+        //         }
+        //     }
+        // }
     }
 
     private func fetchCustomerInfo() {
-        Purchases.shared.getCustomerInfo { (customerInfo, error) in
-            if let error = error {
-                self.showAlert(title: "Error", message: error.localizedDescription)
-            } else if let customerInfo = customerInfo {
-                print("Customer info fetched: \(customerInfo)")
-            }
-        }
+        print("DEBUG: Starting to fetch customer info - Currently Bypassed")
+        // Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
+        //     if let error = error {
+        //         print("DEBUG: Error fetching customer info:", error)
+        //     } else if let customerInfo = customerInfo {
+        //         print("DEBUG: Customer info:", customerInfo)
+        //         // Update UI based on subscription status
+        //         self?.updateUIBasedOnSubscription(customerInfo: customerInfo)
+        //     }
+        // }
+    }
+    
+    // private func updateUIBasedOnSubscription(customerInfo: CustomerInfo) { // Temporarily commented out
+    private func updateUIBasedOnSubscription() { // Stubbed version
+        print("PurchasesViewController: updateUIBasedOnSubscription called - UI will not reflect actual subscription status.")
+        // // Check if subscribed to yearly
+        // let isSubscribedYearly = customerInfo.entitlements["YearlyAccess"]?.isActive == true
+        // if isSubscribedYearly {
+        //     yearlyButton.setTitle("Subscribed (Yearly)", for: .normal)
+        //     yearlyButton.isEnabled = false
+        // } else {
+        //     // Reset yearly button title if not subscribed to yearly, relying on displayOffering to set price
+        //     // This might need to be re-fetched if prices are dynamic
+        // }
+        // // Similarly for monthly and weekly if needed
     }
 
-    func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
-        print("Customer info updated: \(customerInfo)")
-    }
+    // PurchasesDelegate methods (Temporarily commented out)
+    // func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
+    //     print("DEBUG: Delegate received updated customer info:", customerInfo)
+    //     DispatchQueue.main.async {
+    //         self.updateUIBasedOnSubscription(customerInfo: customerInfo)
+    //     }
+    // }
 
     private func showAlert(title: String, message: String) {
-        DispatchQueue.main.async {
-            let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-            self.present(alertController, animated: true, completion: nil)
-        }
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
     }
+}
+
+// Placeholder for PurchasesDelegate if needed for compilation, but methods are bypassed.
+extension PurchasesViewController { // Removed ": PurchasesDelegate"
+    // Keep the delegate conformance commented or removed if not strictly needed for build
+    // If other parts of the class structure expect this conformance, provide stub implementations or comment them.
+    // For now, assuming the class will build without explicit conformance if methods are commented.
+
+    // Example of how you might add stubs if the protocol conformance was mandatory for some reason
+    // and you couldn't just remove it:
+    // func purchases(_ purchases: Any, receivedUpdated customerInfo: Any) {
+    //     print("Stub: receivedUpdated customerInfo bypassed.")
+    // }
+    // func purchases(_ purchases: Any, readyForPromotedProduct product: Any, purchase startPurchase: @escaping (Any) -> Void) {
+    //     print("Stub: readyForPromotedProduct bypassed.")
+    // }
 }
 
 

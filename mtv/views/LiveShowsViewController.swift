@@ -1,20 +1,14 @@
-#error("This is the LiveShowsViewController being compiled!")
+// #error("This is the LiveShowsViewController being compiled!") // Removed for debugging
 
 import UIKit
-import XCDYouTubeKit
+// import XCDYouTubeKit // Removed
+import YouTubeKit // Added
 import AVKit
-import RevenueCat
+// import RevenueCat // Temporarily commented out
 
 class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate {
     
     // MARK: - Properties
-    
-    // Custom patterns to work around window.location.hostname.split error
-    private let safeCustomPatterns = [
-        "\\b[cs]\\s*&&\\s*[adf]\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\(",
-        "\\b[a-zA-Z0-9]+\\s*&&\\s*[a-zA-Z0-9]+\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\(",
-        "(?:\\b|[^a-zA-Z0-9$])([a-zA-Z0-9$]{2})\\s*=\\s*function\\(\\s*a\\s*\\)\\s*\\{\\s*a\\s*=\\s*a\\.split\\(\\s*\"\"\\s*\\)"
-    ]
     
     // Custom colors
     private let purpleColor = UIColor(red: 167/255, green: 137/255, blue: 253/255, alpha: 1.0)  // #A789FD
@@ -24,7 +18,7 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     private var selectedArtistIndex: Int?
     private var visibleVideoIndices: [Int] = []
     private var lastSelectedArtistIndex: IndexPath?
-    private var isSubscribed: Bool = false
+    private var isSubscribed: Bool = true // Assume subscribed for debugging
     
     // Store last focused index paths
     private var lastFocusedArtistIndexPath: IndexPath?
@@ -43,10 +37,11 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
         setupUI()
         showLoadingIndicator()
         fetchArtists()
-        checkSubscriptionStatus()
+        // checkSubscriptionStatus() // Temporarily commented out
+        print("LiveShowsViewController: checkSubscriptionStatus bypassed.")
         
         // Add observer for subscription status change
-        NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil)
+        // NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil) // Temporarily commented out
         
         print("LiveShowsViewController loaded. Delegate is: \(String(describing: artistVideosCollectionView.delegate))")
     }
@@ -58,8 +53,10 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        checkSubscriptionStatus {
+        // checkSubscriptionStatus { // Temporarily commented out
             // After subscription status is updated
+            print("LiveShowsViewController: viewWillAppear - subscription check bypassed.")
+            isSubscribed = true // Assume subscribed
             if let lastSelectedIndex = self.lastSelectedArtistIndex {
                 self.artistTableView.scrollToRow(at: lastSelectedIndex, at: .middle, animated: false)
                 self.artistVideosCollectionView.reloadData()
@@ -72,7 +69,7 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
                 // Try to select the first available artist
                 self.selectFirstAvailableArtist()
             }
-        }
+        // } // End of commented out checkSubscriptionStatus completion
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -219,33 +216,48 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     // MARK: - Subscription Management
     
     private func checkSubscriptionStatus(completion: (() -> Void)? = nil) {
-        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
-            guard let self = self else { return }
-            if let customerInfo = customerInfo {
-                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
-                self.isSubscribed = !activeEntitlements.isEmpty
-                DispatchQueue.main.async {
-                    self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
-                    self.purchaseButton.isEnabled = !self.isSubscribed
-                    completion?()
-                }
-            } else {
-                self.isSubscribed = false
-                DispatchQueue.main.async {
-                    self.purchaseButton.setTitle("🔓 Unlock All Music", for: .normal)
-                    self.purchaseButton.isEnabled = true
-                    completion?()
-                }
-            }
+        // Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in // Temporarily commented out
+        //     guard let self = self else { return }
+        //     if let customerInfo = customerInfo {
+        //         let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
+        //         self.isSubscribed = !activeEntitlements.isEmpty
+        //         DispatchQueue.main.async {
+        //             self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
+        //             self.purchaseButton.isEnabled = !self.isSubscribed
+        //             completion?()
+        //         }
+        //     } else {
+        //         self.isSubscribed = false
+        //         DispatchQueue.main.async {
+        //             self.purchaseButton.setTitle("🔓 Unlock All Music", for: .normal)
+        //             self.purchaseButton.isEnabled = true
+        //             completion?()
+        //         }
+        //     }
+        // }
+        print("LiveShowsViewController: checkSubscriptionStatus called - Bypassed, assuming subscribed.")
+        isSubscribed = true // Assume subscribed
+        DispatchQueue.main.async {
+            self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
+            self.purchaseButton.isEnabled = !self.isSubscribed
+            completion?()
         }
     }
     
     @objc private func subscriptionStatusChanged() {
-        checkSubscriptionStatus {
-            DispatchQueue.main.async {
-                self.artistTableView.reloadData()
-                self.updateUIForSelectedArtist()
-            }
+        // checkSubscriptionStatus { // Temporarily commented out
+        //     DispatchQueue.main.async {
+        //         self.artistTableView.reloadData()
+        //         self.updateUIForSelectedArtist()
+        //     }
+        // }
+        print("LiveShowsViewController: subscriptionStatusChanged called - Bypassed.")
+        isSubscribed = true // Assume subscribed
+        DispatchQueue.main.async {
+            self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
+            self.purchaseButton.isEnabled = !self.isSubscribed
+            self.artistTableView.reloadData()
+            self.updateUIForSelectedArtist()
         }
     }
     
@@ -265,8 +277,8 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
         print("LiveShowsViewController: Attempting to select first available artist from \(artists.count) artists")
         // Try to select the first unlocked artist
         for (index, artist) in artists.enumerated() {
-            print("LiveShowsViewController: Checking artist at index \(index): \(artist.fields.title), isLocked: \(artist.fields.isLocked ?? false)")
-            if isSubscribed || !(artist.fields.isLocked ?? false) {
+            // if isSubscribed || !(artist.fields.isLocked ?? false) { // Original logic
+            if true { // Simplified for debugging: assume all artists are available
                 print("LiveShowsViewController: Selected artist at index \(index): \(artist.fields.title)")
                 selectedArtistIndex = index
                 lastSelectedArtistIndex = IndexPath(row: index, section: 0)
@@ -285,12 +297,13 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     }
     
     @objc private func navigateToPurchases() {
-        // Save the currently focused index paths before navigating to the payment screen
-        lastSelectedArtistIndex = artistTableView.indexPathForSelectedRow
-        
-        let purchasesViewController = PurchasesViewController()
-        purchasesViewController.modalPresentationStyle = .fullScreen
-        present(purchasesViewController, animated: true, completion: nil)
+        // let purchasesViewController = PurchasesViewController() // Temporarily commented out
+        // purchasesViewController.modalPresentationStyle = .fullScreen
+        // present(purchasesViewController, animated: true, completion: nil)
+        print("LiveShowsViewController: navigateToPurchases called - Bypassed.")
+        let alert = UIAlertController(title: "Temporarily Disabled", message: "Access to the subscription screen is temporarily disabled for debugging.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
     }
     
     // MARK: - Data Fetching
@@ -376,119 +389,115 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     
     // MARK: - Video Playback
     
-    // Helper method to get video with fixed patterns to avoid the hostname.split error
-    private func getVideoWithFixedPatterns(videoIdentifier: String, completion: @escaping (XCDYouTubeVideo?, Error?) -> Void) {
-        XCDYouTubeClient.default().getVideoWithIdentifier(
-            videoIdentifier, 
-            cookies: nil, 
-            customPatterns: safeCustomPatterns, 
-            completionHandler: completion
-        )
+    // Refactored: This method now only fetches the stream URL and uses a completion handler.
+    // It no longer presents the AVPlayerViewController itself.
+    private func getVideoWithFixedPatterns(videoIdentifier: String, completion: @escaping (URL?) -> Void) {
+        print("LiveShowsViewController: getVideoWithFixedPatterns called for ID: \(videoIdentifier) - Using YouTubeKit")
+        Task { @MainActor in
+            do {
+                let video = YouTube(videoID: videoIdentifier)
+                let streams = try await video.streams
+                var streamURL: URL? = streams
+                    .filterVideoAndAudio()
+                    .filter { $0.isNativelyPlayable }
+                    .highestResolutionStream()?
+                    .url
+                
+                if streamURL == nil { // Fallback
+                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
+                }
+
+                if let finalStreamURL = streamURL {
+                    print("🌟 LiveShowsViewController: YouTubeKit Stream URL: \(finalStreamURL) for video ID: \(videoIdentifier)")
+                    completion(finalStreamURL)
+                } else {
+                    print("🚫 LiveShowsViewController: YouTubeKit - finalStreamURL is nil for video ID: \(videoIdentifier)")
+                    completion(nil)
+                }
+            } catch {
+                print("YouTubeKit playback error for video ID \(videoIdentifier): \(error.localizedDescription)")
+                completion(nil)
+            }
+        }
     }
-    
+
+    // MARK: - Video Playback (Single Video)
+    func playVideo(videoIdentifier: String) {
+        showLoadingIndicator() // Show loading indicator when starting video playback
+        getVideoWithFixedPatterns(videoIdentifier: videoIdentifier) { [weak self] videoURL in
+            DispatchQueue.main.async {
+                self?.hideLoadingIndicator() // Hide loading indicator once URL is fetched (or fails)
+                guard let self = self else { return }
+                
+                guard let url = videoURL else {
+                    print("🚫 LiveShowsViewController: No video URL found for identifier \(videoIdentifier) after fetching.")
+                    let alert = UIAlertController(title: "Playback Error", message: "Could not load video. Please try again later.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                    return
+                }
+                
+                print("LiveShowsViewController: Presenting player for single video ID: \(videoIdentifier)")
+                let playerViewController = AVPlayerViewController()
+                playerViewController.delegate = self
+                playerViewController.modalPresentationStyle = .fullScreen // Set before presenting
+                let player = AVPlayer(url: url)
+                playerViewController.player = player
+                self.present(playerViewController, animated: true) {
+                    print("✅ LiveShowsViewController: AVPlayerViewController presented for video ID: \(videoIdentifier)")
+                    player.play()
+                    print("▶️ LiveShowsViewController: avPlayer.play() called for video ID: \(videoIdentifier)")
+                }
+            }
+        }
+    }
+
+    // MARK: - Playlist Playback
     func playVideoPlaylist(videoIdentifiers: [String], currentIndex: Int = 0) {
         guard currentIndex < videoIdentifiers.count else {
+            print("LiveShowsViewController: Playlist finished - all videos played")
             return
         }
         
-        let loadingIndicator = UIActivityIndicatorView(style: .large)
-        loadingIndicator.color = .white
-        loadingIndicator.center = view.center
-        view.addSubview(loadingIndicator)
-        loadingIndicator.startAnimating()
-        
-        let playerViewController = AVPlayerViewController()
-        playerViewController.delegate = self
-        
         let currentVideoIdentifier = videoIdentifiers[currentIndex]
-        
-        print("Starting YouTube video playback for ID: \(currentVideoIdentifier)")
-        
-        // Use our local method instead of the extension
-        getVideoWithFixedPatterns(videoIdentifier: currentVideoIdentifier) { [weak self, playerViewController] (video: XCDYouTubeVideo?, error: Error?) in
+        print("LiveShowsViewController: Playing video \(currentIndex + 1)/\(videoIdentifiers.count) from playlist: \(currentVideoIdentifier)")
+
+        showLoadingIndicator() // Show loading indicator for each video in playlist
+
+        getVideoWithFixedPatterns(videoIdentifier: currentVideoIdentifier) { [weak self] videoURL in
             DispatchQueue.main.async {
-                loadingIndicator.stopAnimating()
-                loadingIndicator.removeFromSuperview()
-            }
-            
-            if let error = error {
-                print("YouTube playback error: \(error.localizedDescription)")
-                if let nsError = error as NSError? {
-                    print("Error domain: \(nsError.domain), code: \(nsError.code)")
-                    print("Error details: \(nsError.userInfo)")
+                self?.hideLoadingIndicator() // Hide loading indicator for each video
+                guard let self = self else { return }
+                
+                guard let url = videoURL else {
+                    print("🚫 LiveShowsViewController: No video URL found for identifier \(currentVideoIdentifier) in playlist. Skipping.")
+                    // Show an alert and skip to the next video
+                    let alert = UIAlertController(title: "Playback Error", message: "Could not load video for \(currentVideoIdentifier) in playlist. Skipping to next.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                        self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                    }))
+                    self.present(alert, animated: true, completion: nil)
+                    return
                 }
-                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
-                return
-            }
-            
-            guard let video = video else {
-                print("YouTube video object is nil but no error reported")
-                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
-                return
-            }
-            
-            print("Got video with title: \(video.title)")
-            print("Stream URLs available: \(video.streamURLs.keys)")
-            
-            let streamURLs = video.streamURLs
-            guard let streamURL = (streamURLs[XCDYouTubeVideoQualityHTTPLiveStreaming] ??
-                                   streamURLs[YouTubeVideoQuality.hd720] ??
-                                   streamURLs[YouTubeVideoQuality.medium360] ??
-                                   streamURLs[YouTubeVideoQuality.small240]) else {
-                print("No suitable stream URL quality found")
-                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
-                return
-            }
-            
-            print("Selected stream URL: \(streamURL)")
-            
-            DispatchQueue.main.async {
-                let avPlayer = AVPlayer(url: streamURL)
-                playerViewController.player = avPlayer
-                self?.present(playerViewController, animated: true) {
-                    avPlayer.play()
-                    NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem, queue: nil) { [weak self] _ in
-                        playerViewController.dismiss(animated: true) {
+
+                print("LiveShowsViewController: Presenting player for playlist video ID: \(currentVideoIdentifier)")
+                let playerViewController = AVPlayerViewController()
+                playerViewController.delegate = self
+                playerViewController.modalPresentationStyle = .fullScreen // Set before presenting
+                let player = AVPlayer(url: url)
+                playerViewController.player = player
+                self.present(playerViewController, animated: true) {
+                    print("✅ LiveShowsViewController (Playlist): AVPlayerViewController presented for video ID: \(currentVideoIdentifier)")
+                    player.play()
+                    print("▶️ LiveShowsViewController (Playlist): avPlayer.play() called for video ID: \(currentVideoIdentifier)")
+                    
+                    NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main) { [weak self, weak playerViewController] _ in
+                        NotificationCenter.default.removeObserver(self as Any, name: .AVPlayerItemDidPlayToEndTime, object: player.currentItem)
+                        
+                        playerViewController?.dismiss(animated: true) {
                             self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                         }
                     }
-                }
-            }
-        }
-    }
-    
-    func playVideo(videoIdentifier: String?) {
-        let playerViewController = AVPlayerViewController()
-        playerViewController.delegate = self
-        
-        DispatchQueue.main.async {
-            self.present(playerViewController, animated: true, completion: nil)
-        }
-        
-        // We should use the fixed pattern method here too
-        getVideoWithFixedPatterns(videoIdentifier: videoIdentifier ?? "") { [weak playerViewController] (video: XCDYouTubeVideo?, error: Error?) in
-            guard let video = video else {
-                DispatchQueue.main.async {
-                    self.dismiss(animated: true, completion: nil)
-                }
-                return
-            }
-            
-            let streamURLs = video.streamURLs
-            if let streamURL = (streamURLs[XCDYouTubeVideoQualityHTTPLiveStreaming] ??
-                                streamURLs[YouTubeVideoQuality.hd720] ??
-                                streamURLs[YouTubeVideoQuality.medium360] ??
-                                streamURLs[YouTubeVideoQuality.small240]) {
-                
-                DispatchQueue.main.async {
-                    playerViewController?.player?.automaticallyWaitsToMinimizeStalling = false
-                    let avPlayer = AVPlayer(url: streamURL)
-                    playerViewController?.player = avPlayer
-                    avPlayer.play()
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.dismiss(animated: true, completion: nil)
                 }
             }
         }
@@ -631,19 +640,32 @@ extension LiveShowsViewController: UICollectionViewDataSource, UICollectionViewD
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print("LiveShowsViewController: didSelectItemAt CALLED")
-        if let previouslySelectedIndexPath = collectionView.indexPathsForSelectedItems?.first {
-            if let previouslySelectedCell = collectionView.cellForItem(at: previouslySelectedIndexPath) as? PlaylistImageCell {
-                previouslySelectedCell.transform = CGAffineTransform.identity
-                previouslySelectedCell.backgroundColor = .clear
-            }
-        }
+        lastFocusedVideoIndexPath = indexPath // Store last focused video
+        
+        if collectionView == artistVideosCollectionView {
+            guard let selectedArtistIndex = selectedArtistIndex else { return }
+            let artist = artists[selectedArtistIndex]
+            let videoIndex = visibleVideoIndices[indexPath.item]
+            let video = artist.fields.videos[videoIndex]
+            let videoId = video.fields.video_id
 
-        requireSubscription(on: self) { isSubscribed in
-            if isSubscribed {
-                // Play video
+            // requireSubscription(on: self) { [weak self] isSubscribed in // Temporarily commented out
+            //     guard let self = self, isSubscribed else { return }
+            //     if artist.fields.isPlaylist ?? false {
+            //         let allVideoIds = artist.fields.videos.map { $0.fields.video_id }
+            //         let currentVideoIndexInPlaylist = allVideoIds.firstIndex(of: videoId) ?? 0
+            //         self.playVideoPlaylist(videoIdentifiers: allVideoIds, currentIndex: currentVideoIndexInPlaylist)
+            //     } else {
+            //         self.playVideo(videoIdentifier: videoId)
+            //     }
+            // }
+            print("LiveShowsViewController: collectionView.didSelectItemAt - Bypassing requireSubscription.")
+            if artist.fields.isPlaylist ?? false {
+                let allVideoIds = artist.fields.videos.map { $0.fields.video_id }
+                let currentVideoIndexInPlaylist = allVideoIds.firstIndex(of: videoId) ?? 0
+                self.playVideoPlaylist(videoIdentifiers: allVideoIds, currentIndex: currentVideoIndexInPlaylist)
             } else {
-                // Paywall will be shown by requireSubscription
+                self.playVideo(videoIdentifier: videoId)
             }
         }
     }

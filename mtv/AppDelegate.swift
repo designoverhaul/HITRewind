@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import RevenueCat
+// import RevenueCat // Temporarily commented out
 
 
 
@@ -17,8 +17,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        Purchases.configure(withAPIKey: "appl_goRXxhJHqIfrgGhdFgBXrSiPTMZ")
-        print("In app subscription configured")
+        // Purchases.configure(withAPIKey: "appl_goRXxhJHqIfrgGhdFgBXrSiPTMZ") // Temporarily commented out
+        // print("In app subscription configured") // Temporarily commented out
+        // print("RevenueCat configuration temporarily bypassed for debugging.")
+
+        // --- Start of added code for DebugPlayerViewController ---
+        // window = UIWindow(frame: UIScreen.main.bounds)
+
+        // let debugVC = DebugPlayerViewController()
+        // If you want a navigation bar for the debug view (optional, usually not needed for this simple test):
+        // let navigationController = UINavigationController(rootViewController: debugVC)
+        // window?.rootViewController = navigationController
+        
+        // Directly set DebugPlayerViewController as root:
+        // window?.rootViewController = debugVC
+
+        // window?.makeKeyAndVisible()
+        // --- End of added code for DebugPlayerViewController ---
+
         return true
     }
 
