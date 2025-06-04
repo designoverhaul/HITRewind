@@ -239,10 +239,40 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             switch result {
             case .success(let playlists):
                 self.playlists = playlists
+                
+                // DEBUG: Log video IDs for each playlist to see what data we have
+                for (playlistIndex, playlist) in playlists.enumerated() {
+                    print("🎵 DEBUG PlayList \(playlistIndex): \(playlist.fields.title) (Year: \(playlist.fields.year))")
+                    if let videoIds = playlist.fields.mtvVideos {
+                        print("   📹 Total video entries: \(videoIds.count)")
+                        let validVideoIds = videoIds.filter { !$0.isEmpty }
+                        let emptyVideoIds = videoIds.filter { $0.isEmpty }
+                        print("   ✅ Valid video IDs: \(validVideoIds.count)")
+                        print("   ❌ Empty video IDs: \(emptyVideoIds.count)")
+                        
+                        // Show first few valid video IDs as examples
+                        for (index, videoId) in videoIds.prefix(10).enumerated() {
+                            if !videoId.isEmpty {
+                                print("   ✅ Index \(index): \(videoId)")
+                            } else {
+                                print("   ❌ Index \(index): (empty)")
+                            }
+                        }
+                        if videoIds.count > 10 {
+                            let remainingValid = videoIds.dropFirst(10).filter { !$0.isEmpty }.count
+                            let remainingEmpty = videoIds.dropFirst(10).filter { $0.isEmpty }.count
+                            print("   ... and \(videoIds.count - 10) more entries (\(remainingValid) valid, \(remainingEmpty) empty)")
+                        }
+                    } else {
+                        print("   ❌ No mtvVideos field found")
+                    }
+                }
+                
                 DispatchQueue.main.async {
                     self.playlistTableView.reloadData()
+                    self.playlistImagesCollectionView.reloadData()
                     self.hideLoadingIndicator()
-
+                    
                     if !self.playlists.isEmpty {
                         // Automatically select the first available playlist if no selection has been made before
                         if self.selectedPlaylistIndex == nil {
@@ -254,7 +284,9 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                 }
             case .failure(let error):
                 print("Error fetching playlists: \(error)")
-                self.hideLoadingIndicator()
+                DispatchQueue.main.async {
+                    self.hideLoadingIndicator()
+                }
             }
         }
     }
@@ -303,14 +335,16 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         }
 
         let currentVideoIdentifier = videoIdentifiers[currentIndex]
-        guard !currentVideoIdentifier.isEmpty else {
-            print("🌟 PlayListViewController: Empty video ID at index \(currentIndex), skipping.")
+        guard !currentVideoIdentifier.isEmpty, currentVideoIdentifier != "placeholderVideoID" else { // Added check for placeholder
+            print("🌟 PlayListViewController: Empty or placeholder video ID ('\(currentVideoIdentifier)') at index \(currentIndex), skipping.")
             // Skip to next video
-            self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+            DispatchQueue.main.async {
+                self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+            }
             return
         }
 
-        print("🌟 PlayListViewController: Starting playlist video \(currentIndex + 1)/\(videoIdentifiers.count) - ID: \(currentVideoIdentifier) using YouTubeKit")
+        print("🌟 PlayListViewController: Requesting stream from YouTubePlayerService for ID: \(currentVideoIdentifier)")
 
         let loadingIndicatorView = UIActivityIndicatorView(style: .large)
         loadingIndicatorView.color = .white
@@ -322,54 +356,35 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         playerViewController.delegate = self
         playerViewController.modalPresentationStyle = .fullScreen
 
-        Task { @MainActor in
-            defer {
+        YouTubePlayerService.shared.getPlayableStreamURL(for: currentVideoIdentifier) { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
                 loadingIndicatorView.stopAnimating()
                 loadingIndicatorView.removeFromSuperview()
-            }
-            do {
-                let youtube = YouTube(videoID: currentVideoIdentifier)
-                let streams = try await youtube.streams
-                
-                var streamURL: URL? = streams
-                    .filterVideoAndAudio()
-                    .filter { $0.isNativelyPlayable }
-                    .highestResolutionStream()?
-                    .url
-                
-                if streamURL == nil {
-                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
-                }
 
-                if let finalStreamURL = streamURL {
-                    print("🌟 PlayListViewController (Playlist): YouTubeKit Stream URL: \(finalStreamURL) for video ID: \(currentVideoIdentifier)")
-                    let avPlayer = AVPlayer(url: finalStreamURL)
+                switch result {
+                case .success(let streamURL):
+                    print("🌟 PlayListViewController (Playlist): YouTubePlayerService returned URL: \(streamURL) for video ID: \(currentVideoIdentifier)")
+                    let avPlayer = AVPlayer(url: streamURL)
                     playerViewController.player = avPlayer
 
                     self.present(playerViewController, animated: true) {
                         avPlayer.play()
-
                         NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem, queue: .main) { [weak self, weak playerViewController] _ in
                             NotificationCenter.default.removeObserver(self as Any, name: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem)
-
                             playerViewController?.dismiss(animated: true) {
                                 self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                             }
                         }
                     }
-                } else {
-                    print("🚫 PlayListViewController (Playlist): YouTubeKit - finalStreamURL is nil for video ID \(currentVideoIdentifier)")
-                    // Show an alert and skip to the next video
-                    let alert = UIAlertController(title: "Playback Error", message: "Could not load video stream for playlist item (URL is nil).", preferredStyle: .alert)
+                case .failure(let error):
+                    print("🚫 PlayListViewController (Playlist): YouTubePlayerService failed for video ID \(currentVideoIdentifier). Error: \(error.localizedDescription)")
+                    let alert = UIAlertController(title: "Playback Error", message: "Video \(currentVideoIdentifier) is unplayable: \(error.localizedDescription). Skipping to next.", preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
                         self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                     }))
                     self.present(alert, animated: true, completion: nil)
                 }
-            } catch {
-                print("🌟 YouTubeKit playback error for video ID \(currentVideoIdentifier): \(error.localizedDescription)")
-                // Skip to next video on error
-                self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
             }
         }
     }
@@ -538,17 +553,17 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
                 print("Error: actualVideoIndex is out of bounds for allVideoIds.")
                 return
             }
+            
+            // Get the specific video ID for the selected video
+            let selectedVideoId = allVideoIds[actualVideoIndex]
+            guard !selectedVideoId.isEmpty else {
+                print("PlayListViewController: Selected video has empty ID at index \(actualVideoIndex), skipping.")
+                return
+            }
 
-            // Temporarily commented out subscription check
-            // requireSubscription(on: self) { [weak self] isSubscribed in
-            //     guard let self = self, isSubscribed else { return }
-            //
-            //     // Play the whole playlist starting from the selected video
-            //     self.playVideoPlaylist(videoIdentifiers: allVideoIds, currentIndex: actualVideoIndex)
-            // }
             print("PlayListViewController: collectionView.didSelectItemAt - Bypassing requireSubscription.")
-            // Play the whole playlist starting from the selected video
-            self.playVideoPlaylist(videoIdentifiers: allVideoIds, currentIndex: actualVideoIndex)
+            // Play only the selected single video instead of the entire playlist
+            self.playVideoPlaylist(videoIdentifiers: [selectedVideoId], currentIndex: 0)
         }
     }
 

@@ -391,62 +391,38 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     
     // Refactored: This method now only fetches the stream URL and uses a completion handler.
     // It no longer presents the AVPlayerViewController itself.
-    private func getVideoWithFixedPatterns(videoIdentifier: String, completion: @escaping (URL?) -> Void) {
-        print("LiveShowsViewController: getVideoWithFixedPatterns called for ID: \(videoIdentifier) - Using YouTubeKit")
-        Task { @MainActor in
-            do {
-                let video = YouTube(videoID: videoIdentifier)
-                let streams = try await video.streams
-                var streamURL: URL? = streams
-                    .filterVideoAndAudio()
-                    .filter { $0.isNativelyPlayable }
-                    .highestResolutionStream()?
-                    .url
-                
-                if streamURL == nil { // Fallback
-                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
-                }
-
-                if let finalStreamURL = streamURL {
-                    print("🌟 LiveShowsViewController: YouTubeKit Stream URL: \(finalStreamURL) for video ID: \(videoIdentifier)")
-                    completion(finalStreamURL)
-                } else {
-                    print("🚫 LiveShowsViewController: YouTubeKit - finalStreamURL is nil for video ID: \(videoIdentifier)")
-                    completion(nil)
-                }
-            } catch {
-                print("YouTubeKit playback error for video ID \(videoIdentifier): \(error.localizedDescription)")
-                completion(nil)
-            }
-        }
+    // Updated completion to return Result<URL, YouTubePlayerError> for better error handling
+    private func getVideoWithFixedPatterns(videoIdentifier: String, completion: @escaping (Result<URL, YouTubePlayerError>) -> Void) {
+        print("LiveShowsViewController: Requesting stream from YouTubePlayerService for ID: \(videoIdentifier)")
+        YouTubePlayerService.shared.getPlayableStreamURL(for: videoIdentifier, completion: completion)
     }
 
     // MARK: - Video Playback (Single Video)
     func playVideo(videoIdentifier: String) {
         showLoadingIndicator() // Show loading indicator when starting video playback
-        getVideoWithFixedPatterns(videoIdentifier: videoIdentifier) { [weak self] videoURL in
+        getVideoWithFixedPatterns(videoIdentifier: videoIdentifier) { [weak self] result in
             DispatchQueue.main.async {
                 self?.hideLoadingIndicator() // Hide loading indicator once URL is fetched (or fails)
                 guard let self = self else { return }
                 
-                guard let url = videoURL else {
-                    print("🚫 LiveShowsViewController: No video URL found for identifier \(videoIdentifier) after fetching.")
-                    let alert = UIAlertController(title: "Playback Error", message: "Could not load video. Please try again later.", preferredStyle: .alert)
+                switch result {
+                case .success(let url):
+                    print("LiveShowsViewController: Presenting player for single video ID: \(videoIdentifier) with URL: \(url)")
+                    let playerViewController = AVPlayerViewController()
+                    playerViewController.delegate = self
+                    playerViewController.modalPresentationStyle = .fullScreen // Set before presenting
+                    let player = AVPlayer(url: url)
+                    playerViewController.player = player
+                    self.present(playerViewController, animated: true) {
+                        print("✅ LiveShowsViewController: AVPlayerViewController presented for video ID: \(videoIdentifier)")
+                        player.play()
+                        print("▶️ LiveShowsViewController: avPlayer.play() called for video ID: \(videoIdentifier)")
+                    }
+                case .failure(let error):
+                    print("🚫 LiveShowsViewController: No video URL found for identifier \(videoIdentifier) after fetching. Error: \(error.localizedDescription)")
+                    let alert = UIAlertController(title: "Playback Error", message: error.localizedDescription, preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
                     self.present(alert, animated: true, completion: nil)
-                    return
-                }
-                
-                print("LiveShowsViewController: Presenting player for single video ID: \(videoIdentifier)")
-                let playerViewController = AVPlayerViewController()
-                playerViewController.delegate = self
-                playerViewController.modalPresentationStyle = .fullScreen // Set before presenting
-                let player = AVPlayer(url: url)
-                playerViewController.player = player
-                self.present(playerViewController, animated: true) {
-                    print("✅ LiveShowsViewController: AVPlayerViewController presented for video ID: \(videoIdentifier)")
-                    player.play()
-                    print("▶️ LiveShowsViewController: avPlayer.play() called for video ID: \(videoIdentifier)")
                 }
             }
         }
@@ -464,40 +440,39 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
 
         showLoadingIndicator() // Show loading indicator for each video in playlist
 
-        getVideoWithFixedPatterns(videoIdentifier: currentVideoIdentifier) { [weak self] videoURL in
+        getVideoWithFixedPatterns(videoIdentifier: currentVideoIdentifier) { [weak self] result in
             DispatchQueue.main.async {
                 self?.hideLoadingIndicator() // Hide loading indicator for each video
                 guard let self = self else { return }
                 
-                guard let url = videoURL else {
-                    print("🚫 LiveShowsViewController: No video URL found for identifier \(currentVideoIdentifier) in playlist. Skipping.")
-                    // Show an alert and skip to the next video
-                    let alert = UIAlertController(title: "Playback Error", message: "Could not load video for \(currentVideoIdentifier) in playlist. Skipping to next.", preferredStyle: .alert)
+                switch result {
+                case .success(let url):
+                    print("LiveShowsViewController: Presenting player for playlist video ID: \(currentVideoIdentifier) with URL: \(url)")
+                    let playerViewController = AVPlayerViewController()
+                    playerViewController.delegate = self
+                    playerViewController.modalPresentationStyle = .fullScreen // Set before presenting
+                    let player = AVPlayer(url: url)
+                    playerViewController.player = player
+                    self.present(playerViewController, animated: true) {
+                        print("✅ LiveShowsViewController (Playlist): AVPlayerViewController presented for video ID: \(currentVideoIdentifier)")
+                        player.play()
+                        print("▶️ LiveShowsViewController (Playlist): avPlayer.play() called for video ID: \(currentVideoIdentifier)")
+                        
+                        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main) { [weak self, weak playerViewController] _ in
+                            NotificationCenter.default.removeObserver(self as Any, name: .AVPlayerItemDidPlayToEndTime, object: player.currentItem)
+                            
+                            playerViewController?.dismiss(animated: true) {
+                                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                            }
+                        }
+                    }
+                case .failure(let error):
+                    print("🚫 LiveShowsViewController: No video URL found for identifier \(currentVideoIdentifier) in playlist. Error: \(error.localizedDescription). Skipping.")
+                    let alert = UIAlertController(title: "Playback Error", message: "Video \(currentVideoIdentifier) is unplayable: \(error.localizedDescription). Skipping to next.", preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
                         self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                     }))
                     self.present(alert, animated: true, completion: nil)
-                    return
-                }
-
-                print("LiveShowsViewController: Presenting player for playlist video ID: \(currentVideoIdentifier)")
-                let playerViewController = AVPlayerViewController()
-                playerViewController.delegate = self
-                playerViewController.modalPresentationStyle = .fullScreen // Set before presenting
-                let player = AVPlayer(url: url)
-                playerViewController.player = player
-                self.present(playerViewController, animated: true) {
-                    print("✅ LiveShowsViewController (Playlist): AVPlayerViewController presented for video ID: \(currentVideoIdentifier)")
-                    player.play()
-                    print("▶️ LiveShowsViewController (Playlist): avPlayer.play() called for video ID: \(currentVideoIdentifier)")
-                    
-                    NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main) { [weak self, weak playerViewController] _ in
-                        NotificationCenter.default.removeObserver(self as Any, name: .AVPlayerItemDidPlayToEndTime, object: player.currentItem)
-                        
-                        playerViewController?.dismiss(animated: true) {
-                            self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
-                        }
-                    }
                 }
             }
         }

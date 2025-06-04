@@ -232,7 +232,7 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
             return
         }
 
-        print("SearchViewController (views): Attempting to play video with ID: \(videoId) using YouTubeKit")
+        print("SearchViewController: Requesting stream from YouTubePlayerService for ID: \(videoId)")
         let loadingIndicatorView = UIActivityIndicatorView(style: .large)
         loadingIndicatorView.color = .white
         loadingIndicatorView.center = self.view.center
@@ -243,39 +243,24 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         playerViewController.delegate = self
         playerViewController.modalPresentationStyle = .fullScreen
 
-        Task { @MainActor in
-            defer {
+        YouTubePlayerService.shared.getPlayableStreamURL(for: videoId) { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
                 loadingIndicatorView.stopAnimating()
                 loadingIndicatorView.removeFromSuperview()
-            }
-            do {
-                let youtube = YouTube(videoID: videoId)
-                let streams = try await youtube.streams
-                
-                var streamURL: URL? = streams
-                    .filterVideoAndAudio()
-                    .filter { $0.isNativelyPlayable }
-                    .highestResolutionStream()?
-                    .url
-                
-                if streamURL == nil { // Fallback
-                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
-                }
 
-                if let finalStreamURL = streamURL {
-                    print("🌟 SearchViewController: YouTubeKit Stream URL: \(finalStreamURL)")
-                    let avPlayer = AVPlayer(url: finalStreamURL)
+                switch result {
+                case .success(let streamURL):
+                    print("SearchViewController: YouTubePlayerService returned URL: \(streamURL) for video ID: \(videoId)")
+                    let avPlayer = AVPlayer(url: streamURL)
                     playerViewController.player = avPlayer
                     self.present(playerViewController, animated: true) {
                         avPlayer.play()
                     }
-                } else {
-                    print("🚫 SearchViewController: YouTubeKit - finalStreamURL is nil for video ID: \(videoId)")
-                    self.showErrorAlert(message: "Failed to load video stream (URL is nil).")
+                case .failure(let error):
+                    print("🚫 SearchViewController: YouTubePlayerService failed for video ID \(videoId). Error: \(error.localizedDescription)")
+                    self.showErrorAlert(message: error.localizedDescription)
                 }
-            } catch {
-                print("🌟 YouTubeKit playback error for video ID \(videoId): \(error.localizedDescription)")
-                self.showErrorAlert(message: "Failed to load video: \(error.localizedDescription)")
             }
         }
     }
@@ -401,55 +386,36 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         
         let currentVideoIdentifier = videoIdentifiers[currentIndex]
         
-        print("🌟 Starting playlist video \(currentIndex + 1)/\(videoIdentifiers.count) - ID: \(currentVideoIdentifier) using YouTubeKit")
+        print("SearchViewController (Playlist): Requesting stream from YouTubePlayerService for ID: \(currentVideoIdentifier)")
         
-        Task { @MainActor in
-            defer {
+        YouTubePlayerService.shared.getPlayableStreamURL(for: currentVideoIdentifier) { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
                 loadingIndicatorView.stopAnimating()
                 loadingIndicatorView.removeFromSuperview()
-            }
-            
-            do {
-                let video = YouTube(videoID: currentVideoIdentifier)
-                let streams = try await video.streams
-                
-                var streamURL: URL? = streams
-                    .filterVideoAndAudio()
-                    .filter { $0.isNativelyPlayable }
-                    .highestResolutionStream()?
-                    .url
 
-                if streamURL == nil {
-                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
-                }
-                
-                if let finalStreamURL = streamURL {
-                    print("🌟 SearchViewController (Playlist): YouTubeKit Stream URL for playlist video: \(finalStreamURL)")
-                    let avPlayer = AVPlayer(url: finalStreamURL)
+                switch result {
+                case .success(let streamURL):
+                    print("SearchViewController (Playlist): YouTubePlayerService returned URL: \(streamURL) for video ID: \(currentVideoIdentifier)")
+                    let avPlayer = AVPlayer(url: streamURL)
                     playerViewController.player = avPlayer
-                    
                     self.present(playerViewController, animated: true) {
                         avPlayer.play()
-                        
                         NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem, queue: .main) { [weak self, weak playerViewController] _ in
                             NotificationCenter.default.removeObserver(self as Any, name: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem)
-                            
                             playerViewController?.dismiss(animated: true) {
                                 self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                             }
                         }
                     }
-                } else {
-                    print("🚫 SearchViewController (Playlist): YouTubeKit - finalStreamURL is nil for video ID \(currentVideoIdentifier)")
-                    self.showErrorAlert(message: "Failed to load stream for video \(currentVideoIdentifier) (URL is nil).")
-                    // Skip to next video
-                    self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                case .failure(let error):
+                    print("🚫 SearchViewController (Playlist): YouTubePlayerService failed for video ID \(currentVideoIdentifier). Error: \(error.localizedDescription)")
+                    let alert = UIAlertController(title: "Playback Error", message: "Video \(currentVideoIdentifier) is unplayable: \(error.localizedDescription). Skipping to next.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { [weak self] _ in
+                        self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
+                    }))
+                    self.present(alert, animated: true, completion: nil)
                 }
-            } catch {
-                print("🌟 YouTubeKit playback error for video \(currentIndex + 1) (ID: \(currentVideoIdentifier)): \(error.localizedDescription)")
-                self.showErrorAlert(message: "Playback error for video \(currentVideoIdentifier): \(error.localizedDescription)")
-                // Skip to next video on error
-                self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
             }
         }
     }

@@ -340,6 +340,10 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     private func playSingleVideo(with url: String) {
         guard let videoId = extractVideoId(from: url) else {
             print("🌟 Invalid video URL: \(url)")
+            // Consider showing an alert for invalid video ID format here
+            let alert = UIAlertController(title: "Playback Error", message: "Invalid video URL format.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+            self.present(alert, animated: true, completion: nil)
             return
         }
         
@@ -353,90 +357,18 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         playerViewController.modalPresentationStyle = .fullScreen
         playerViewController.delegate = self
         
-        print("🌟 Starting YouTube video playback for ID: \(videoId) using YouTubeKit")
+        print("🌟 LegendaryShowsViewController: Requesting stream from YouTubePlayerService for ID: \(videoId)")
         
-        Task { @MainActor in // Use Task for async operation
-            defer {
+        YouTubePlayerService.shared.getPlayableStreamURL(for: videoId) { [weak self] result in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
                 loadingIndicator.stopAnimating()
                 loadingIndicator.removeFromSuperview()
-            }
-            
-            do {
-                let video = YouTube(videoID: videoId, methods: [.local, .remote])
                 
-                // Attempt to get HLS livestreams first (long shot for VOD)
-                var hlsStreamURL: URL? = nil
-                do {
-                    let liveStreams = try await video.livestreams
-                    if let hlsStream = liveStreams.filter({ $0.streamType == .hls }).first {
-                        hlsStreamURL = hlsStream.url
-                        print("🌟 Found HLS livestream URL: \(hlsStreamURL!)")
-                    }
-                } catch {
-                    print("ⓘ No HLS livestreams found or error fetching them for video ID \(videoId): \(error.localizedDescription)")
-                }
-
-                if let validHLSUrl = hlsStreamURL {
-                    print("🌟 Attempting to play HLS stream for video ID: \(videoId)")
-                    let avPlayer = AVPlayer(url: validHLSUrl)
-                    playerViewController.player = avPlayer
-                    self.present(playerViewController, animated: true) {
-                        print("✅ LegendaryShowsViewController: AVPlayerViewController presented for HLS video ID: \(videoId)")
-                        avPlayer.play()
-                    }
-                    return // Exit if HLS stream is played
-                }
-
-                // If no HLS stream, proceed with regular stream extraction
-                let allFetchedStreams = try await video.streams // Fetch all streams asynchronously
-
-                print("--- DEBUG: All streams returned by YouTubeKit for \(video.videoID ?? "Unknown VideoID") ---")
-                if allFetchedStreams.isEmpty {
-                    print("YouTubeKit returned no streams.")
-                } else {
-                    for (index, stream) in allFetchedStreams.enumerated() {
-                        let url = stream.url
-                        let isPlayable = stream.isNativelyPlayable
-                        // Check if this individual stream would be considered combined A/V by YouTubeKit's filter
-                        let isCombined = !([stream].filterVideoAndAudio().isEmpty)
-                        print("  Stream \(index): URL contains itag=\(url.absoluteString.components(separatedBy: "itag=").last?.components(separatedBy: "&").first ?? "N/A"), NativelyPlayable: \(isPlayable), Combined A/V: \(isCombined)")
-                    }
-                }
-                print("--- END DEBUG ---")
-                
-                let combinedAudioVideoStreams = allFetchedStreams.filterVideoAndAudio()
-                let playableCombinedStreams = combinedAudioVideoStreams.filter { $0.isNativelyPlayable }
-
-                var finalStream: YouTubeKit.Stream?
-                var selectedQualityDescription = "Unknown"
-
-                if !playableCombinedStreams.isEmpty {
-                    // Try for 720p from combined, playable streams
-                    if let first720pStream = playableCombinedStreams.streams(withExactResolution: 720).first {
-                        finalStream = first720pStream
-                        selectedQualityDescription = "720p (Combined A/V)"
-                    }
-                    // Else, try for 480p from combined, playable streams
-                    else if let first480pStream = playableCombinedStreams.streams(withExactResolution: 480).first {
-                        finalStream = first480pStream
-                        selectedQualityDescription = "480p (Combined A/V)"
-                    }
-                    // Else, try for 360p from combined, playable streams
-                    else if let first360pStream = playableCombinedStreams.streams(withExactResolution: 360).first {
-                        finalStream = first360pStream
-                        selectedQualityDescription = "360p (Combined A/V)"
-                    }
-                    // Else, take the lowest available resolution from combined, playable streams
-                    else if let lowestPlayableCombined = playableCombinedStreams.lowestResolutionStream() {
-                        finalStream = lowestPlayableCombined
-                        selectedQualityDescription = "Lowest Playable (Combined A/V)"
-                    }
-                }
-                // If playableCombinedStreams is empty, finalStream will remain nil here.
-
-                if let streamToPlay = finalStream {
-                    let streamURL = streamToPlay.url
-                    print("🌟 Selected \(selectedQualityDescription) stream. LegendaryShowsViewController: YouTubeKit Stream URL: \(streamURL) for video ID: \(videoId)")
+                switch result {
+                case .success(let streamURL):
+                    print("🌟 LegendaryShowsViewController: YouTubePlayerService returned URL: \(streamURL) for video ID: \(videoId)")
                     let avPlayer = AVPlayer(url: streamURL)
                     playerViewController.player = avPlayer
                     self.present(playerViewController, animated: true) {
@@ -444,19 +376,12 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                         avPlayer.play()
                         print("▶️ LegendaryShowsViewController: avPlayer.play() called for video ID: \(videoId)")
                     }
-                } else {
-                    // This 'else' block is now reached if no HLS stream was found AND no suitable combined A/V stream was found.
-                    print("🚫 LegendaryShowsViewController: YouTubeKit - Could not find a suitable combined audio/video stream for video ID: \(videoId)")
-                    let alert = UIAlertController(title: "Playback Unavailable", message: "This video is not available in a directly playable format (no combined audio/video stream found).", preferredStyle: .alert)
+                case .failure(let error):
+                    print("🚫 LegendaryShowsViewController: YouTubePlayerService failed for video ID \(videoId). Error: \(error.localizedDescription)")
+                    let alert = UIAlertController(title: "Playback Error", message: error.localizedDescription, preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
                     self.present(alert, animated: true, completion: nil)
                 }
-            } catch {
-                print("🚫 YouTubeKit failed to get streams for video ID \(videoId). Error: \(error)")
-                // Optionally, show an alert to the user
-                let alert = UIAlertController(title: "Playback Error", message: "Could not load video information: \(error.localizedDescription)", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                self.present(alert, animated: true, completion: nil)
             }
         }
     }
@@ -481,96 +406,18 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         
         let currentVideoIdentifier = videoIdentifiers[currentIndex]
         
-        print("🌟 Starting playlist video \(currentIndex + 1)/\(videoIdentifiers.count) - ID: \(currentVideoIdentifier) using YouTubeKit")
-        
-        Task { @MainActor in // Use Task for async operation
-            defer {
+        print("🌟 LegendaryShowsViewController (Playlist): Requesting stream from YouTubePlayerService for ID: \(currentVideoIdentifier)")
+
+        YouTubePlayerService.shared.getPlayableStreamURL(for: currentVideoIdentifier) { [weak self] result in
+            guard let self = self else { return }
+
+            DispatchQueue.main.async {
                 loadingIndicator.stopAnimating()
                 loadingIndicator.removeFromSuperview()
-            }
-            
-            do {
-                let video = YouTube(videoID: currentVideoIdentifier, methods: [.local, .remote])
-                
-                // Attempt to get HLS livestreams first (long shot for VOD)
-                var hlsStreamURL: URL? = nil
-                do {
-                    let liveStreams = try await video.livestreams
-                    if let hlsStream = liveStreams.filter({ $0.streamType == .hls }).first {
-                        hlsStreamURL = hlsStream.url
-                        print("🌟 Found HLS livestream URL: \(hlsStreamURL!) for playlist item: \(currentVideoIdentifier)")
-                    }
-                } catch {
-                     print("ⓘ No HLS livestreams found or error fetching them for playlist video ID \(currentVideoIdentifier): \(error.localizedDescription)")
-                }
 
-                if let validHLSUrl = hlsStreamURL {
-                    print("🌟 Attempting to play HLS stream for playlist video ID: \(currentVideoIdentifier)")
-                    let avPlayer = AVPlayer(url: validHLSUrl)
-                    playerViewController.player = avPlayer
-                    self.present(playerViewController, animated: true) { 
-                        print("✅ LegendaryShowsViewController (Playlist): AVPlayerViewController presented for HLS video ID: \(currentVideoIdentifier)")
-                        avPlayer.play()
-                        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem, queue: .main) { [weak self, weak playerViewController] _ in
-                            NotificationCenter.default.removeObserver(self as Any, name: .AVPlayerItemDidPlayToEndTime, object: avPlayer.currentItem)
-                            playerViewController?.dismiss(animated: true) {
-                                self?.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
-                            }
-                        }
-                    }
-                    return // Exit if HLS stream is played
-                }
-
-                // If no HLS stream, proceed with regular stream extraction
-                let allFetchedStreams = try await video.streams
-
-                print("--- DEBUG: All streams returned by YouTubeKit for playlist video \(video.videoID ?? "Unknown VideoID") ---")
-                 if allFetchedStreams.isEmpty {
-                    print("YouTubeKit returned no streams for playlist video.")
-                } else {
-                    for (index, stream) in allFetchedStreams.enumerated() {
-                        let url = stream.url
-                        let isPlayable = stream.isNativelyPlayable
-                        // Check if this individual stream would be considered combined A/V by YouTubeKit's filter
-                        let isCombined = !([stream].filterVideoAndAudio().isEmpty)
-                        print("  Stream \(index): URL contains itag=\(url.absoluteString.components(separatedBy: "itag=").last?.components(separatedBy: "&").first ?? "N/A"), NativelyPlayable: \(isPlayable), Combined A/V: \(isCombined)")
-                    }
-                }
-                print("--- END DEBUG ---")
-                
-                let combinedAudioVideoStreams = allFetchedStreams.filterVideoAndAudio()
-                let playableCombinedStreams = combinedAudioVideoStreams.filter { $0.isNativelyPlayable }
-
-                var finalStream: YouTubeKit.Stream?
-                var selectedQualityDescription = "Unknown"
-
-                if !playableCombinedStreams.isEmpty {
-                    // Try for 720p from combined, playable streams
-                    if let first720pStream = playableCombinedStreams.streams(withExactResolution: 720).first {
-                        finalStream = first720pStream
-                        selectedQualityDescription = "720p (Combined A/V)"
-                    }
-                    // Else, try for 480p from combined, playable streams
-                    else if let first480pStream = playableCombinedStreams.streams(withExactResolution: 480).first {
-                        finalStream = first480pStream
-                        selectedQualityDescription = "480p (Combined A/V)"
-                    }
-                    // Else, try for 360p from combined, playable streams
-                    else if let first360pStream = playableCombinedStreams.streams(withExactResolution: 360).first {
-                        finalStream = first360pStream
-                        selectedQualityDescription = "360p (Combined A/V)"
-                    }
-                    // Else, take the lowest available resolution from combined, playable streams
-                    else if let lowestPlayableCombined = playableCombinedStreams.lowestResolutionStream() {
-                        finalStream = lowestPlayableCombined
-                        selectedQualityDescription = "Lowest Playable (Combined A/V)"
-                    }
-                }
-                // If playableCombinedStreams is empty, finalStream will remain nil here.
-                
-                if let streamToPlay = finalStream {
-                    let streamURL = streamToPlay.url
-                    print("🌟 Selected \(selectedQualityDescription) stream. LegendaryShowsViewController (Playlist): YouTubeKit Stream URL: \(streamURL) for video ID: \(currentVideoIdentifier)")
+                switch result {
+                case .success(let streamURL):
+                    print("🌟 LegendaryShowsViewController (Playlist): YouTubePlayerService returned URL: \(streamURL) for video ID: \(currentVideoIdentifier)")
                     let avPlayer = AVPlayer(url: streamURL)
                     playerViewController.player = avPlayer
                     
@@ -586,24 +433,14 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                             }
                         }
                     }
-                } else {
-                    // This 'else' block is now reached if no HLS stream was found AND no suitable combined A/V stream was found for the playlist item.
-                    print("🚫 LegendaryShowsViewController (Playlist): YouTubeKit - Could not find a suitable combined audio/video stream for video ID: \(currentVideoIdentifier)")
-                    let alert = UIAlertController(title: "Playback Unavailable", message: "This video in the playlist is not available in a directly playable format (no combined audio/video stream found). Skipping to next.", preferredStyle: .alert)
+                case .failure(let error):
+                    print("🚫 LegendaryShowsViewController (Playlist): YouTubePlayerService failed for video ID \(currentVideoIdentifier). Error: \(error.localizedDescription)")
+                    let alert = UIAlertController(title: "Playback Error", message: "Video \(currentVideoIdentifier) is unplayable: \(error.localizedDescription). Skipping to next.", preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
                         self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
                     }))
                     self.present(alert, animated: true, completion: nil)
                 }
-            } catch {
-                print("🚫 YouTubeKit failed to get streams for video ID \(currentVideoIdentifier). Error: \(error)")
-                // Optionally, show an alert to the user
-                let alert = UIAlertController(title: "Playback Error", message: "Could not load video information for playlist item: \(error.localizedDescription)", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
-                    // Skip to next video if in a playlist context
-                    self.playVideoPlaylist(videoIdentifiers: videoIdentifiers, currentIndex: currentIndex + 1)
-                }))
-                self.present(alert, animated: true, completion: nil)
             }
         }
     }

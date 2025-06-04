@@ -158,8 +158,13 @@ func sortAndArrangePlaylists(apiKey: String, baseURLString: String, completion: 
                         let artistNames = playlists[playlistIndex].fields.artistNames ?? []
                         let isVisible = playlists[playlistIndex].fields.isVisible
 
+                        // Extract YouTube video IDs from videoUrls
+                        let extractedVideoIds = videoUrls.map { url in
+                            return extractYouTubeVideoID(from: url) ?? ""
+                        }
+
                         // Update the playlist fields with sorted data
-                        playlists[playlistIndex].fields.mtvVideos = sortedIndices.map { mtvVideos.indices.contains($0) ? mtvVideos[$0] : "" }
+                        playlists[playlistIndex].fields.mtvVideos = sortedIndices.map { extractedVideoIds.indices.contains($0) ? extractedVideoIds[$0] : "" }
                         playlists[playlistIndex].fields.videoUrls = sortedIndices.map { videoUrls.indices.contains($0) ? videoUrls[$0] : "" }
                         playlists[playlistIndex].fields.artistNames = sortedIndices.map { artistNames.indices.contains($0) ? artistNames[$0] : "" }
                         playlists[playlistIndex].fields.isVisible = sortedIndices.map { isVisible.indices.contains($0) ? isVisible[$0] ?? false : false }
