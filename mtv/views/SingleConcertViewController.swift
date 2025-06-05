@@ -1,5 +1,5 @@
 import UIKit
-import XCDYouTubeKit // For YouTube playback
+// import XCDYouTubeKit // No longer used, switched to YouTubePlayerService
 import AVKit // For AVPlayerViewController
 // No RevenueCat needed here directly unless checking subscription for individual videos
 
@@ -26,13 +26,13 @@ struct ConcertVideoResponse: Codable {
     let records: [ConcertVideo]
 }
 
-class SingleConcertViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, AVPlayerViewControllerDelegate {
-    var venueName: String! // To be set by presenting VC for the title
-    var artistName: String! // To be set by presenting VC
-    var concertRecordId: String! // To be set by presenting VC, used for fetching
-    var largeImageURL: String? // To be set by presenting VC for the hero background
-    var eventDescription: String? // To be set by presenting VC for the description
-    var eventYear: String? // To be set by presenting VC for the year
+@objc class SingleConcertViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, AVPlayerViewControllerDelegate {
+    @objc var venueName: String! // To be set by presenting VC for the title
+    @objc var artistName: String! // To be set by presenting VC
+    @objc var concertRecordId: String! // To be set by presenting VC, used for fetching
+    @objc var largeImageURL: String? // To be set by presenting VC for the hero background
+    @objc var eventDescription: String? // To be set by presenting VC for the description
+    @objc var eventYear: String? // To be set by presenting VC for the year
 
     var videos: [ConcertVideo] = []
 
@@ -133,12 +133,12 @@ class SingleConcertViewController: UIViewController, UICollectionViewDataSource,
         return indicator
     }()
     
-    // Custom patterns for XCDYouTubeKit
-    private let safeCustomPatterns = [
-        "\\b[cs]\\s*&&\\s*[adf]\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\(",
-        "\\b[a-zA-Z0-9]+\\s*&&\\s*[a-zA-Z0-9]+\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\(",
-        "(?:\\b|[^a-zA-Z0-9$])([a-zA-Z0-9$]{2})\\s*=\\s*function\\(\\s*a\\s*\\)\\s*\\{\\s*a\\s*=\\s*a\\.split\\(\\s*\"\"\\s*\\)"
-    ]
+    // Custom patterns for XCDYouTubeKit - NO LONGER NEEDED
+    // private let safeCustomPatterns = [
+    //     "\\b[cs]\\s*&&\\s*[adf]\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\((",
+    //     "\\b[a-zA-Z0-9]+\\s*&&\\s*[a-zA-Z0-9]+\\.set\\([^,]+\\s*,\\s*encodeURIComponent\\s*\\(\\s*([a-zA-Z0-9$]+)\\((",
+    //     "(?:\\b|[^a-zA-Z0-9$])([a-zA-Z0-9$]{2})\\s*=\\s*function\\(\\s*a\\s*\\)\\s*\\{\\s*a\\s*=\\s*a\\.split\\(\\s*\"\"\\s*\\)"
+    // ]
 
 
 
@@ -323,11 +323,11 @@ class SingleConcertViewController: UIViewController, UICollectionViewDataSource,
                     handled = true
                 } else {
                     print("🚀 DEBUG: ❌ No clear navigation path - attempting to find parent")
-                    // Try to find the tab bar controller and switch to Epic Shows tab
+                    // Try to find the tab bar controller and switch to Music Videos tab
                     if let tabBarController = findTabBarController() {
-                        print("🚀 DEBUG: Found tab bar controller - switching to Epic Shows tab")
+                        print("🚀 DEBUG: Found tab bar controller - switching to Music Videos tab")
                         DispatchQueue.main.async {
-                            tabBarController.selectedIndex = 0 // Epic Shows is at index 0
+                            tabBarController.selectedIndex = 1 // Music Videos is now at index 1
                         }
                         handled = true
                     }
@@ -904,100 +904,46 @@ class SingleConcertViewController: UIViewController, UICollectionViewDataSource,
         let playerViewController = AVPlayerViewController()
         playerViewController.delegate = self
         
-        // Show loading indicator for video
         let videoLoadingIndicator = UIActivityIndicatorView(style: .large)
         videoLoadingIndicator.color = .white
-        videoLoadingIndicator.center = view.center // Or playerViewController.view.center
-        view.addSubview(videoLoadingIndicator) // Add to main view or player view
+        videoLoadingIndicator.center = view.center
+        view.addSubview(videoLoadingIndicator)
         videoLoadingIndicator.startAnimating()
 
         let videoTitle = currentIndex < videos.count ? videos[currentIndex].videoTitle ?? "Unknown" : "Unknown"
-        print("🌟 Playing video \(currentIndex + 1)/\(videos.count): \(videoTitle)")
+        print("🌟 Playing video \(currentIndex + 1)/\(videos.count): \(videoTitle) using YouTubePlayerService")
 
-        XCDYouTubeClient.default().getVideoWithIdentifier(identifier, cookies: nil, customPatterns: safeCustomPatterns) {
-            [weak self, playerViewController, weak videoLoadingIndicator] (video: XCDYouTubeVideo?, error: Error?) in
-            
+        // Use YouTubePlayerService
+        YouTubePlayerService.shared.getPlayableStreamURL(for: identifier) { [weak self, playerViewController, weak videoLoadingIndicator] result in
             DispatchQueue.main.async {
                 videoLoadingIndicator?.stopAnimating()
                 videoLoadingIndicator?.removeFromSuperview()
             }
 
-            if let error = error {
-                print("🌟 YouTube playback error: \(error.localizedDescription)")
+            guard let strongSelf = self else { return }
+
+            switch result {
+            case .success(let streamURL):
+                print("🌟 YouTubePlayerService returned URL: \(streamURL) for video ID: \(identifier)")
                 DispatchQueue.main.async {
-                    // If current video fails, try to play next video automatically
-                    if let strongSelf = self, currentIndex < strongSelf.videos.count - 1 {
+                    let avPlayer = AVPlayer(url: streamURL)
+                    playerViewController.player = avPlayer
+                    strongSelf.present(playerViewController, animated: true) {
+                        avPlayer.play()
+                        strongSelf.setupAutoPlayForNextVideo(player: avPlayer, currentIndex: currentIndex, playerViewController: playerViewController)
+                    }
+                }
+            case .failure(let error):
+                print("🚫 YouTubePlayerService failed for video ID \(identifier). Error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    if currentIndex < strongSelf.videos.count - 1 {
                         print("🌟 Current video failed, trying next video...")
                         strongSelf.playNextVideo(fromIndex: currentIndex)
                     } else {
                         let alert = UIAlertController(title: "Playback Error", message: "Failed to load video. \(error.localizedDescription)", preferredStyle: .alert)
                         alert.addAction(UIAlertAction(title: "OK", style: .default))
-                        self?.present(alert, animated: true)
+                        strongSelf.present(alert, animated: true)
                     }
-                }
-                return
-            }
-
-            guard let video = video else {
-                print("🌟 No video object returned from YouTube client.")
-                DispatchQueue.main.async {
-                    // If current video fails, try to play next video automatically
-                    if let strongSelf = self, currentIndex < strongSelf.videos.count - 1 {
-                        print("🌟 Current video failed, trying next video...")
-                        strongSelf.playNextVideo(fromIndex: currentIndex)
-                    } else {
-                        let alert = UIAlertController(title: "Playback Error", message: "Video data not found.", preferredStyle: .alert)
-                        alert.addAction(UIAlertAction(title: "OK", style: .default))
-                        self?.present(alert, animated: true)
-                    }
-                }
-                return
-            }
-
-            // Prefer HLS stream, then fallback
-            let streamURLs = video.streamURLs
-            
-            var selectedStreamURL: URL?
-            if let hlsURL = streamURLs[XCDYouTubeVideoQualityHTTPLiveStreaming] {
-                selectedStreamURL = hlsURL
-            } else if let hd1080URL = streamURLs[NSNumber(value: 137)] { // 137 is 1080p (may be video-only)
-                selectedStreamURL = hd1080URL
-            } else if let hd720URL = streamURLs[NSNumber(value: 22)] { // 22 is 720p
-                selectedStreamURL = hd720URL
-            } else if let medium360URL = streamURLs[NSNumber(value: 18)] { // 18 is 360p
-                selectedStreamURL = medium360URL
-            } else if let small240URL = streamURLs[NSNumber(value: 36)] { // 36 is 240p
-                selectedStreamURL = small240URL
-            } else if let fallbackURL = streamURLs.values.first {
-                selectedStreamURL = fallbackURL
-            }
-
-            guard let streamURL = selectedStreamURL else {
-                print("🌟 No suitable stream URL quality found.")
-                DispatchQueue.main.async {
-                    // If current video fails, try to play next video automatically
-                    if let strongSelf = self, currentIndex < strongSelf.videos.count - 1 {
-                        print("🌟 Current video failed, trying next video...")
-                        strongSelf.playNextVideo(fromIndex: currentIndex)
-                    } else {
-                        let alert = UIAlertController(title: "Playback Error", message: "No suitable video stream found.", preferredStyle: .alert)
-                        alert.addAction(UIAlertAction(title: "OK", style: .default))
-                        self?.present(alert, animated: true)
-                    }
-                }
-                return
-            }
-            
-            print("🌟 Playing stream: \(streamURL)")
-
-            DispatchQueue.main.async {
-                let avPlayer = AVPlayer(url: streamURL)
-                playerViewController.player = avPlayer
-                self?.present(playerViewController, animated: true) {
-                    avPlayer.play()
-                    
-                    // Set up auto-play for next video when current video ends
-                    self?.setupAutoPlayForNextVideo(player: avPlayer, currentIndex: currentIndex, playerViewController: playerViewController)
                 }
             }
         }

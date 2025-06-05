@@ -49,18 +49,23 @@ class SettingsViewController: UIViewController {
         eulaTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(eulaTitleLabel)
 
-        // EULA link label (styled as a link)
+        // EULA link label (no longer styled as a link - plain text)
         let eulaLinkLabel = UILabel()
-        let urlString = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
-        let attributedString = NSMutableAttributedString(string: urlString)
-        attributedString.addAttribute(.foregroundColor, value: UIColor.systemBlue, range: NSRange(location: 0, length: urlString.count))
-        attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: NSRange(location: 0, length: urlString.count))
-        eulaLinkLabel.attributedText = attributedString
+        eulaLinkLabel.text = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+        eulaLinkLabel.textColor = UIColor(white: 0.7, alpha: 1.0) // Same color as other text
         eulaLinkLabel.font = UIFont.systemFont(ofSize: 16)
         eulaLinkLabel.textAlignment = .center
         eulaLinkLabel.translatesAutoresizingMaskIntoConstraints = false
-        eulaLinkLabel.isUserInteractionEnabled = true
         containerView.addSubview(eulaLinkLabel)
+
+        // Contact support label
+        let contactSupportLabel = UILabel()
+        contactSupportLabel.text = "Contact Support: contact@designoverhaul.com"
+        contactSupportLabel.textColor = UIColor(white: 0.7, alpha: 1.0)
+        contactSupportLabel.font = UIFont.systemFont(ofSize: 16)
+        contactSupportLabel.textAlignment = .center
+        contactSupportLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(contactSupportLabel)
 
         // Layout constraints
         NSLayoutConstraint.activate([
@@ -88,7 +93,12 @@ class SettingsViewController: UIViewController {
             eulaLinkLabel.topAnchor.constraint(equalTo: eulaTitleLabel.bottomAnchor, constant: 10),
             eulaLinkLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             eulaLinkLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            eulaLinkLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+
+            // Contact support label at the bottom
+            contactSupportLabel.topAnchor.constraint(equalTo: eulaLinkLabel.bottomAnchor, constant: 30),
+            contactSupportLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            contactSupportLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            contactSupportLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         ])
         
         // Add a gear icon to the top right, if this view controller were embedded in a UINavigationController

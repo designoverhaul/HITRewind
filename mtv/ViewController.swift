@@ -16,27 +16,27 @@ class ViewController: UIViewController {
         // Create the tab bar controller
         let tabBarController = UITabBarController()
         
-        // Create Music Videos tab (your existing screen)
+        // Create Legendary Shows tab (moved to far left)
+        let legendaryShowsController = LegendaryShowsViewController()
+        legendaryShowsController.tabBarItem = UITabBarItem(
+            title: "Legendary Shows",
+            image: nil,
+            tag: 0
+        )
+        
+        // Create Music Videos tab (renamed from "Top 100 Videos")
         let musicVideosController = PlayListViewController()
         musicVideosController.tabBarItem = UITabBarItem(
-            title: "Top 100 Videos",
-            image: UIImage(systemName: "play.rectangle.fill"),
-            tag: 0
+            title: "Music Videos",
+            image: nil,
+            tag: 1
         )
         
         // Create Live Shows tab (Artist-based screen)
         let liveShowsController = LiveShowsTabViewController()
         liveShowsController.tabBarItem = UITabBarItem(
             title: "Live", 
-            image: UIImage(systemName: "music.mic"),
-            tag: 1
-        )
-        
-        // Create Legendary Shows tab
-        let legendaryShowsController = LegendaryShowsViewController()
-        legendaryShowsController.tabBarItem = UITabBarItem(
-            title: "Legendary Shows",
-            image: UIImage(systemName: "star.fill"),
+            image: nil,
             tag: 2
         )
         
@@ -44,7 +44,7 @@ class ViewController: UIViewController {
         let searchController = SearchViewController(nibName: nil, bundle: nil)
         searchController.tabBarItem = UITabBarItem(
             title: "Search",
-            image: UIImage(systemName: "magnifyingglass"),
+            image: nil,
             tag: 3
         )
         
@@ -58,13 +58,46 @@ class ViewController: UIViewController {
         // Use only the gear emoji as the tab bar item
         settingsController.tabBarItem.title = "⚙️"
         
-        // Add controllers to tab bar (Legendary Shows after Live Shows)
-        tabBarController.viewControllers = [musicVideosController, liveShowsController, legendaryShowsController, searchController, settingsController]
+        // Add controllers to tab bar (Legendary Shows moved to far left)
+        tabBarController.viewControllers = [legendaryShowsController, musicVideosController, liveShowsController, searchController, settingsController]
         
         // Set up the tab bar appearance for tvOS
         tabBarController.tabBar.isTranslucent = true
         tabBarController.tabBar.barTintColor = UIColor.black.withAlphaComponent(0.8)
         tabBarController.tabBar.tintColor = UIColor.white
+        
+        // Reduce font weight of navigation titles
+        if #available(tvOS 13.0, *) {
+            let appearance = UITabBarAppearance()
+            appearance.configureWithDefaultBackground()
+            appearance.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+            
+            // Configure normal state text attributes (regular font weight)
+            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+                .font: UIFont.systemFont(ofSize: 17, weight: .regular),
+                .foregroundColor: UIColor.white
+            ]
+            
+            // Configure selected state text attributes
+            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+                .font: UIFont.systemFont(ofSize: 17, weight: .regular),
+                .foregroundColor: UIColor.white
+            ]
+            
+            tabBarController.tabBar.standardAppearance = appearance
+            tabBarController.tabBar.scrollEdgeAppearance = appearance
+        } else {
+            // Fallback for earlier versions
+            UITabBarItem.appearance().setTitleTextAttributes([
+                .font: UIFont.systemFont(ofSize: 17, weight: .regular),
+                .foregroundColor: UIColor.white
+            ], for: .normal)
+            
+            UITabBarItem.appearance().setTitleTextAttributes([
+                .font: UIFont.systemFont(ofSize: 17, weight: .regular),
+                .foregroundColor: UIColor.white
+            ], for: .selected)
+        }
         
         // Add as child view controller
         addChild(tabBarController)
