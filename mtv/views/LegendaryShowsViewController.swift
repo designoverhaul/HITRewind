@@ -2,7 +2,7 @@ import UIKit
 // import XCDYouTubeKit // Replaced with YouTubeKit
 import YouTubeKit // Added for the new YouTube player
 import AVKit
-// import RevenueCat // Temporarily commented out
+import RevenueCat
 
 // MARK: - YouTubeVideoQuality
 
@@ -194,10 +194,20 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     private var collectionView: UICollectionView!
     private var bannerScrollView: UIScrollView!
     private var loadingIndicator: UIActivityIndicatorView!
+
+    // Property for the new top large banner
+    private var topLargeBannerImageView: FocusableBannerImageView!
+
+    // Properties for the second carousel and video grid
+    private var bannerScrollView2: UIScrollView!
+    private var collectionView2: UICollectionView!
+    private var concerts1: [Concert] = []
+    private var concerts2: [Concert] = []
+    private var legendaryShows1: [LegendaryShow] = []
+    private var legendaryShows2: [LegendaryShow] = []
     
     // Subscription management properties
-    // private var isSubscribed: Bool = false // Temporarily commented out
-    private var isSubscribed: Bool = true // Assume subscribed for debugging
+    private var isSubscribed: Bool = false
     
     // MARK: - Lifecycle Methods
     
@@ -207,11 +217,10 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         showLoadingIndicator()
         fetchConcerts()
         fetchLegendaryShows()
-        // checkSubscriptionStatus() // Temporarily commented out
-        print("LegendaryShowsViewController: checkSubscriptionStatus bypassed.")
+        checkSubscriptionStatus()
         
         // Add observer for subscription status change
-        // NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil) // Temporarily commented out
+        NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil)
         
         // Add observer for banner selection (for tvOS compatibility)
         NotificationCenter.default.addObserver(
@@ -228,9 +237,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // checkSubscriptionStatus() // Temporarily commented out
-        print("LegendaryShowsViewController: viewWillAppear - subscription check bypassed.")
-        isSubscribed = true // Assume subscribed
+        checkSubscriptionStatus()
     }
     
     // MARK: - UI Setup
@@ -243,13 +250,6 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         imageView.contentMode = .scaleAspectFill
         imageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(imageView)
-        
-        // Banner carousel setup - horizontal scrolling (will be added to a scroll view that scrolls with content)
-        bannerScrollView = UIScrollView()
-        bannerScrollView.backgroundColor = .clear
-        bannerScrollView.showsHorizontalScrollIndicator = false
-        bannerScrollView.showsVerticalScrollIndicator = false
-        bannerScrollView.translatesAutoresizingMaskIntoConstraints = false
         
         // Main content scroll view to contain both banner and collection view
         let mainScrollView = UIScrollView()
@@ -264,9 +264,32 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         contentView.translatesAutoresizingMaskIntoConstraints = false
         mainScrollView.addSubview(contentView)
         
-        // Add banner scroll view to content view
+        // New Top Large Banner Image View
+        topLargeBannerImageView = FocusableBannerImageView(frame: .zero)
+        topLargeBannerImageView.contentMode = .scaleAspectFit
+        topLargeBannerImageView.clipsToBounds = true
+        topLargeBannerImageView.backgroundColor = UIColor.darkGray // Placeholder
+        topLargeBannerImageView.isUserInteractionEnabled = true
+        topLargeBannerImageView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(topLargeBannerImageView)
+        
+        // Initialize, configure, and add bannerScrollView (first carousel)
+        bannerScrollView = UIScrollView()
+        bannerScrollView.backgroundColor = .clear
+        bannerScrollView.showsHorizontalScrollIndicator = false
+        bannerScrollView.showsVerticalScrollIndicator = false
+        bannerScrollView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(bannerScrollView)
         
+        // Initialize, configure, and add bannerScrollView2 (second carousel)
+        // Ensure this is done before it's used in constraints or logic that assumes it's initialized.
+        bannerScrollView2 = UIScrollView()
+        bannerScrollView2.backgroundColor = .clear
+        bannerScrollView2.showsHorizontalScrollIndicator = false
+        bannerScrollView2.showsVerticalScrollIndicator = false
+        bannerScrollView2.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(bannerScrollView2)
+
         // Collection view setup - 3 columns, full width
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
@@ -292,7 +315,27 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(collectionView)
         
+        // Second Collection view setup
+        let layout2 = UICollectionViewFlowLayout()
+        layout2.scrollDirection = .vertical
+        layout2.minimumInteritemSpacing = 30
+        layout2.minimumLineSpacing = 40
+        layout2.itemSize = CGSize(width: itemWidth, height: itemHeight) // Same item size
+        layout2.sectionInset = UIEdgeInsets(top: 20, left: 40, bottom: 20, right: 40) // Same inset
+
+        collectionView2 = UICollectionView(frame: .zero, collectionViewLayout: layout2)
+        collectionView2.backgroundColor = .clear
+        collectionView2.dataSource = self
+        collectionView2.delegate = self
+        collectionView2.register(LegendaryShowCell.self, forCellWithReuseIdentifier: "LegendaryShowCell")
+        collectionView2.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(collectionView2)
+        
         // Layout constraints
+        // Calculate height for the first collection view (8 items = 2 rows, given 4 columns)
+        let numberOfRowsInFirstGrid = 2
+        let firstCollectionViewHeight = (CGFloat(numberOfRowsInFirstGrid) * itemHeight) + (CGFloat(numberOfRowsInFirstGrid - 1) * layout.minimumLineSpacing) + layout.sectionInset.top + layout.sectionInset.bottom
+        
         NSLayoutConstraint.activate([
             // Logo (same as search screen)
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 152),
@@ -313,18 +356,36 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             contentView.bottomAnchor.constraint(equalTo: mainScrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: mainScrollView.widthAnchor),
             
+            // Top Large Banner (70% width, centered)
+            topLargeBannerImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            topLargeBannerImageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            topLargeBannerImageView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.7),
+            topLargeBannerImageView.heightAnchor.constraint(equalTo: topLargeBannerImageView.widthAnchor, multiplier: 556.0/2108.0),
+            
             // Banner carousel (left-aligned with videos, scrolls with content)
-            bannerScrollView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            bannerScrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40), // Left-aligned with collection view
+            bannerScrollView.topAnchor.constraint(equalTo: topLargeBannerImageView.bottomAnchor, constant: 30),
+            bannerScrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
             bannerScrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            bannerScrollView.heightAnchor.constraint(equalToConstant: 280), // Height for banner images (10% larger: 231pt + padding)
+            bannerScrollView.heightAnchor.constraint(equalToConstant: 280),
             
             // Collection View (positioned below banner carousel within content)
             collectionView.topAnchor.constraint(equalTo: bannerScrollView.bottomAnchor, constant: 30),
             collectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            collectionView.heightAnchor.constraint(equalToConstant: 2000) // Fixed height for collection view content
+            collectionView.heightAnchor.constraint(equalToConstant: firstCollectionViewHeight), // Height for 2 rows of 4 videos
+
+            // Second Banner carousel (below first collection view)
+            bannerScrollView2.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: 30),
+            bannerScrollView2.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
+            bannerScrollView2.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            bannerScrollView2.heightAnchor.constraint(equalToConstant: 280),
+
+            // Second Collection View (positioned below second banner carousel)
+            collectionView2.topAnchor.constraint(equalTo: bannerScrollView2.bottomAnchor, constant: 30),
+            collectionView2.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            collectionView2.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            collectionView2.bottomAnchor.constraint(equalTo: contentView.bottomAnchor), // Occupies remaining space
+            collectionView2.heightAnchor.constraint(equalToConstant: 2000) // Fixed height for now, can be dynamic
         ])
     }
     
@@ -336,9 +397,9 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         MTV_Music_Videos.fetchConcerts(apiKey: apiKey, baseURLString: concertsUrl) { [weak self] result in
             guard let self = self else { return }
             switch result {
-            case .success(let concerts):
-                print("🎪 LegendaryShowsViewController: Successfully fetched \(concerts.count) concerts")
-                self.concerts = concerts
+            case .success(let fetchedConcerts):
+                print("🎪 LegendaryShowsViewController: Successfully fetched \(fetchedConcerts.count) concerts")
+                self.concerts = fetchedConcerts
                 DispatchQueue.main.async {
                     self.setupBannerCarousel()
                 }
@@ -357,8 +418,20 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             case .success(let shows):
                 print("🌟 LegendaryShowsViewController: Successfully fetched \(shows.count) legendary shows")
                 self.legendaryShows = shows
+                
+                // Split shows for the two collection views
+                let splitIndex = 8 // Changed from 4 to 8
+                if shows.count > splitIndex {
+                    self.legendaryShows1 = Array(shows.prefix(splitIndex))
+                    self.legendaryShows2 = Array(shows.suffix(from: splitIndex))
+                } else {
+                    self.legendaryShows1 = shows // If splitIndex or less, all go to the first collection view
+                    self.legendaryShows2 = []    // Second collection view is empty
+                }
+                
                 DispatchQueue.main.async {
                     self.collectionView.reloadData()
+                    self.collectionView2.reloadData()
                     self.hideLoadingIndicator()
                 }
             case .failure(let error):
@@ -375,29 +448,62 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     private func setupBannerCarousel() {
         // Clear existing banner views
         bannerScrollView.subviews.forEach { $0.removeFromSuperview() }
+        bannerScrollView2.subviews.forEach { $0.removeFromSuperview() }
+
+        var shuffledOriginalConcerts = self.concerts
+        shuffledOriginalConcerts.shuffle()
+        self.concerts = shuffledOriginalConcerts // Update self.concerts to the globally used shuffled list
+
+        var concertsForCarousels = self.concerts
+        var tagOffsetForFirstCarousel = 0
+
+        if !self.concerts.isEmpty {
+            let topBannerConcert = self.concerts[0]
+            if let bannerImages = topBannerConcert.fields.bannerImage, let firstBannerImage = bannerImages.first {
+                loadBannerImage(from: firstBannerImage.url, into: topLargeBannerImageView)
+                // Consider making topLargeBannerImageView tappable here if needed in the future, with tag 0
+                self.topLargeBannerImageView.tag = 0
+            }
+            concertsForCarousels = Array(self.concerts.dropFirst())
+            tagOffsetForFirstCarousel = 1
+        }
+
+        let halfWay = concertsForCarousels.count / 2
+        let carousel1Data = Array(concertsForCarousels.prefix(halfWay))
+        let carousel2Data = Array(concertsForCarousels.suffix(from: halfWay))
+
+        setupIndividualBannerCarousel(scrollView: bannerScrollView, concertsToDisplay: carousel1Data, tagOffset: tagOffsetForFirstCarousel)
         
-        let bannerHeight: CGFloat = 231 // Increased by 10% from 210 to 231
+        let tagOffsetForSecondCarousel = tagOffsetForFirstCarousel + carousel1Data.count
+        setupIndividualBannerCarousel(scrollView: bannerScrollView2, concertsToDisplay: carousel2Data, tagOffset: tagOffsetForSecondCarousel)
+    }
+
+    private func setupIndividualBannerCarousel(scrollView: UIScrollView, concertsToDisplay: [Concert], tagOffset: Int) {
+        // Clear existing banner views from this specific scroll view
+        scrollView.subviews.forEach { $0.removeFromSuperview() }
+
+        let bannerHeight: CGFloat = 231
         let bannerSpacing: CGFloat = 20
         var currentX: CGFloat = 0
         
-        for (index, concert) in concerts.enumerated() {
+        for (index, concert) in concertsToDisplay.enumerated() {
             guard let bannerImages = concert.fields.bannerImage,
                   let firstBanner = bannerImages.first else { continue }
             
             // Create banner image view - no container, just the image
-            let bannerImageView = FocusableBannerImageView()
+            let bannerImageView = FocusableBannerImageView(frame: .zero)
             bannerImageView.contentMode = .scaleAspectFill
             bannerImageView.clipsToBounds = true
             bannerImageView.backgroundColor = UIColor.black.withAlphaComponent(0.1)
             bannerImageView.translatesAutoresizingMaskIntoConstraints = false
-            bannerImageView.tag = index // For tap handling
+            bannerImageView.tag = index + tagOffset // For tap handling, ensure unique tags globally
             
             // Add tap gesture to banner
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(bannerTapped(_:)))
             bannerImageView.addGestureRecognizer(tapGesture)
             bannerImageView.isUserInteractionEnabled = true
             
-            bannerScrollView.addSubview(bannerImageView)
+            scrollView.addSubview(bannerImageView)
             
             // Calculate banner width maintaining aspect ratio (banner images are 2108x556)
             let aspectRatio: CGFloat = 2108.0 / 556.0
@@ -405,8 +511,8 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             
             // Position banner image
             NSLayoutConstraint.activate([
-                bannerImageView.leadingAnchor.constraint(equalTo: bannerScrollView.leadingAnchor, constant: currentX),
-                bannerImageView.topAnchor.constraint(equalTo: bannerScrollView.topAnchor, constant: 10),
+                bannerImageView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: currentX),
+                bannerImageView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 10),
                 bannerImageView.widthAnchor.constraint(equalToConstant: bannerWidth),
                 bannerImageView.heightAnchor.constraint(equalToConstant: bannerHeight)
             ])
@@ -418,7 +524,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         }
         
         // Set scroll view content size
-        bannerScrollView.contentSize = CGSize(width: max(currentX - bannerSpacing, 0), height: bannerHeight + 20)
+        scrollView.contentSize = CGSize(width: max(currentX - bannerSpacing, 0), height: bannerHeight + 20)
     }
     
     private func loadBannerImage(from urlString: String, into imageView: UIImageView) {
@@ -609,7 +715,6 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             gradientLayer.locations = [0.0, 1.0]
             gradientLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
             gradientLayer.endPoint = CGPoint(x: 0.5, y: 1.0)
-            gradientOverlay.layer.addSublayer(gradientLayer)
             
             // Logo
             let logoImageView = UIImageView(image: UIImage(named: "logoVector"))
@@ -1013,42 +1118,33 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     // MARK: - Subscription Management
     
     private func checkSubscriptionStatus() {
-        // Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in // Temporarily commented out
-        //     guard let self = self else { return }
+        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
+            guard let self = self else { return }
 
-        //     if let customerInfo = customerInfo {
-        //         let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
-        //         if !activeEntitlements.isEmpty {
-        //             self.isSubscribed = true
-        //             print("🌟 LegendaryShowsViewController: User is subscribed")
-        //         } else {
-        //             self.isSubscribed = false
-        //             print("🌟 LegendaryShowsViewController: User is not subscribed")
-        //         }
-        //     } else if let error = error {
-        //         print("🌟 LegendaryShowsViewController: Error fetching customer info: \(error.localizedDescription)")
-        //         self.isSubscribed = false
-        //     }
-        // }
-        print("LegendaryShowsViewController: checkSubscriptionStatus called - Bypassed, assuming subscribed.")
-        isSubscribed = true // Assume subscribed
+            if let customerInfo = customerInfo {
+                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
+                if !activeEntitlements.isEmpty {
+                    self.isSubscribed = true
+                    print("🌟 LegendaryShowsViewController: User is subscribed")
+                } else {
+                    self.isSubscribed = false
+                    print("🌟 LegendaryShowsViewController: User is not subscribed")
+                }
+            } else if let error = error {
+                print("🌟 LegendaryShowsViewController: Error fetching customer info: \(error.localizedDescription)")
+                self.isSubscribed = false
+            }
+        }
     }
     
     @objc private func subscriptionStatusChanged() {
-        // checkSubscriptionStatus() // Temporarily commented out
-        print("LegendaryShowsViewController: subscriptionStatusChanged called - Bypassed.")
-        isSubscribed = true // Assume subscribed
+        checkSubscriptionStatus()
     }
     
     @objc private func navigateToPurchases() {
-        // let purchasesViewController = PurchasesViewController() // Temporarily commented out
-        // purchasesViewController.modalPresentationStyle = .fullScreen
-        // present(purchasesViewController, animated: true, completion: nil)
-        print("LegendaryShowsViewController: navigateToPurchases called - Bypassed.")
-        // Optionally, show an alert that this feature is temporarily disabled
-        let alert = UIAlertController(title: "Temporarily Disabled", message: "Access to the subscription screen is temporarily disabled for debugging.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        present(alert, animated: true, completion: nil)
+        let purchasesViewController = PurchasesViewController()
+        purchasesViewController.modalPresentationStyle = .fullScreen
+        present(purchasesViewController, animated: true, completion: nil)
     }
 }
 
@@ -1057,7 +1153,12 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
 extension LegendaryShowsViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return legendaryShows.count
+        if collectionView == self.collectionView { // First collection view (top one)
+            return legendaryShows1.count
+        } else if collectionView == self.collectionView2 { // Second collection view (bottom one)
+            return legendaryShows2.count
+        }
+        return 0 // Default
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -1065,7 +1166,16 @@ extension LegendaryShowsViewController: UICollectionViewDataSource {
             return UICollectionViewCell()
         }
         
-        let show = legendaryShows[indexPath.item]
+        let show: LegendaryShow
+        if collectionView == self.collectionView { // First collection view
+            show = legendaryShows1[indexPath.item]
+        } else if collectionView == self.collectionView2 { // Second collection view
+            show = legendaryShows2[indexPath.item]
+        } else {
+            // Should not happen, but return a default cell to avoid crashing
+            return UICollectionViewCell()
+        }
+
         cell.configure(with: show)
         return cell
     }
@@ -1076,18 +1186,21 @@ extension LegendaryShowsViewController: UICollectionViewDataSource {
 extension LegendaryShowsViewController: UICollectionViewDelegate {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedShow = legendaryShows[indexPath.item]
-        // requireSubscription(on: self) { [weak self] isSubscribed in // Temporarily commented out
-        //     guard let self = self, isSubscribed else { return }
-        //     if let url = selectedShow.fields.url {
-        //         print("🌟 LegendaryShowsViewController: User subscribed, playing video: \(selectedShow.fields.title ?? "Unknown")")
-        //         self.playVideo(with: url)
-        //     }
-        // }
-        print("LegendaryShowsViewController: collectionView.didSelectItemAt - Bypassing requireSubscription.")
-        if let url = selectedShow.fields.url {
-            print("🌟 LegendaryShowsViewController: Playing video (subscription check bypassed): \(selectedShow.fields.title ?? "Unknown")")
-            self.playVideo(with: url)
+        let selectedShow: LegendaryShow
+        if collectionView == self.collectionView { // First collection view
+            selectedShow = legendaryShows1[indexPath.item]
+        } else if collectionView == self.collectionView2 { // Second collection view
+            selectedShow = legendaryShows2[indexPath.item]
+        } else {
+            return // Should not happen
+        }
+
+        requireSubscription(on: self) { [weak self] isSubscribed in
+            guard let self = self, isSubscribed else { return }
+            if let url = selectedShow.fields.url {
+                print("🌟 LegendaryShowsViewController: User subscribed, playing video: \(selectedShow.fields.title ?? "Unknown")")
+                self.playVideo(with: url)
+            }
         }
     }
 }
@@ -1146,9 +1259,11 @@ class LegendaryShowCell: UICollectionViewCell {
         super.init(frame: frame)
         setupCell()
     }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
     private func setupCell() {
         contentView.clipsToBounds = false
         layer.masksToBounds = false
@@ -1181,10 +1296,48 @@ class LegendaryShowCell: UICollectionViewCell {
             // Year label inline with artist label, right-aligned
             yearLabel.centerYAnchor.constraint(equalTo: artistLabel.centerYAnchor),
             yearLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            yearLabel.leadingAnchor.constraint(greaterThanOrEqualTo: artistLabel.trailingAnchor, constant: 8),
-            // Bottom constraint for cell - reduced since no two-line titles
-            artistLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -5)
+            yearLabel.leadingAnchor.constraint(greaterThanOrEqualTo: artistLabel.trailingAnchor, constant: 8)
         ])
+
+        // Create and configure the specific bottom constraint for artistLabel
+        let artistBottomConstraint = artistLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10)
+        artistBottomConstraint.priority = .defaultHigh
+        // Add this constraint to the activation list, or activate it separately if preferred.
+        // For simplicity here, adding it to the existing activate call if possible, or activating it directly.
+        // Let's re-structure to activate it along with others clearly.
+
+        // First, define all constraints
+        let thumbnailContainerTop = thumbnailContainer.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10)
+        let thumbnailContainerLeading = thumbnailContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10)
+        let thumbnailContainerTrailing = thumbnailContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10)
+        let thumbnailContainerHeight = thumbnailContainer.heightAnchor.constraint(equalTo: thumbnailContainer.widthAnchor, multiplier: 9.0/16.0)
+        
+        let imageViewTop = imageView.topAnchor.constraint(equalTo: thumbnailContainer.topAnchor)
+        let imageViewLeading = imageView.leadingAnchor.constraint(equalTo: thumbnailContainer.leadingAnchor)
+        let imageViewTrailing = imageView.trailingAnchor.constraint(equalTo: thumbnailContainer.trailingAnchor)
+        let imageViewBottom = imageView.bottomAnchor.constraint(equalTo: thumbnailContainer.bottomAnchor)
+        
+        let titleLabelTop = titleLabel.topAnchor.constraint(equalTo: thumbnailContainer.bottomAnchor, constant: 12)
+        let titleLabelLeading = titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20)
+        let titleLabelTrailing = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
+        
+        let artistLabelTop = artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4)
+        let artistLabelLeading = artistLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20)
+        let artistLabelTrailing = artistLabel.trailingAnchor.constraint(lessThanOrEqualTo: yearLabel.leadingAnchor, constant: -8)
+        
+        let yearLabelCenterY = yearLabel.centerYAnchor.constraint(equalTo: artistLabel.centerYAnchor)
+        let yearLabelTrailing = yearLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
+        let yearLabelLeading = yearLabel.leadingAnchor.constraint(greaterThanOrEqualTo: artistLabel.trailingAnchor, constant: 8)
+        
+        NSLayoutConstraint.activate([
+            thumbnailContainerTop, thumbnailContainerLeading, thumbnailContainerTrailing, thumbnailContainerHeight,
+            imageViewTop, imageViewLeading, imageViewTrailing, imageViewBottom,
+            titleLabelTop, titleLabelLeading, titleLabelTrailing,
+            artistLabelTop, artistLabelLeading, artistLabelTrailing,
+            yearLabelCenterY, yearLabelTrailing, yearLabelLeading,
+            artistBottomConstraint // Include the prioritized constraint here
+        ])
+
         // Compression/hugging priorities
         artistLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         artistLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -1198,7 +1351,12 @@ class LegendaryShowCell: UICollectionViewCell {
         thumbnailContainer.layer.shadowOpacity = 0
     }
     func configure(with show: LegendaryShow) {
-        titleLabel.text = show.fields.title ?? "Unknown Title"
+        var finalTitle = show.fields.title
+        if finalTitle?.lowercased() == "video unavailable" {
+            finalTitle = nil
+        }
+        titleLabel.text = finalTitle ?? "Unknown Title"
+        
         artistLabel.text = show.fields.artist ?? "Unknown Artist"
         artistLabel.isHidden = false
         yearLabel.text = show.fields.year ?? ""
@@ -1292,6 +1450,21 @@ class LegendaryShowCell: UICollectionViewCell {
 
 class FocusableBannerImageView: UIImageView {
     
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        configureView()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configureView()
+    }
+    
+    private func configureView() {
+        layer.cornerRadius = 12
+        clipsToBounds = true
+    }
+    
     override var canBecomeFocused: Bool {
         return true
     }
@@ -1301,18 +1474,14 @@ class FocusableBannerImageView: UIImageView {
         
         coordinator.addCoordinatedAnimations({
             if self.isFocused {
-                // Scale up and add highlight when focused
+                // Scale up when focused
                 self.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-                self.layer.borderWidth = 3.0
-                self.layer.borderColor = UIColor.white.cgColor
                 // Bring to front with high z-index
                 self.layer.zPosition = 1000
                 print("🎪 Banner image focused - tag: \(self.tag)")
             } else {
-                // Scale back down and remove highlight when not focused
+                // Scale back down when not focused
                 self.transform = CGAffineTransform.identity
-                self.layer.borderWidth = 0.0
-                self.layer.borderColor = UIColor.clear.cgColor
                 // Reset z-index
                 self.layer.zPosition = 0
                 print("🎪 Banner image unfocused - tag: \(self.tag)")

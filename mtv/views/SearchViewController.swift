@@ -2,7 +2,7 @@ import UIKit
 // import XCDYouTubeKit // Removed
 import YouTubeKit // Added
 import AVKit
-// import RevenueCat // Temporarily commented out
+import RevenueCat
 
 class SearchViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UITextFieldDelegate {
     
@@ -87,8 +87,7 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
     private var searchResults: [SearchResult] = []
     private var searchTimer: Timer?
     private let searchService = SearchService.shared
-    // private var isSubscribed: Bool = false // Temporarily commented out
-    private var isSubscribed: Bool = true // Assume subscribed for debugging
+    private var isSubscribed: Bool = false
     
     // MARK: - Lifecycle
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -144,8 +143,7 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         
         setupCollectionView()
         setupSearchTextField()
-        // checkSubscriptionStatus() // Temporarily commented out
-        print("SearchViewController: checkSubscriptionStatus bypassed.")
+        checkSubscriptionStatus()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -447,17 +445,15 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         }
     }
     
-    // MARK: - Subscription Check
+    // MARK: - Subscription Management
     private func checkSubscriptionStatus() {
-        // Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in // Temporarily commented out
-        //     if let customerInfo = customerInfo {
-        //         self?.isSubscribed = customerInfo.entitlements.all.contains { $0.value.isActive }
-        //     } else {
-        //         self?.isSubscribed = false
-        //     }
-        // }
-        print("SearchViewController: checkSubscriptionStatus called - Bypassed, assuming subscribed.")
-        isSubscribed = true // Assume subscribed
+        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
+            if let customerInfo = customerInfo {
+                self?.isSubscribed = customerInfo.entitlements.all.contains { $0.value.isActive }
+            } else {
+                self?.isSubscribed = false
+            }
+        }
     }
     
     private func navigateToPurchases() {
@@ -485,27 +481,17 @@ extension SearchViewController {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedResult = searchResults[indexPath.item]
         
-        // requireSubscription(on: self) { [weak self] isSubscribed in // Temporarily commented out
-        //     guard let self = self, isSubscribed else { return }
+        requireSubscription(on: self) { [weak self] isSubscribed in
+            guard let self = self, isSubscribed else { return }
             
-        //     let videoURL = selectedResult.url // url is not optional
-        //     switch selectedResult.type {
-        //     case .video:
-        //         self.playVideo(with: videoURL)
-        //     case .mtvVideo: // Assuming mtvVideo can also be a playlist or single video
-        //         self.handlePotentialPlaylist(with: videoURL)
-        //     // No default needed if all enum cases are handled
-        //     }
-        // }
-        print("SearchViewController: collectionView.didSelectItemAt - Bypassing requireSubscription.")
-        let videoURL = selectedResult.url // url is not optional
-        switch selectedResult.type {
-        case .video: // Direct enum case matching
-            // self.playVideo(with: videoURL) // Changed to handle potential playlists
-            self.handlePotentialPlaylist(with: videoURL)
-        case .mtvVideo: // Direct enum case matching
-            self.handlePotentialPlaylist(with: videoURL)
-        // No default needed if all enum cases are covered by SearchResultType
+            let videoURL = selectedResult.url // url is not optional
+            switch selectedResult.type {
+            case .video:
+                self.handlePotentialPlaylist(with: videoURL)
+            case .mtvVideo: // Assuming mtvVideo can also be a playlist or single video
+                self.handlePotentialPlaylist(with: videoURL)
+            // No default needed if all enum cases are handled
+            }
         }
     }
 }

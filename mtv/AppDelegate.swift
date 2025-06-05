@@ -6,7 +6,7 @@
 //
 
 import UIKit
-// import RevenueCat // Temporarily commented out
+import RevenueCat
 
 
 
@@ -17,8 +17,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Purchases.configure(withAPIKey: "appl_goRXxhJHqIfrgGhdFgBXrSiPTMZ") // Temporarily commented out
-        // print("In app subscription configured") // Temporarily commented out
+        Purchases.configure(withAPIKey: "appl_goRXxhJHqIfrgGhdFgBXrSiPTMZ")
+        print("In app subscription configured")
         // print("RevenueCat configuration temporarily bypassed for debugging.")
 
         // --- Start of added code for DebugPlayerViewController ---

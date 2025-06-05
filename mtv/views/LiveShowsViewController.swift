@@ -4,7 +4,7 @@ import UIKit
 // import XCDYouTubeKit // Removed
 import YouTubeKit // Added
 import AVKit
-// import RevenueCat // Temporarily commented out
+import RevenueCat
 
 class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate {
     
@@ -18,7 +18,7 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     private var selectedArtistIndex: Int?
     private var visibleVideoIndices: [Int] = []
     private var lastSelectedArtistIndex: IndexPath?
-    private var isSubscribed: Bool = true // Assume subscribed for debugging
+    private var isSubscribed: Bool = false
     
     // Store last focused index paths
     private var lastFocusedArtistIndexPath: IndexPath?
@@ -37,11 +37,10 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
         setupUI()
         showLoadingIndicator()
         fetchArtists()
-        // checkSubscriptionStatus() // Temporarily commented out
-        print("LiveShowsViewController: checkSubscriptionStatus bypassed.")
+        checkSubscriptionStatus()
         
         // Add observer for subscription status change
-        // NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil) // Temporarily commented out
+        NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil)
         
         print("LiveShowsViewController loaded. Delegate is: \(String(describing: artistVideosCollectionView.delegate))")
     }
@@ -53,10 +52,8 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        // checkSubscriptionStatus { // Temporarily commented out
+        checkSubscriptionStatus {
             // After subscription status is updated
-            print("LiveShowsViewController: viewWillAppear - subscription check bypassed.")
-            isSubscribed = true // Assume subscribed
             if let lastSelectedIndex = self.lastSelectedArtistIndex {
                 self.artistTableView.scrollToRow(at: lastSelectedIndex, at: .middle, animated: false)
                 self.artistVideosCollectionView.reloadData()
@@ -69,7 +66,7 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
                 // Try to select the first available artist
                 self.selectFirstAvailableArtist()
             }
-        // } // End of commented out checkSubscriptionStatus completion
+        }
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -216,48 +213,33 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     // MARK: - Subscription Management
     
     private func checkSubscriptionStatus(completion: (() -> Void)? = nil) {
-        // Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in // Temporarily commented out
-        //     guard let self = self else { return }
-        //     if let customerInfo = customerInfo {
-        //         let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
-        //         self.isSubscribed = !activeEntitlements.isEmpty
-        //         DispatchQueue.main.async {
-        //             self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
-        //             self.purchaseButton.isEnabled = !self.isSubscribed
-        //             completion?()
-        //         }
-        //     } else {
-        //         self.isSubscribed = false
-        //         DispatchQueue.main.async {
-        //             self.purchaseButton.setTitle("🔓 Unlock All Music", for: .normal)
-        //             self.purchaseButton.isEnabled = true
-        //             completion?()
-        //         }
-        //     }
-        // }
-        print("LiveShowsViewController: checkSubscriptionStatus called - Bypassed, assuming subscribed.")
-        isSubscribed = true // Assume subscribed
-        DispatchQueue.main.async {
-            self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
-            self.purchaseButton.isEnabled = !self.isSubscribed
-            completion?()
+        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
+            guard let self = self else { return }
+            if let customerInfo = customerInfo {
+                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
+                self.isSubscribed = !activeEntitlements.isEmpty
+                DispatchQueue.main.async {
+                    self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
+                    self.purchaseButton.isEnabled = !self.isSubscribed
+                    completion?()
+                }
+            } else {
+                self.isSubscribed = false
+                DispatchQueue.main.async {
+                    self.purchaseButton.setTitle("🔓 Unlock All Music", for: .normal)
+                    self.purchaseButton.isEnabled = true
+                    completion?()
+                }
+            }
         }
     }
     
     @objc private func subscriptionStatusChanged() {
-        // checkSubscriptionStatus { // Temporarily commented out
-        //     DispatchQueue.main.async {
-        //         self.artistTableView.reloadData()
-        //         self.updateUIForSelectedArtist()
-        //     }
-        // }
-        print("LiveShowsViewController: subscriptionStatusChanged called - Bypassed.")
-        isSubscribed = true // Assume subscribed
-        DispatchQueue.main.async {
-            self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
-            self.purchaseButton.isEnabled = !self.isSubscribed
-            self.artistTableView.reloadData()
-            self.updateUIForSelectedArtist()
+        checkSubscriptionStatus {
+            DispatchQueue.main.async {
+                self.artistTableView.reloadData()
+                self.updateUIForSelectedArtist()
+            }
         }
     }
     
@@ -297,13 +279,9 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
     }
     
     @objc private func navigateToPurchases() {
-        // let purchasesViewController = PurchasesViewController() // Temporarily commented out
-        // purchasesViewController.modalPresentationStyle = .fullScreen
-        // present(purchasesViewController, animated: true, completion: nil)
-        print("LiveShowsViewController: navigateToPurchases called - Bypassed.")
-        let alert = UIAlertController(title: "Temporarily Disabled", message: "Access to the subscription screen is temporarily disabled for debugging.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        present(alert, animated: true, completion: nil)
+        let purchasesViewController = PurchasesViewController()
+        purchasesViewController.modalPresentationStyle = .fullScreen
+        present(purchasesViewController, animated: true, completion: nil)
     }
     
     // MARK: - Data Fetching
@@ -624,23 +602,15 @@ extension LiveShowsViewController: UICollectionViewDataSource, UICollectionViewD
             let video = artist.fields.videos[videoIndex]
             let videoId = video.fields.video_id
 
-            // requireSubscription(on: self) { [weak self] isSubscribed in // Temporarily commented out
-            //     guard let self = self, isSubscribed else { return }
-            //     if artist.fields.isPlaylist ?? false {
-            //         let allVideoIds = artist.fields.videos.map { $0.fields.video_id }
-            //         let currentVideoIndexInPlaylist = allVideoIds.firstIndex(of: videoId) ?? 0
-            //         self.playVideoPlaylist(videoIdentifiers: allVideoIds, currentIndex: currentVideoIndexInPlaylist)
-            //     } else {
-            //         self.playVideo(videoIdentifier: videoId)
-            //     }
-            // }
-            print("LiveShowsViewController: collectionView.didSelectItemAt - Bypassing requireSubscription.")
-            if artist.fields.isPlaylist ?? false {
-                let allVideoIds = artist.fields.videos.map { $0.fields.video_id }
-                let currentVideoIndexInPlaylist = allVideoIds.firstIndex(of: videoId) ?? 0
-                self.playVideoPlaylist(videoIdentifiers: allVideoIds, currentIndex: currentVideoIndexInPlaylist)
-            } else {
-                self.playVideo(videoIdentifier: videoId)
+            requireSubscription(on: self) { [weak self] isSubscribed in
+                guard let self = self, isSubscribed else { return }
+                if artist.fields.isPlaylist ?? false {
+                    let allVideoIds = artist.fields.videos.map { $0.fields.video_id }
+                    let currentVideoIndexInPlaylist = allVideoIds.firstIndex(of: videoId) ?? 0
+                    self.playVideoPlaylist(videoIdentifiers: allVideoIds, currentIndex: currentVideoIndexInPlaylist)
+                } else {
+                    self.playVideo(videoIdentifier: videoId)
+                }
             }
         }
     }

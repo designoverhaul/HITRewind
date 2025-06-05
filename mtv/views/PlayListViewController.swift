@@ -1,5 +1,5 @@
 import UIKit
-// import RevenueCat // Temporarily commented out
+import RevenueCat
 import AVKit
 import YouTubeKit
 
@@ -11,8 +11,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     private var selectedPlaylistIndex: Int?
     private var visibleVideoIndices: [Int] = []
     private var lastSelectedYearIndex: IndexPath?
-    // private var isSubscribed: Bool = false // Temporarily commented out
-    private var isSubscribed: Bool = true // Assume subscribed for debugging
+    private var isSubscribed: Bool = false
 
     // Store last focused index paths
     private var lastFocusedYearIndexPath: IndexPath?
@@ -29,11 +28,10 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
         setupUI()
         showLoadingIndicator()
         fetchPlaylists()
-        // checkSubscriptionStatus() // Temporarily commented out
-        print("PlayListViewController: checkSubscriptionStatus bypassed.")
+        checkSubscriptionStatus()
 
         // Add observer for subscription status change
-        // NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil) // Temporarily commented out
+        NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: Notification.Name("SubscriptionStatusChanged"), object: nil)
     }
 
     deinit {
@@ -43,22 +41,21 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        // checkSubscriptionStatus { // Temporarily commented out
-        // After subscription status is updated
-        print("PlayListViewController: viewWillAppear - subscription check bypassed.")
-        if let lastSelectedIndex = self.lastSelectedYearIndex {
-            self.playlistTableView.scrollToRow(at: lastSelectedIndex, at: .middle, animated: false)
-            self.playlistImagesCollectionView.reloadData()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.playlistTableView.selectRow(at: lastSelectedIndex, animated: false, scrollPosition: .none)
-                self.selectedPlaylistIndex = lastSelectedIndex.row
-                self.updateUIForSelectedPlaylist()
+        checkSubscriptionStatus {
+            // After subscription status is updated
+            if let lastSelectedIndex = self.lastSelectedYearIndex {
+                self.playlistTableView.scrollToRow(at: lastSelectedIndex, at: .middle, animated: false)
+                self.playlistImagesCollectionView.reloadData()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.playlistTableView.selectRow(at: lastSelectedIndex, animated: false, scrollPosition: .none)
+                    self.selectedPlaylistIndex = lastSelectedIndex.row
+                    self.updateUIForSelectedPlaylist()
+                }
+            } else {
+                // Try to select the first available playlist
+                self.selectFirstAvailablePlaylist()
             }
-        } else {
-            // Try to select the first available playlist
-            self.selectFirstAvailablePlaylist()
         }
-        // } // End of commented out checkSubscriptionStatus completion
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -166,37 +163,30 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     // MARK: - Subscription Management
 
     private func checkSubscriptionStatus(completion: (() -> Void)? = nil) {
-        // Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in // Temporarily commented out
-        //     guard let self = self else { return }
+        Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
+            guard let self = self else { return }
 
-        //     if let customerInfo = customerInfo {
-        //         let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
-        //         if !activeEntitlements.isEmpty {
-        //             self.isSubscribed = true
-        //         } else {
-        //             self.isSubscribed = false
-        //         }
-        //     } else if let error = error {
-        //         print("Error fetching customer info: \(error.localizedDescription)")
-        //     }
-        //     DispatchQueue.main.async {
-        //         completion?()
-        //     }
-        // }
-        print("PlayListViewController: checkSubscriptionStatus called - Bypassed, assuming subscribed.")
-        isSubscribed = true // Assume subscribed
-        DispatchQueue.main.async {
-            completion?()
+            if let customerInfo = customerInfo {
+                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
+                if !activeEntitlements.isEmpty {
+                    self.isSubscribed = true
+                } else {
+                    self.isSubscribed = false
+                }
+            } else if let error = error {
+                print("Error fetching customer info: \(error.localizedDescription)")
+                self.isSubscribed = false // Ensure isSubscribed is false on error
+            }
+            DispatchQueue.main.async {
+                completion?()
+            }
         }
     }
 
     @objc private func subscriptionStatusChanged() {
-        // checkSubscriptionStatus { // Temporarily commented out
-        //     self.updateUIForSelectedPlaylist()
-        // }
-        print("PlayListViewController: subscriptionStatusChanged called - Bypassed.")
-        isSubscribed = true // Assume subscribed
-        self.updateUIForSelectedPlaylist()
+        checkSubscriptionStatus {
+            self.updateUIForSelectedPlaylist()
+        }
     }
 
     private func updateUIForSelectedPlaylist() {
@@ -397,26 +387,20 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     func playVideo(videoIdentifier: String?) {
         // Check subscription status before playing
         print("Play video starts")
-        // requireSubscription(on: self) { [weak self] isSubscribed in // Temporarily commented out
-        //     guard let self = self, isSubscribed else {
-        //         // Handle not subscribed case if necessary, perhaps by returning or showing a message
-        //         return
-        //     }
+        requireSubscription(on: self) { [weak self] isSubscribed in
+            guard let self = self, isSubscribed else {
+                // Handle not subscribed case if necessary, perhaps by returning or showing a message
+                return
+            }
             
-        //     guard let videoIdentifier = videoIdentifier, !videoIdentifier.isEmpty else {
-        //         print("Video identifier is nil or empty.")
-        //         // Handle invalid video identifier, perhaps show an alert
-        //         return
-        //     }
+            guard let videoIdentifier = videoIdentifier, !videoIdentifier.isEmpty else {
+                print("Video identifier is nil or empty.")
+                // Handle invalid video identifier, perhaps show an alert
+                return
+            }
             
-        //     self.playVideoPlaylist(videoIdentifiers: [videoIdentifier], currentIndex: 0)
-        // }
-        print("PlayListViewController: playVideo - Bypassing requireSubscription.")
-        guard let videoIdentifier = videoIdentifier, !videoIdentifier.isEmpty else {
-            print("Video identifier is nil or empty.")
-            return
+            self.playVideoPlaylist(videoIdentifiers: [videoIdentifier], currentIndex: 0)
         }
-        self.playVideoPlaylist(videoIdentifiers: [videoIdentifier], currentIndex: 0)
     }
 }
 
