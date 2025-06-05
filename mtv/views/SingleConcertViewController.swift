@@ -77,11 +77,7 @@ class SingleConcertViewController: UIViewController, UICollectionViewDataSource,
     private let venueNameLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        if let customFont = UIFont(name: "Anton-Regular", size: 48) {
-            label.font = customFont
-        } else {
-            label.font = UIFont.systemFont(ofSize: 48, weight: .bold)
-        }
+        label.font = UIFont.systemFont(ofSize: 48, weight: .bold)
         label.textAlignment = .left
         label.numberOfLines = 2
         label.lineBreakMode = .byTruncatingTail
@@ -464,12 +460,8 @@ class SingleConcertViewController: UIViewController, UICollectionViewDataSource,
         
         // Add venue name with bold font
         if let venue = venueName {
-            let boldFont: UIFont
-            if let customFont = UIFont(name: "Anton-Regular", size: 48) {
-                boldFont = customFont
-            } else {
-                boldFont = UIFont.systemFont(ofSize: 48, weight: .bold)
-            }
+            // Use system bold font directly instead of trying to load Anton-Regular
+            let boldFont = UIFont.systemFont(ofSize: 48, weight: .bold)
             
             let venueAttributes: [NSAttributedString.Key: Any] = [
                 .font: boldFont,

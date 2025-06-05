@@ -561,13 +561,8 @@ class LegendaryShowCell: UICollectionViewCell {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        // 30% smaller than 38: use 27
-        if let customFont = UIFont(name: "Anton-Regular", size: 27) {
-            label.font = customFont
-        } else {
-            print("⚠️ Anton-Regular font not found, using system bold.")
-            label.font = UIFont.systemFont(ofSize: 27, weight: .bold)
-        }
+        // Use system bold font directly instead of trying to load Anton-Regular
+        label.font = UIFont.systemFont(ofSize: 27, weight: .bold)
         label.textAlignment = .left
         label.numberOfLines = 2
         label.lineBreakMode = .byTruncatingTail

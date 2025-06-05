@@ -270,20 +270,28 @@ class LiveShowsTabViewController: UIViewController {
     
     // MARK: - Loading Indicator
     private func showLoadingIndicator() {
-        loadingIndicator = UIActivityIndicatorView(style: .large)
-        loadingIndicator.color = .white
-        loadingIndicator.startAnimating()
-        view.addSubview(loadingIndicator)
-        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
+        // Clean up any existing loading indicator first
+        hideLoadingIndicator()
+        
+        DispatchQueue.main.async {
+            self.loadingIndicator = UIActivityIndicatorView(style: .large)
+            self.loadingIndicator.color = .white
+            self.loadingIndicator.startAnimating()
+            self.view.addSubview(self.loadingIndicator)
+            self.loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                self.loadingIndicator.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
+                self.loadingIndicator.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
+            ])
+        }
     }
     
     private func hideLoadingIndicator() {
-        loadingIndicator?.stopAnimating()
-        loadingIndicator?.removeFromSuperview()
+        DispatchQueue.main.async {
+            self.loadingIndicator?.stopAnimating()
+            self.loadingIndicator?.removeFromSuperview()
+            self.loadingIndicator = nil // Clear the reference
+        }
     }
     
     // Handle remote back/menu button to show category grid
@@ -528,53 +536,37 @@ extension LiveShowsTabViewController: UICollectionViewDataSource, UICollectionVi
     }
     
     private func playVideo(videoIdentifier: String) {
-        print("SearchViewController: Attempting to play video with ID: \\(videoIdentifier) using YouTubeKit")
+        print("SearchViewController: Requesting stream from YouTubePlayerService for ID: \(videoIdentifier)")
         let loadingIndicator = UIActivityIndicatorView(style: .large)
         loadingIndicator.color = .white
-        loadingIndicator.center = self.view.center // Assuming 'self' is SearchViewController
+        loadingIndicator.center = self.view.center
         self.view.addSubview(loadingIndicator)
         loadingIndicator.startAnimating()
 
         let playerViewController = AVPlayerViewController()
-        // playerViewController.delegate = self // Set delegate if SearchViewController conforms to AVPlayerViewControllerDelegate
+        playerViewController.modalPresentationStyle = .fullScreen
 
-        Task { @MainActor in
-            defer {
+        YouTubePlayerService.shared.getPlayableStreamURL(for: videoIdentifier) { [weak self] result in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
                 loadingIndicator.stopAnimating()
                 loadingIndicator.removeFromSuperview()
-            }
-            do {
-                let video = YouTube(videoID: videoIdentifier)
-                let streams = try await video.streams
                 
-                var streamURL: URL? = streams
-                    .filterVideoAndAudio()
-                    .filter { $0.isNativelyPlayable }
-                    .highestResolutionStream()?
-                    .url
-                
-                if streamURL == nil { // Fallback
-                    streamURL = streams.filterVideoAndAudio().first?.url ?? streams.first?.url
+                switch result {
+                case .success(let streamURL):
+                    print("SearchViewController: YouTubePlayerService returned URL: \(streamURL) for video ID: \(videoIdentifier)")
+                    let avPlayer = AVPlayer(url: streamURL)
+                    playerViewController.player = avPlayer
+                    self.present(playerViewController, animated: true) {
+                        avPlayer.play()
+                    }
+                case .failure(let error):
+                    print("🚫 SearchViewController: YouTubePlayerService failed for video ID \(videoIdentifier). Error: \(error.localizedDescription)")
+                    let alert = UIAlertController(title: "Playback Error", message: error.localizedDescription, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
                 }
-
-                guard let finalStreamURL = streamURL else {
-                    print("🌟 No suitable stream URL found with YouTubeKit for video ID: \\(videoIdentifier)")
-                    // Optionally, show an error to the user
-                    return
-                }
-                
-                print("🌟 YouTubeKit Stream URL: \\(finalStreamURL)")
-                let avPlayer = AVPlayer(url: finalStreamURL)
-                playerViewController.player = avPlayer
-                
-                // Ensure 'self' here refers to the SearchViewController instance to present the player
-                // If SearchViewController is not the one presenting, adjust accordingly.
-                self.present(playerViewController, animated: true) {
-                    avPlayer.play()
-                }
-            } catch {
-                print("🌟 YouTubeKit playback error for video ID \\(videoIdentifier): \\(error.localizedDescription)")
-                // Optionally, show an error to the user
             }
         }
     }
