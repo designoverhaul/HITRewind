@@ -1,5 +1,89 @@
 import UIKit
 
+// Temporary inline DiagnosticsViewController to avoid scope issues
+class DiagnosticsViewController: UIViewController {
+    
+    private var scrollView: UIScrollView!
+    private var contentView: UIView!
+    private var stackView: UIStackView!
+    private var refreshTimer: Timer?
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        startMonitoring()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        stopMonitoring()
+    }
+    
+    private func setupUI() {
+        view.backgroundColor = UIColor(red: 41/255, green: 38/255, blue: 49/255, alpha: 1.0)
+        title = "Performance Diagnostics"
+        
+        // Create a simple diagnostic view
+        let titleLabel = UILabel()
+        titleLabel.text = "🔧 Performance Diagnostics"
+        titleLabel.textColor = .white
+        titleLabel.font = UIFont.systemFont(ofSize: 32, weight: .bold)
+        titleLabel.textAlignment = .center
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(titleLabel)
+        
+        let infoLabel = UILabel()
+        infoLabel.text = "This diagnostic tool helps monitor image loading performance and memory usage for troubleshooting thumbnail issues."
+        infoLabel.textColor = UIColor.lightGray
+        infoLabel.font = UIFont.systemFont(ofSize: 18)
+        infoLabel.textAlignment = .center
+        infoLabel.numberOfLines = 0
+        infoLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(infoLabel)
+        
+        // Close button
+        let closeButton = UIButton(type: .system)
+        closeButton.setTitle("Close", for: .normal)
+        closeButton.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.2)
+        closeButton.layer.cornerRadius = 8
+        closeButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
+        closeButton.setTitleColor(.white, for: .normal)
+        closeButton.addTarget(self, action: #selector(closeView), for: .primaryActionTriggered)
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(closeButton)
+        
+        NSLayoutConstraint.activate([
+            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 100),
+            
+            infoLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            infoLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 40),
+            infoLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 100),
+            infoLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -100),
+            
+            closeButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            closeButton.topAnchor.constraint(equalTo: infoLabel.bottomAnchor, constant: 60),
+            closeButton.widthAnchor.constraint(equalToConstant: 200),
+            closeButton.heightAnchor.constraint(equalToConstant: 50)
+        ])
+    }
+    
+    @objc private func closeView() {
+        dismiss(animated: true)
+    }
+    
+    private func startMonitoring() {
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            // Placeholder for monitoring logic
+        }
+    }
+    
+    private func stopMonitoring() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+}
+
 class SettingsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -66,6 +150,17 @@ class SettingsViewController: UIViewController {
         contactSupportLabel.textAlignment = .center
         contactSupportLabel.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(contactSupportLabel)
+        
+        // Diagnostics button for troubleshooting performance issues
+        let diagnosticsButton = UIButton(type: .system)
+        diagnosticsButton.setTitle("🔧 Performance Diagnostics", for: .normal)
+        diagnosticsButton.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.2)
+        diagnosticsButton.layer.cornerRadius = 8
+        diagnosticsButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
+        diagnosticsButton.setTitleColor(.white, for: .normal)
+        diagnosticsButton.addTarget(self, action: #selector(openDiagnostics), for: .primaryActionTriggered)
+        diagnosticsButton.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(diagnosticsButton)
 
         // Layout constraints
         NSLayoutConstraint.activate([
@@ -94,11 +189,17 @@ class SettingsViewController: UIViewController {
             eulaLinkLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             eulaLinkLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
 
-            // Contact support label at the bottom
+            // Contact support label 
             contactSupportLabel.topAnchor.constraint(equalTo: eulaLinkLabel.bottomAnchor, constant: 30),
             contactSupportLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             contactSupportLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            contactSupportLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+            
+            // Diagnostics button at the bottom
+            diagnosticsButton.topAnchor.constraint(equalTo: contactSupportLabel.bottomAnchor, constant: 30),
+            diagnosticsButton.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            diagnosticsButton.widthAnchor.constraint(equalToConstant: 300),
+            diagnosticsButton.heightAnchor.constraint(equalToConstant: 50),
+            diagnosticsButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         ])
         
         // Add a gear icon to the top right, if this view controller were embedded in a UINavigationController
@@ -112,5 +213,11 @@ class SettingsViewController: UIViewController {
     @objc func settingsButtonTapped() {
         // Handle settings button tap
         print("Settings button tapped")
+    }
+    
+    @objc func openDiagnostics() {
+        let diagnosticsVC = DiagnosticsViewController()
+        diagnosticsVC.modalPresentationStyle = UIModalPresentationStyle.fullScreen
+        present(diagnosticsVC, animated: true)
     }
 } 

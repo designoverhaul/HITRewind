@@ -3,6 +3,45 @@ import UIKit
 import YouTubeKit // Added for the new YouTube player
 import AVKit
 import RevenueCat
+import ObjectiveC
+
+// MARK: - UIImageView Extension for ImageCache Support
+extension UIImageView {
+    private static var taskKey: UInt8 = 0
+    
+    private var currentTask: URLSessionDataTask? {
+        get { return objc_getAssociatedObject(self, &UIImageView.taskKey) as? URLSessionDataTask }
+        set { objc_setAssociatedObject(self, &UIImageView.taskKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+    }
+    
+    func loadImageFromCache(urlString: String, placeholder: UIImage? = nil) {
+        // Cancel any existing download
+        currentTask?.cancel()
+        
+        // Set placeholder
+        if let placeholder = placeholder {
+            self.image = placeholder
+        }
+        
+        // Simple image loading with basic caching
+        guard let url = URL(string: urlString) else { return }
+        
+        currentTask = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                self?.currentTask = nil
+                if let data = data, let image = UIImage(data: data) {
+                    self?.image = image
+                }
+            }
+        }
+        currentTask?.resume()
+    }
+    
+    func cancelImageLoad() {
+        currentTask?.cancel()
+        currentTask = nil
+    }
+}
 
 // MARK: - YouTubeVideoQuality
 
@@ -69,6 +108,36 @@ struct LegendaryShowFields: Codable {
 
 struct LegendaryShowResponse: Codable {
     let records: [LegendaryShow]
+}
+
+// MARK: - Music Video Models for "I ❤️ the 80s"
+struct MusicVideo: Codable {
+    let id: String
+    let fields: MusicVideoFields
+}
+
+struct MusicVideoFields: Codable {
+    let title: String?
+    let artistName: String?
+    let year: Int?
+    let featured: Bool?
+    let featured80s: Bool?
+    let thumbnail: String?
+    let url: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title = "title"
+        case artistName = "artistName"
+        case year = "year"
+        case featured = "Featured"
+        case featured80s = "80sFeatured"
+        case thumbnail = "thumbnail"
+        case url = "URL"
+    }
+}
+
+struct MusicVideoResponse: Codable {
+    let records: [MusicVideo]
 }
 
 // Function to fetch concerts from Concerts table
@@ -201,10 +270,16 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     // Properties for the second carousel and video grid
     private var bannerScrollView2: UIScrollView!
     private var collectionView2: UICollectionView!
+    private var collectionView2HeightConstraint: NSLayoutConstraint!
     private var concerts1: [Concert] = []
     private var concerts2: [Concert] = []
     private var legendaryShows1: [LegendaryShow] = []
     private var legendaryShows2: [LegendaryShow] = []
+    
+    // Properties for the "I ❤️ the 80s" section
+    private var featuredVideos: [MusicVideo] = []
+    private var featuredVideosTitleLabel: UILabel!
+    private var featuredVideosCollectionView: UICollectionView!
     
     // Subscription management properties
     private var isSubscribed: Bool = false
@@ -217,6 +292,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         showLoadingIndicator()
         fetchConcerts()
         fetchLegendaryShows()
+        fetchFeatured80sVideos()
         checkSubscriptionStatus()
         
         // Add observer for subscription status change
@@ -302,7 +378,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         let totalSpacing: CGFloat = 3 * 30 // 3 spaces between 4 items
         let availableWidth = screenWidth - totalHorizontalPadding - totalSpacing
         let itemWidth = availableWidth / 4
-        let itemHeight: CGFloat = 380 // Increased from 320 to provide more space for text
+        let itemHeight: CGFloat = 330 // Adjusted from 380 to remove extra bottom space
         
         layout.itemSize = CGSize(width: itemWidth, height: itemHeight)
         layout.sectionInset = UIEdgeInsets(top: 20, left: 40, bottom: 20, right: 40)
@@ -324,12 +400,37 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         layout2.sectionInset = UIEdgeInsets(top: 20, left: 40, bottom: 20, right: 40) // Same inset
 
         collectionView2 = UICollectionView(frame: .zero, collectionViewLayout: layout2)
-        collectionView2.backgroundColor = .clear
+        collectionView2.backgroundColor = .clear // DEBUG REMOVED
         collectionView2.dataSource = self
         collectionView2.delegate = self
+        collectionView2.isScrollEnabled = false
         collectionView2.register(LegendaryShowCell.self, forCellWithReuseIdentifier: "LegendaryShowCell")
         collectionView2.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(collectionView2)
+        
+        // "I ❤️ the 80s" Title Label
+        featuredVideosTitleLabel = UILabel()
+        featuredVideosTitleLabel.text = "I ❤️ the 80s"
+        featuredVideosTitleLabel.textColor = .white
+        featuredVideosTitleLabel.font = UIFont.boldSystemFont(ofSize: 36)
+        featuredVideosTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(featuredVideosTitleLabel)
+
+        // Featured Videos Collection View
+        let featuredLayout = UICollectionViewFlowLayout()
+        featuredLayout.scrollDirection = .horizontal
+        featuredLayout.minimumInteritemSpacing = 30
+        featuredLayout.minimumLineSpacing = 40
+        featuredLayout.itemSize = CGSize(width: itemWidth, height: itemHeight)
+        featuredLayout.sectionInset = UIEdgeInsets(top: 0, left: 40, bottom: 0, right: 40) // Add horizontal padding via inset
+
+        featuredVideosCollectionView = UICollectionView(frame: .zero, collectionViewLayout: featuredLayout)
+        featuredVideosCollectionView.backgroundColor = .clear
+        featuredVideosCollectionView.dataSource = self
+        featuredVideosCollectionView.delegate = self
+        featuredVideosCollectionView.register(MusicVideoCell.self, forCellWithReuseIdentifier: "MusicVideoCell")
+        featuredVideosCollectionView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(featuredVideosCollectionView)
         
         // Layout constraints
         // Calculate height for the first collection view (8 items = 2 rows, given 4 columns)
@@ -357,13 +458,13 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             contentView.widthAnchor.constraint(equalTo: mainScrollView.widthAnchor),
             
             // Top Large Banner (70% width, centered)
-            topLargeBannerImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            topLargeBannerImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 40),
             topLargeBannerImageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             topLargeBannerImageView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.7),
             topLargeBannerImageView.heightAnchor.constraint(equalTo: topLargeBannerImageView.widthAnchor, multiplier: 556.0/2108.0),
             
             // Banner carousel (left-aligned with videos, scrolls with content)
-            bannerScrollView.topAnchor.constraint(equalTo: topLargeBannerImageView.bottomAnchor, constant: 30),
+            bannerScrollView.topAnchor.constraint(equalTo: topLargeBannerImageView.bottomAnchor, constant: 50),
             bannerScrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
             bannerScrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             bannerScrollView.heightAnchor.constraint(equalToConstant: 280),
@@ -384,12 +485,132 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             collectionView2.topAnchor.constraint(equalTo: bannerScrollView2.bottomAnchor, constant: 30),
             collectionView2.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             collectionView2.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            collectionView2.bottomAnchor.constraint(equalTo: contentView.bottomAnchor), // Occupies remaining space
-            collectionView2.heightAnchor.constraint(equalToConstant: 2000) // Fixed height for now, can be dynamic
+            
+            // "I ❤️ the 80s" Title Label
+            featuredVideosTitleLabel.topAnchor.constraint(equalTo: collectionView2.bottomAnchor, constant: 40),
+            featuredVideosTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
+            featuredVideosTitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -40),
+
+            // Featured Videos Collection View
+            featuredVideosCollectionView.topAnchor.constraint(equalTo: featuredVideosTitleLabel.bottomAnchor, constant: 20),
+            featuredVideosCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            featuredVideosCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            featuredVideosCollectionView.heightAnchor.constraint(equalToConstant: itemHeight), // Use itemHeight for single row
+            
+            // Pin the bottom of the last element to the contentView's bottom
+            featuredVideosCollectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40)
         ])
+        
+        // Add the dynamic height constraint for the second collection view
+        collectionView2HeightConstraint = collectionView2.heightAnchor.constraint(equalToConstant: 0) // Start with 0 height
+        collectionView2HeightConstraint.isActive = true
     }
     
     // MARK: - Data Fetching
+    
+    private func fetchFeatured80sVideos() {
+        print("🎸 Fetching featured 80s videos...")
+        let urlString = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/MTvVideos?filterByFormula=%7B80sFeatured%7D%3D1&maxRecords=50"
+        print("🎸 Corrected URL with 80sFeatured filter: \(urlString)")
+        guard let url = URL(string: urlString) else {
+            print("🎸 Invalid URL for featured videos")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else { return }
+
+            if let error = error {
+                print("🎸 HTTP Request Error: \(error.localizedDescription)")
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("🎸 Invalid HTTP response")
+                return
+            }
+
+            print("🎸 HTTP Status Code: \(httpResponse.statusCode)")
+
+            guard let data = data else {
+                print("🎸 No data received")
+                return
+            }
+            
+            // Print raw JSON for debugging (first 2000 characters)
+            if let jsonString = String(data: data, encoding: .utf8) {
+                let preview = String(jsonString.prefix(2000))
+                print("🎸 Raw JSON response preview:\n\(preview)")
+                
+                // Look for any field that might contain "80" or "Featured"
+                let lines = jsonString.components(separatedBy: "\n")
+                for line in lines {
+                    if line.contains("80") || line.contains("Featured") {
+                        print("🎸 FIELD MATCH: \(line)")
+                    }
+                }
+                
+                // Debug: Show all unique field names from first 5 records
+                do {
+                    if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let records = json["records"] as? [[String: Any]] {
+                        print("🎸 DEBUG: Showing all field names from first few records:")
+                        for (recordIndex, record) in records.prefix(3).enumerated() {
+                            if let fields = record["fields"] as? [String: Any] {
+                                let fieldNames = Array(fields.keys).sorted()
+                                print("🎸 Record \(recordIndex) fields: \(fieldNames)")
+                            }
+                        }
+                    }
+                } catch {
+                    print("🎸 DEBUG: Could not parse JSON for field names: \(error)")
+                }
+            }
+
+            do {
+                let decoder = JSONDecoder()
+                let videoResponse = try decoder.decode(MusicVideoResponse.self, from: data)
+                
+                print("🎸 Successfully decoded \(videoResponse.records.count) featured videos.")
+
+                print("🎸 Raw response contains \(videoResponse.records.count) records")
+                
+                // Log details of each video and check for 80sFeatured field
+                for (index, video) in videoResponse.records.enumerated() {
+                    print("🎸 Video \(index): title=\(video.fields.title ?? "nil"), artist=\(video.fields.artistName ?? "nil"), year=\(video.fields.year ?? 0), 80sFeatured=\(video.fields.featured80s ?? false)")
+                }
+
+                // The server is already filtering by 80sFeatured, so we use the records directly.
+                let shuffledVideos = videoResponse.records.shuffled()
+                self.featuredVideos = Array(shuffledVideos.prefix(8))
+                print("🎸 Set featuredVideos array to \(self.featuredVideos.count) items")
+
+                DispatchQueue.main.async {
+                    print("🎸 Reloading featured videos collection view...")
+                    self.featuredVideosCollectionView.reloadData()
+                    print("🎸 Collection view reloaded")
+                }
+            } catch {
+                print("🎸 FATAL: Error decoding featured videos: \(error)")
+                if let decodingError = error as? DecodingError {
+                    print("🎸 DECODING ERROR DETAILS: \(decodingError)")
+                }
+                
+                // We no longer need the fallback since the primary fetch should work now
+                // print("🎸 Trying fallback: fetch all records...")
+                // self.fetchAllVideosAndFilter()
+            }
+        }.resume()
+    }
+    
+    private func fetchAllVideosAndFilter() {
+        // This function is now deprecated and can be removed or left empty.
+        // For safety, let's just log that it was called.
+        print("🎸 DEPRECATED: fetchAllVideosAndFilter was called, but is no longer needed.")
+    }
     
     private func fetchConcerts() {
         print("🎪 LegendaryShowsViewController: Starting to fetch concerts for banner carousel")
@@ -432,6 +653,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                 DispatchQueue.main.async {
                     self.collectionView.reloadData()
                     self.collectionView2.reloadData()
+                    self.updateCollectionView2Height() // Calculate and set height
                     self.hideLoadingIndicator()
                 }
             case .failure(let error):
@@ -441,6 +663,29 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                 }
             }
         }
+    }
+    
+    private func updateCollectionView2Height() {
+        guard let layout = collectionView2.collectionViewLayout as? UICollectionViewFlowLayout else {
+            return
+        }
+
+        let showCount = legendaryShows2.count
+        guard showCount > 0 else {
+            collectionView2HeightConstraint.constant = 0
+            return
+        }
+
+        let itemsPerRow = 4
+        let numberOfRows = (showCount + itemsPerRow - 1) / itemsPerRow // Ceiling division
+
+        let itemHeight = layout.itemSize.height
+        let lineSpacing = layout.minimumLineSpacing
+        let sectionInsets = layout.sectionInset
+
+        let totalHeight = (CGFloat(numberOfRows) * itemHeight) + (CGFloat(numberOfRows - 1) * lineSpacing) + sectionInsets.top + sectionInsets.bottom
+        
+        collectionView2HeightConstraint.constant = totalHeight
     }
     
     // MARK: - Banner Carousel Setup
@@ -1157,11 +1402,27 @@ extension LegendaryShowsViewController: UICollectionViewDataSource {
             return legendaryShows1.count
         } else if collectionView == self.collectionView2 { // Second collection view (bottom one)
             return legendaryShows2.count
+        } else if collectionView == self.featuredVideosCollectionView {
+            print("🎸 COLLECTION VIEW DEBUG: numberOfItemsInSection called for featuredVideosCollectionView, featuredVideos.count = \(featuredVideos.count)")
+            print("🎸 COLLECTION VIEW DEBUG: featuredVideos array: \(featuredVideos.map { $0.fields.title ?? "No title" })")
+            return featuredVideos.count
         }
         return 0 // Default
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        if collectionView == self.featuredVideosCollectionView {
+            print("🎸 COLLECTION VIEW DEBUG: cellForItemAt called for featuredVideosCollectionView at index \(indexPath.item)")
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MusicVideoCell", for: indexPath) as? MusicVideoCell else {
+                print("🎸 COLLECTION VIEW DEBUG: Failed to dequeue MusicVideoCell")
+                return UICollectionViewCell()
+            }
+            let video = featuredVideos[indexPath.item]
+            print("🎸 COLLECTION VIEW DEBUG: Configuring cell with video: \(video.fields.title ?? "No title")")
+            cell.configure(with: video)
+            return cell
+        }
+        
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "LegendaryShowCell", for: indexPath) as? LegendaryShowCell else {
             return UICollectionViewCell()
         }
@@ -1186,6 +1447,19 @@ extension LegendaryShowsViewController: UICollectionViewDataSource {
 extension LegendaryShowsViewController: UICollectionViewDelegate {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if collectionView == self.featuredVideosCollectionView {
+            print("🎸 COLLECTION VIEW DEBUG: Featured video selected at index \(indexPath.item)")
+            let selectedVideo = featuredVideos[indexPath.item]
+            requireSubscription(on: self) { [weak self] isSubscribed in
+                guard let self = self, isSubscribed else { return }
+                if let url = selectedVideo.fields.url {
+                    print("🎸 User subscribed, playing featured video: \(selectedVideo.fields.title ?? "Unknown")")
+                    self.playVideo(with: url)
+                }
+            }
+            return
+        }
+        
         let selectedShow: LegendaryShow
         if collectionView == self.collectionView { // First collection view
             selectedShow = legendaryShows1[indexPath.item]
@@ -1201,6 +1475,117 @@ extension LegendaryShowsViewController: UICollectionViewDelegate {
                 print("🌟 LegendaryShowsViewController: User subscribed, playing video: \(selectedShow.fields.title ?? "Unknown")")
                 self.playVideo(with: url)
             }
+        }
+    }
+}
+
+// MARK: - Music Video Cell
+
+class MusicVideoCell: UICollectionViewCell {
+    private let imageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        iv.layer.cornerRadius = 12
+        iv.backgroundColor = UIColor.black.withAlphaComponent(0.1)
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        return iv
+    }()
+    
+    private let songLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .white
+        label.font = UIFont.systemFont(ofSize: 27, weight: .bold)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let artistLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = UIColor(hex: "#A789FD")
+        label.font = UIFont.systemFont(ofSize: 25, weight: .semibold)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        print("🎸 CELL DEBUG: MusicVideoCell init called")
+        
+        contentView.addSubview(imageView)
+        contentView.addSubview(songLabel)
+        contentView.addSubview(artistLabel)
+        
+        NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            imageView.heightAnchor.constraint(equalTo: contentView.heightAnchor, multiplier: 0.7),
+            
+            songLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 8),
+            songLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            songLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            
+            artistLabel.topAnchor.constraint(equalTo: songLabel.bottomAnchor, constant: 4),
+            artistLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            artistLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        imageView.cancelImageLoad() // Cancel any pending image load
+        imageView.image = nil
+        songLabel.text = nil
+        artistLabel.text = nil
+        
+        // Reset focus state
+        contentView.backgroundColor = .clear
+        contentView.layer.cornerRadius = 0
+        contentView.layer.masksToBounds = false
+        transform = .identity
+    }
+    
+    override var canBecomeFocused: Bool {
+        return true
+    }
+    
+    override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+        super.didUpdateFocus(in: context, with: coordinator)
+        
+        coordinator.addCoordinatedAnimations({
+            if self.isFocused {
+                self.contentView.backgroundColor = UIColor(hex: "292631")
+                self.contentView.layer.cornerRadius = 12
+                self.contentView.layer.masksToBounds = true
+                self.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+                self.layer.zPosition = 1
+            } else {
+                self.contentView.backgroundColor = .clear
+                self.contentView.layer.cornerRadius = 0
+                self.contentView.layer.masksToBounds = false
+                self.transform = CGAffineTransform.identity
+                self.layer.zPosition = 0
+            }
+        }, completion: nil)
+    }
+    
+    func configure(with video: MusicVideo) {
+        print("🎸 CELL DEBUG: MusicVideoCell configure called with video: \(video.fields.title ?? "No title"), artist: \(video.fields.artistName ?? "No artist")")
+        songLabel.text = video.fields.title ?? "Unknown Song"
+        artistLabel.text = video.fields.artistName ?? "Unknown Artist"
+        
+        if let thumbnailUrl = video.fields.thumbnail, !thumbnailUrl.isEmpty {
+            print("🎸 CELL DEBUG: Loading thumbnail from cache: \(thumbnailUrl)")
+            let placeholder = UIImage(systemName: "photo")
+            imageView.loadImageFromCache(urlString: thumbnailUrl, placeholder: placeholder)
+        } else {
+            print("🎸 CELL DEBUG: No thumbnail URL provided")
+            imageView.image = UIImage(systemName: "photo")
         }
     }
 }
@@ -1274,37 +1659,6 @@ class LegendaryShowCell: UICollectionViewCell {
         contentView.addSubview(titleLabel)
         contentView.addSubview(artistLabel)
         contentView.addSubview(yearLabel)
-        NSLayoutConstraint.activate([
-            // Thumbnail container (for glow)
-            thumbnailContainer.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
-            thumbnailContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
-            thumbnailContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
-            thumbnailContainer.heightAnchor.constraint(equalTo: thumbnailContainer.widthAnchor, multiplier: 9.0/16.0),
-            // Image view inside container
-            imageView.topAnchor.constraint(equalTo: thumbnailContainer.topAnchor),
-            imageView.leadingAnchor.constraint(equalTo: thumbnailContainer.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: thumbnailContainer.trailingAnchor),
-            imageView.bottomAnchor.constraint(equalTo: thumbnailContainer.bottomAnchor),
-            // Title label below thumbnail
-            titleLabel.topAnchor.constraint(equalTo: thumbnailContainer.bottomAnchor, constant: 12),
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            // Artist label below title
-            artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            artistLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            artistLabel.trailingAnchor.constraint(lessThanOrEqualTo: yearLabel.leadingAnchor, constant: -8),
-            // Year label inline with artist label, right-aligned
-            yearLabel.centerYAnchor.constraint(equalTo: artistLabel.centerYAnchor),
-            yearLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            yearLabel.leadingAnchor.constraint(greaterThanOrEqualTo: artistLabel.trailingAnchor, constant: 8)
-        ])
-
-        // Create and configure the specific bottom constraint for artistLabel
-        let artistBottomConstraint = artistLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10)
-        artistBottomConstraint.priority = .defaultHigh
-        // Add this constraint to the activation list, or activate it separately if preferred.
-        // For simplicity here, adding it to the existing activate call if possible, or activating it directly.
-        // Let's re-structure to activate it along with others clearly.
 
         // First, define all constraints
         let thumbnailContainerTop = thumbnailContainer.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10)
@@ -1317,11 +1671,11 @@ class LegendaryShowCell: UICollectionViewCell {
         let imageViewTrailing = imageView.trailingAnchor.constraint(equalTo: thumbnailContainer.trailingAnchor)
         let imageViewBottom = imageView.bottomAnchor.constraint(equalTo: thumbnailContainer.bottomAnchor)
         
-        let titleLabelTop = titleLabel.topAnchor.constraint(equalTo: thumbnailContainer.bottomAnchor, constant: 12)
+        let titleLabelTop = titleLabel.topAnchor.constraint(equalTo: thumbnailContainer.bottomAnchor, constant: 4)
         let titleLabelLeading = titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20)
         let titleLabelTrailing = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
         
-        let artistLabelTop = artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4)
+        let artistLabelTop = artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2)
         let artistLabelLeading = artistLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20)
         let artistLabelTrailing = artistLabel.trailingAnchor.constraint(lessThanOrEqualTo: yearLabel.leadingAnchor, constant: -8)
         
@@ -1334,8 +1688,7 @@ class LegendaryShowCell: UICollectionViewCell {
             imageViewTop, imageViewLeading, imageViewTrailing, imageViewBottom,
             titleLabelTop, titleLabelLeading, titleLabelTrailing,
             artistLabelTop, artistLabelLeading, artistLabelTrailing,
-            yearLabelCenterY, yearLabelTrailing, yearLabelLeading,
-            artistBottomConstraint // Include the prioritized constraint here
+            yearLabelCenterY, yearLabelTrailing, yearLabelLeading
         ])
 
         // Compression/hugging priorities
@@ -1376,13 +1729,7 @@ class LegendaryShowCell: UICollectionViewCell {
     }
     private func loadThumbnailFromURL(_ urlString: String) {
         guard let url = URL(string: urlString) else { return }
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            if let data = data, let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    self?.imageView.image = image
-                }
-            }
-        }.resume()
+        imageView.loadImageFromCache(urlString: urlString, placeholder: UIImage(systemName: "play.rectangle.fill"))
     }
     private func fetchPlaylistThumbnail(playlistId: String) {
         let apiKey = "AIzaSyChKL0fUHEfc1AlKe0ks53Y2wT78gxLiJE"
@@ -1453,16 +1800,54 @@ class FocusableBannerImageView: UIImageView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         configureView()
+        setupNotifications()
     }
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         configureView()
+        setupNotifications()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     private func configureView() {
         layer.cornerRadius = 12
-        clipsToBounds = true
+        clipsToBounds = false // Changed to false to allow shadow
+        
+        // Setup shadow properties (initially hidden)
+        layer.shadowColor = UIColor.white.cgColor
+        layer.shadowOffset = CGSize(width: 0, height: 0)
+        layer.shadowRadius = 8
+        layer.shadowOpacity = 0
+    }
+    
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bannerFocusChanged(_:)),
+            name: NSNotification.Name("BannerFocusChanged"),
+            object: nil
+        )
+    }
+    
+    @objc private func bannerFocusChanged(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let focusedTag = userInfo["focusedTag"] as? Int else { return }
+        
+        // If this banner is not the focused one, dim it slightly
+        if focusedTag != self.tag && focusedTag != -1 {
+            UIView.animate(withDuration: 0.2) {
+                self.alpha = 0.6
+            }
+        } else if focusedTag == -1 {
+            // No banner is focused, restore normal alpha
+            UIView.animate(withDuration: 0.2) {
+                self.alpha = 1.0
+            }
+        }
     }
     
     override var canBecomeFocused: Bool {
@@ -1478,13 +1863,37 @@ class FocusableBannerImageView: UIImageView {
                 self.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
                 // Bring to front with high z-index
                 self.layer.zPosition = 1000
+                // Add modest shadow
+                self.layer.shadowOpacity = 0.4
+                // Restore full opacity for focused banner
+                self.alpha = 1.0
                 print("🎪 Banner image focused - tag: \(self.tag)")
+                
+                // Notify other banners to dim
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("BannerFocusChanged"),
+                    object: nil,
+                    userInfo: ["focusedTag": self.tag]
+                )
             } else {
                 // Scale back down when not focused
                 self.transform = CGAffineTransform.identity
                 // Reset z-index
                 self.layer.zPosition = 0
+                // Remove shadow
+                self.layer.shadowOpacity = 0
                 print("🎪 Banner image unfocused - tag: \(self.tag)")
+                
+                // If no banner is focused, restore all banners
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if context.nextFocusedView as? FocusableBannerImageView == nil {
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("BannerFocusChanged"),
+                            object: nil,
+                            userInfo: ["focusedTag": -1]
+                        )
+                    }
+                }
             }
         }, completion: nil)
     }
