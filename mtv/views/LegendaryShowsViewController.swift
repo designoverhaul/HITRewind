@@ -9,7 +9,7 @@ import ObjectiveC
 extension UIImageView {
     private static var taskKey: UInt8 = 0
     
-    private var currentTask: URLSessionDataTask? {
+    var currentTask: URLSessionDataTask? {
         get { return objc_getAssociatedObject(self, &UIImageView.taskKey) as? URLSessionDataTask }
         set { objc_setAssociatedObject(self, &UIImageView.taskKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
     }
@@ -775,13 +775,48 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     private func loadBannerImage(from urlString: String, into imageView: UIImageView) {
         guard let url = URL(string: urlString) else { return }
         
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            if let data = data, let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    imageView.image = image
+        // Cancel any existing task for this image view
+        imageView.cancelImageLoad()
+        
+        // Configure URLSession for better performance with large images
+        let config = URLSessionConfiguration.default
+        config.urlCache = URLCache(memoryCapacity: 50 * 1024 * 1024, diskCapacity: 100 * 1024 * 1024, diskPath: nil) // 50MB memory, 100MB disk
+        config.requestCachePolicy = .returnCacheDataElseLoad
+        let session = URLSession(configuration: config)
+        
+        let task = session.dataTask(with: url) { [weak imageView] data, response, error in
+            DispatchQueue.main.async {
+                guard let imageView = imageView, 
+                      let data = data,
+                      error == nil else {
+                    print("🖼️ Failed to load banner image: \(error?.localizedDescription ?? "Unknown error")")
+                    return
+                }
+                
+                // Resize large images to reduce memory usage
+                if let originalImage = UIImage(data: data) {
+                    let resizedImage = self.resizeImageForDisplay(originalImage, targetWidth: 800) // Resize to max 800px width
+                    imageView.image = resizedImage
+                    print("🖼️ ✅ Loaded and resized banner image: \(originalImage.size) -> \(resizedImage.size)")
                 }
             }
-        }.resume()
+        }
+        
+        // Store the task for potential cancellation
+        imageView.currentTask = task
+        task.resume()
+    }
+    
+    // Helper method to resize images for better memory performance
+    private func resizeImageForDisplay(_ image: UIImage, targetWidth: CGFloat) -> UIImage {
+        let aspectRatio = image.size.height / image.size.width
+        let targetHeight = targetWidth * aspectRatio
+        let targetSize = CGSize(width: targetWidth, height: targetHeight)
+        
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        return renderer.image { context in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
     }
     
     @objc private func handleBannerSelection(_ notification: Notification) {

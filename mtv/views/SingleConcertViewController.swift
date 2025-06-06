@@ -301,39 +301,48 @@ struct ConcertVideoResponse: Codable {
                 print("🚀 DEBUG: navigationController exists: \(navigationController != nil)")
                 print("🚀 DEBUG: navigationController view controllers count: \(navigationController?.viewControllers.count ?? 0)")
                 
-                if let navController = navigationController {
-                    print("🚀 DEBUG: Navigation controller view controllers:")
-                    for (index, vc) in navController.viewControllers.enumerated() {
-                        print("🚀 DEBUG:   [\(index)]: \(type(of: vc))")
-                    }
-                }
-                
-                // Handle back navigation - ensure we go back to Epic Shows screen
-                if let navController = navigationController, navController.viewControllers.count > 1 {
-                    print("🚀 DEBUG: ✅ Popping view controller from navigation stack")
-                    DispatchQueue.main.async {
-                        navController.popViewController(animated: true)
-                    }
-                    handled = true
-                } else if presentingViewController != nil {
-                    print("🚀 DEBUG: ⚠️ Presented modally - dismissing")
-                    DispatchQueue.main.async {
-                        self.dismiss(animated: true, completion: nil)
-                    }
-                    handled = true
+                // IMPORTANT: Check if we have a presented view controller (like video player)
+                // If so, let it handle the menu press first instead of dismissing ourselves
+                if let presentedVC = presentedViewController {
+                    print("🚀 DEBUG: 🎬 Video player or other VC is presented (\(type(of: presentedVC))), letting it handle menu press")
+                    // Don't handle the menu press ourselves - let the presented VC handle it
+                    // This ensures the video player dismisses itself and returns to SingleConcertViewController
+                    handled = false
                 } else {
-                    print("🚀 DEBUG: ❌ No clear navigation path - attempting to find parent")
-                    // Try to find the tab bar controller and switch to Music Videos tab
-                    if let tabBarController = findTabBarController() {
-                        print("🚀 DEBUG: Found tab bar controller - switching to Music Videos tab")
+                    if let navController = navigationController {
+                        print("🚀 DEBUG: Navigation controller view controllers:")
+                        for (index, vc) in navController.viewControllers.enumerated() {
+                            print("🚀 DEBUG:   [\(index)]: \(type(of: vc))")
+                        }
+                    }
+                    
+                    // Handle back navigation - ensure we go back to Epic Shows screen
+                    if let navController = navigationController, navController.viewControllers.count > 1 {
+                        print("🚀 DEBUG: ✅ Popping view controller from navigation stack")
                         DispatchQueue.main.async {
-                            tabBarController.selectedIndex = 1 // Music Videos is now at index 1
+                            navController.popViewController(animated: true)
                         }
                         handled = true
+                    } else if presentingViewController != nil {
+                        print("🚀 DEBUG: ⚠️ Presented modally - dismissing")
+                        DispatchQueue.main.async {
+                            self.dismiss(animated: true, completion: nil)
+                        }
+                        handled = true
+                    } else {
+                        print("🚀 DEBUG: ❌ No clear navigation path - attempting to find parent")
+                        // Try to find the tab bar controller and switch to Music Videos tab
+                        if let tabBarController = findTabBarController() {
+                            print("🚀 DEBUG: Found tab bar controller - switching to Music Videos tab")
+                            DispatchQueue.main.async {
+                                tabBarController.selectedIndex = 1 // Music Videos is now at index 1
+                            }
+                            handled = true
+                        }
                     }
+                    
+                    print("🚀 DEBUG: Back navigation initiated (handled: \(handled))")
                 }
-                
-                print("🚀 DEBUG: Back navigation initiated (handled: \(handled))")
                 
                 if handled {
                     return // Don't call super if we handled it
@@ -1005,6 +1014,7 @@ struct ConcertVideoResponse: Codable {
         // Play the next video
         playYouTubeVideo(identifier: nextVideoId, currentIndex: nextIndex)
     }
+
      // Make sure PlaylistImageCell is adapted for focus if needed for tvOS
      // (e.g., by overriding didUpdateFocus or using UICollectionViewDelegateFocus callbacks)
 }
