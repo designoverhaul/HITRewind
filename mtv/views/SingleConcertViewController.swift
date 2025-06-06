@@ -862,8 +862,7 @@ struct ConcertVideoResponse: Codable {
                 title: video.videoTitle, // Use actual video title from Concert Videos table
                 artist: "", // Empty artist field since individual videos don't need artist display
                 year: "", // No year for individual videos
-                url: video.youtubeURL,
-                thumbnail: nil
+                url: video.youtubeURL
             )
         )
         

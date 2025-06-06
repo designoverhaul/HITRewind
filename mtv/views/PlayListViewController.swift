@@ -167,15 +167,10 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             guard let self = self else { return }
 
             if let customerInfo = customerInfo {
-                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
-                if !activeEntitlements.isEmpty {
-                    self.isSubscribed = true
-                } else {
-                    self.isSubscribed = false
-                }
+                self.isSubscribed = customerInfo.entitlements["lifetime"]?.isActive == true
             } else if let error = error {
                 print("Error fetching customer info: \(error.localizedDescription)")
-                self.isSubscribed = false // Ensure isSubscribed is false on error
+                self.isSubscribed = false
             }
             DispatchQueue.main.async {
                 completion?()

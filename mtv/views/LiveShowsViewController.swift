@@ -216,8 +216,7 @@ class LiveShowsViewController: UIViewController, AVPlayerViewControllerDelegate 
         Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
             guard let self = self else { return }
             if let customerInfo = customerInfo {
-                let activeEntitlements = customerInfo.entitlements.all.filter { $0.value.isActive }
-                self.isSubscribed = !activeEntitlements.isEmpty
+                self.isSubscribed = customerInfo.entitlements["lifetime"]?.isActive == true
                 DispatchQueue.main.async {
                     self.purchaseButton.setTitle(self.isSubscribed ? "👍 Unlocked" : "🔓 Unlock All Music", for: .normal)
                     self.purchaseButton.isEnabled = !self.isSubscribed
