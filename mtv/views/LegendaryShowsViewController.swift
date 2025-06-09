@@ -223,14 +223,15 @@ func fetchConcerts(apiKey: String, baseURLString: String, completion: @escaping 
 
 // Function to fetch legendary shows from separate table
 func fetchLegendaryShows(apiKey: String, baseURLString: String, completion: @escaping (Result<[LegendaryShow], Error>) -> Void) {
-    // No filter needed since this is a dedicated legendary shows table
-    guard let url = URL(string: baseURLString) else {
+    // Add maxRecords parameter to limit to 20 shows (5 rows of 4 items each)
+    let urlStringWithLimit = baseURLString + "?maxRecords=20"
+    guard let url = URL(string: urlStringWithLimit) else {
         print("🌟 LEGENDARY DEBUG: Failed to create URL")
         completion(.failure(NSError(domain: "URLError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
         return
     }
     
-    print("🌟 LEGENDARY DEBUG: Final URL: \(url)")
+    print("🌟 LEGENDARY DEBUG: Final URL with limit: \(url)")
     
     var request = URLRequest(url: url)
     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -264,7 +265,7 @@ func fetchLegendaryShows(apiKey: String, baseURLString: String, completion: @esc
             let decoder = JSONDecoder()
             let legendaryShowResponse = try decoder.decode(LegendaryShowResponse.self, from: data)
             let legendaryShows = legendaryShowResponse.records
-            print("🌟 LEGENDARY DEBUG: Successfully decoded \(legendaryShows.count) shows")
+            print("🌟 LEGENDARY DEBUG: Successfully decoded \(legendaryShows.count) shows (limited to 20)")
             
             // Print details of each show for debugging
             for (index, show) in legendaryShows.enumerated() {
@@ -340,6 +341,16 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         checkSubscriptionStatus()
+        
+        // Check if we need to reshuffle for a new day
+        if shouldShuffleToday() {
+            if !concerts.isEmpty {
+                setupBannerCarousel()
+            }
+            if !legendaryShows.isEmpty {
+                reshuffleLegendaryShows()
+            }
+        }
     }
     
     // MARK: - UI Setup
@@ -577,15 +588,25 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             switch result {
             case .success(let shows):
                 print("🌟 LegendaryShowsViewController: Successfully fetched \(shows.count) legendary shows")
-                self.legendaryShows = shows
                 
-                // Split shows for the two collection views
-                let splitIndex = 8 // Changed from 4 to 8
-                if shows.count > splitIndex {
-                    self.legendaryShows1 = Array(shows.prefix(splitIndex))
-                    self.legendaryShows2 = Array(shows.suffix(from: splitIndex))
+                // Apply daily shuffle to videos if needed
+                var shuffledShows = shows
+                if self.shouldShuffleToday() {
+                    shuffledShows.shuffle()
+                    print("🌟 ✨ Daily shuffle applied to legendary shows!")
                 } else {
-                    self.legendaryShows1 = shows // If splitIndex or less, all go to the first collection view
+                    print("🌟 📅 Using existing video order from today")
+                }
+                
+                self.legendaryShows = shuffledShows
+                
+                // Split shows for the two collection views (20 total: 8 + 12)
+                let splitIndex = 8 // First collection view gets 2 rows (8 items)
+                if shuffledShows.count > splitIndex {
+                    self.legendaryShows1 = Array(shuffledShows.prefix(splitIndex))
+                    self.legendaryShows2 = Array(shuffledShows.suffix(from: splitIndex))
+                } else {
+                    self.legendaryShows1 = shuffledShows // If splitIndex or less, all go to the first collection view
                     self.legendaryShows2 = []    // Second collection view is empty
                 }
                 
@@ -627,6 +648,52 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         collectionView2HeightConstraint.constant = totalHeight
     }
     
+    // MARK: - Daily Shuffle Management
+    
+    private func shouldShuffleToday() -> Bool {
+        let lastShuffleKey = "LastDailyShuffleDate" // Changed key name to be more generic
+        let today = Calendar.current.startOfDay(for: Date())
+        
+        if let lastShuffleDate = UserDefaults.standard.object(forKey: lastShuffleKey) as? Date {
+            let lastShuffleDay = Calendar.current.startOfDay(for: lastShuffleDate)
+            return today > lastShuffleDay
+        }
+        
+        // First time opening the app - shuffle
+        return true
+    }
+    
+    private func updateLastShuffleDate() {
+        let lastShuffleKey = "LastDailyShuffleDate" // Changed key name to be more generic
+        UserDefaults.standard.set(Date(), forKey: lastShuffleKey)
+    }
+    
+    private func reshuffleLegendaryShows() {
+        print("🌟 🔄 Reshuffling legendary shows for new day...")
+        
+        // Shuffle the main array
+        legendaryShows.shuffle()
+        
+        // Re-split for the two collection views (20 total: 8 + 12)
+        let splitIndex = 8 // First collection view gets 2 rows (8 items)
+        if legendaryShows.count > splitIndex {
+            legendaryShows1 = Array(legendaryShows.prefix(splitIndex))
+            legendaryShows2 = Array(legendaryShows.suffix(from: splitIndex))
+        } else {
+            legendaryShows1 = legendaryShows
+            legendaryShows2 = []
+        }
+        
+        // Reload the collection views
+        DispatchQueue.main.async {
+            self.collectionView.reloadData()
+            self.collectionView2.reloadData()
+            self.updateCollectionView2Height()
+        }
+        
+        print("🌟 ✨ Legendary shows reshuffled and reloaded!")
+    }
+    
     // MARK: - Banner Carousel Setup
     
     private func setupBannerCarousel() {
@@ -634,9 +701,16 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         bannerScrollView.subviews.forEach { $0.removeFromSuperview() }
         bannerScrollView2.subviews.forEach { $0.removeFromSuperview() }
 
+        // Only shuffle if we haven't shuffled today, or if this is the first time
         var shuffledOriginalConcerts = self.concerts
-        shuffledOriginalConcerts.shuffle()
-        self.concerts = shuffledOriginalConcerts // Update self.concerts to the globally used shuffled list
+        if shouldShuffleToday() {
+            shuffledOriginalConcerts.shuffle()
+            self.concerts = shuffledOriginalConcerts // Update self.concerts to the globally used shuffled list
+            updateLastShuffleDate()
+            print("🎪 ✨ Daily shuffle applied - banners rearranged for today!")
+        } else {
+            print("🎪 📅 Using existing shuffle order from today")
+        }
 
         var concertsForCarousels = self.concerts
         var tagOffsetForFirstCarousel = 0

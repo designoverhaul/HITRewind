@@ -469,37 +469,98 @@ extension LiveShowsViewController: UITableViewDataSource, UITableViewDelegate {
         let artist = artists[indexPath.row]
         let artistName = artist.fields.title
         let lockIcon = (!isSubscribed && artist.fields.isLocked == true) ? " 🔒" : ""
-        cell.textLabel?.text = isSubscribed ? artistName : artistName + lockIcon
-        cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 30) ?? UIFont.systemFont(ofSize: 30, weight: .bold)
-        cell.layer.cornerRadius = 10
-        // Set default text color to white
-        cell.textLabel?.textColor = .white
-        // If this cell is selected, set text color to black
-        if tableView.indexPathForSelectedRow == indexPath {
-            cell.textLabel?.textColor = .black
+        let displayText = isSubscribed ? artistName : artistName + lockIcon
+        
+        // Clear any existing custom views
+        cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+        
+        // Create container view for artist name and arrow
+        let containerView = UIView()
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        cell.contentView.addSubview(containerView)
+        
+        // Create artist label
+        let artistLabel = UILabel()
+        artistLabel.text = displayText
+        artistLabel.font = UIFont(name: "sf_pro-regular", size: 30) ?? UIFont.systemFont(ofSize: 30, weight: .bold)
+        artistLabel.textAlignment = .left
+        artistLabel.textColor = .white
+        artistLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(artistLabel)
+        
+        // Create arrow icon (initially hidden)
+        let arrowIcon = UIImageView(image: UIImage(systemName: "arrowshape.right.circle.fill"))
+        arrowIcon.tintColor = .black // Black arrow on purple background when selected
+        arrowIcon.translatesAutoresizingMaskIntoConstraints = false
+        arrowIcon.isHidden = true // Hide by default, show only when selected
+        arrowIcon.tag = 999 // Tag to find it later
+        containerView.addSubview(arrowIcon)
+        
+        // Show arrow only if this artist is currently selected
+        if indexPath.row == selectedArtistIndex {
+            arrowIcon.isHidden = false
         }
+        
+        // Layout constraints
+        NSLayoutConstraint.activate([
+            // Container fills the cell
+            containerView.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
+            containerView.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
+            containerView.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
+            
+            // Artist label left-aligned
+            artistLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            artistLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            
+            // Arrow icon to the right of the artist name (made larger)
+            arrowIcon.leadingAnchor.constraint(equalTo: artistLabel.trailingAnchor, constant: 8),
+            arrowIcon.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            arrowIcon.widthAnchor.constraint(equalToConstant: 30),
+            arrowIcon.heightAnchor.constraint(equalToConstant: 30)
+        ])
+        
+        cell.backgroundColor = .clear
+        cell.layer.cornerRadius = 15
+        cell.layer.masksToBounds = true
+
         let bgColorView = UIView()
-        bgColorView.backgroundColor = UIColor.black
+        bgColorView.backgroundColor = purpleColor // Purple background for selected state
+        bgColorView.layer.cornerRadius = 15
+        bgColorView.layer.masksToBounds = true
         cell.selectedBackgroundView = bgColorView
         cell.layer.borderWidth = 0
         cell.layer.borderColor = UIColor.clear.cgColor
+        
         print("LiveShowsViewController: Configured cell for artist at index \(indexPath.row): \(artistName)")
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        // Clear previous selection styling
         if let previousSelectedIndex = selectedArtistIndex,
            let previousSelectedCell = tableView.cellForRow(at: IndexPath(row: previousSelectedIndex, section: 0)) {
             previousSelectedCell.layer.borderWidth = 0
-            // Reset text color to white for previously selected cell
-            previousSelectedCell.textLabel?.textColor = .white
+            // Update custom label color and hide arrow
+            if let artistLabel = previousSelectedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                artistLabel.textColor = .white
+            }
+            if let arrowIcon = previousSelectedCell.contentView.viewWithTag(999) {
+                arrowIcon.isHidden = true
+            }
         }
+        
+        // Apply selection styling - the selectedBackgroundView will handle the purple background
         if let selectedCell = tableView.cellForRow(at: indexPath) {
-            selectedCell.layer.borderWidth = 2
-            selectedCell.layer.borderColor = purpleColor.cgColor
-            // Set text color to black for selected cell
-            selectedCell.textLabel?.textColor = .black
+            // Update custom label color and show arrow
+            if let artistLabel = selectedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                artistLabel.textColor = .black // Black text on purple background
+            }
+            if let arrowIcon = selectedCell.contentView.viewWithTag(999) {
+                arrowIcon.isHidden = false // Show arrow when selected
+            }
         }
+        
         selectedArtistIndex = indexPath.row
         lastSelectedArtistIndex = indexPath // Update last selected index
         // Always show videos, regardless of lock status
@@ -512,8 +573,15 @@ extension LiveShowsViewController: UITableViewDataSource, UITableViewDelegate {
         let deselectedCell = tableView.cellForRow(at: indexPath)
         deselectedCell?.layer.borderWidth = 0
         deselectedCell?.layer.borderColor = UIColor.clear.cgColor
-        // Reset text color to white for deselected cell
-        deselectedCell?.textLabel?.textColor = .white
+        deselectedCell?.backgroundColor = .clear
+        
+        // Update custom label color and hide arrow
+        if let artistLabel = deselectedCell?.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+            artistLabel.textColor = .white
+        }
+        if let arrowIcon = deselectedCell?.contentView.viewWithTag(999) {
+            arrowIcon.isHidden = true
+        }
     }
     
     func tableView(_ tableView: UITableView, didUpdateFocusIn context: UITableViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
@@ -523,12 +591,32 @@ extension LiveShowsViewController: UITableViewDataSource, UITableViewDelegate {
                 if let nextFocusedCell = tableView.cellForRow(at: nextFocusedIndexPath) {
                     nextFocusedCell.contentView.backgroundColor = self.purpleColor
                     nextFocusedCell.contentView.transform = CGAffineTransform.identity
+                    // When focused, text should be black on purple background (handled by selectedBackgroundView)
+                    if let artistLabel = nextFocusedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                        artistLabel.textColor = .black
+                    }
+                    // Do not show/hide arrow on focus - only on selection
                 }
             }
             if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
                 if let previouslyFocusedCell = tableView.cellForRow(at: previouslyFocusedIndexPath) {
                     previouslyFocusedCell.contentView.backgroundColor = UIColor.clear
                     previouslyFocusedCell.contentView.transform = CGAffineTransform.identity
+                    // When unfocused, check if this cell is still selected
+                    if self.selectedArtistIndex == previouslyFocusedIndexPath.row {
+                        // Keep selected styling (black text on purple, arrow remains visible)
+                        previouslyFocusedCell.contentView.backgroundColor = self.purpleColor
+                        if let artistLabel = previouslyFocusedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                            artistLabel.textColor = .black
+                        }
+                        // Arrow stays visible for selected item
+                    } else {
+                        // Return to normal styling (white text on clear, arrow remains hidden)
+                        if let artistLabel = previouslyFocusedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                            artistLabel.textColor = .white
+                        }
+                        // Arrow stays hidden for non-selected item
+                    }
                 }
             }
         }, completion: nil)

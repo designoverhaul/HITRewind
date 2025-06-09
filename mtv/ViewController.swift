@@ -140,6 +140,15 @@ class LiveShowsTabViewController: UIViewController {
         fetchCategories()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        // Check if we need to reshuffle categories for a new day
+        if !categories.isEmpty && shouldShuffleTodayForCategories() {
+            reshuffleCategories()
+        }
+    }
+    
     // MARK: - UI Setup
     private func setupUI() {
         view.backgroundColor = .black
@@ -262,11 +271,6 @@ class LiveShowsTabViewController: UIViewController {
                         self.isShowingArtists = true
                         self.categoryTableView.reloadData()
                         self.categoryCollectionView.reloadData()
-                        // Auto-select the back button initially
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            let backButtonIndexPath = IndexPath(row: 0, section: 0)
-                            self.categoryTableView.selectRow(at: backButtonIndexPath, animated: false, scrollPosition: .none)
-                        }
                     }
                 }
             case .failure(let error):
@@ -275,6 +279,35 @@ class LiveShowsTabViewController: UIViewController {
             }
         }
     }
+    
+    private func reshuffleCategories() {
+        print("🎪 🔄 Reshuffling categories for new day...")
+        
+        // Shuffle the categories array
+        categories.shuffle()
+        
+        // Update the shuffle date
+        updateLastShuffleDateForCategories()
+        
+        // Reset any selection states since order has changed
+        selectedCategory = nil
+        selectedBannerIndex = nil
+        isShowingArtists = false
+        isShowingVideos = false
+        currentArtists = []
+        currentVideos = []
+        
+        // Reload the collection view
+        DispatchQueue.main.async {
+            self.categoryTableView.reloadData()
+            self.categoryCollectionView.reloadData()
+            self.updateCollectionViewLayout(forVideos: false)
+        }
+        
+        print("🎪 ✨ Categories reshuffled and reloaded!")
+    }
+    
+
     
     private func fetchVideosForArtist(artistName: String) {
         print("🎬 Fetching videos for artist: \(artistName)")
@@ -330,8 +363,18 @@ class LiveShowsTabViewController: UIViewController {
     // Handle remote back/menu button to show category grid
     override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
         if presses.contains(where: { $0.type == .menu || $0.type == .playPause }) {
-            // If currently showing artists or videos, go back to category grid
-            if isShowingArtists || isShowingVideos {
+            // Handle back navigation with same logic as back button
+            if isShowingVideos {
+                // If currently showing videos, return to category banners but keep artist list
+                isShowingVideos = false
+                selectedArtist = nil
+                currentVideos = []
+                categoryCollectionView.reloadData()
+                updateCollectionViewLayout(forVideos: false)
+                print("Menu pressed: Returning to category banners, keeping artist list")
+                return // Don't call super, we handled it
+            } else if isShowingArtists {
+                // If showing category banners with artists, completely reset to categories
                 isShowingArtists = false
                 isShowingVideos = false
                 selectedCategory = nil
@@ -343,6 +386,7 @@ class LiveShowsTabViewController: UIViewController {
                 categoryTableView.reloadData()
                 categoryCollectionView.reloadData()
                 updateCollectionViewLayout(forVideos: false)
+                print("Menu pressed: Completely resetting to categories")
                 return // Don't call super, we handled it
             }
         }
@@ -355,7 +399,7 @@ extension LiveShowsTabViewController: UITableViewDataSource, UITableViewDelegate
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if isShowingArtists {
-            return currentArtists.count + 1 // +1 for back button
+            return currentArtists.count
         } else {
             return 0 // No content when no category selected
         }
@@ -364,66 +408,118 @@ extension LiveShowsTabViewController: UITableViewDataSource, UITableViewDelegate
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
         
+        // Clear any existing custom views
+        cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+        
         if isShowingArtists {
-            if indexPath.row == 0 {
-                // Back button
-                cell.textLabel?.text = "Back to Categories ->"
-                cell.textLabel?.textColor = UIColor(hex: "#A789FD")
-                cell.textLabel?.font = UIFont.systemFont(ofSize: 25, weight: .medium)
-            } else {
-                // Artist name
-                let artistIndex = indexPath.row - 1
-                cell.textLabel?.text = currentArtists[artistIndex]
-                cell.textLabel?.textColor = .white
-                cell.textLabel?.font = UIFont.systemFont(ofSize: 24, weight: .medium)
+            // Artist name - use custom layout with arrow
+            let artistName = currentArtists[indexPath.row]
+            
+            // Create container view for artist name and arrow
+            let containerView = UIView()
+            containerView.translatesAutoresizingMaskIntoConstraints = false
+            cell.contentView.addSubview(containerView)
+            
+            // Create artist label
+            let artistLabel = UILabel()
+            artistLabel.text = artistName
+            artistLabel.font = UIFont.systemFont(ofSize: 24, weight: .medium)
+            artistLabel.textAlignment = .left
+            artistLabel.textColor = .white
+            artistLabel.translatesAutoresizingMaskIntoConstraints = false
+            containerView.addSubview(artistLabel)
+            
+            // Create arrow icon (initially hidden)
+            let arrowIcon = UIImageView(image: UIImage(systemName: "arrowshape.right.circle.fill"))
+            arrowIcon.tintColor = .black // Black arrow when selected
+            arrowIcon.translatesAutoresizingMaskIntoConstraints = false
+            arrowIcon.isHidden = true // Hide by default, show only when selected
+            arrowIcon.tag = 999 // Tag to find it later
+            containerView.addSubview(arrowIcon)
+            
+            // Show arrow only if this artist is currently selected
+            if selectedArtist == artistName {
+                arrowIcon.isHidden = false
             }
+            
+            // Layout constraints
+            NSLayoutConstraint.activate([
+                // Container fills the cell
+                containerView.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
+                containerView.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
+                containerView.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
+                containerView.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
+                
+                // Artist label left-aligned
+                artistLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+                artistLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+                artistLabel.trailingAnchor.constraint(lessThanOrEqualTo: arrowIcon.leadingAnchor, constant: -8),
+                
+                // Arrow icon right-aligned in the container
+                arrowIcon.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+                arrowIcon.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+                arrowIcon.widthAnchor.constraint(equalToConstant: 30),
+                arrowIcon.heightAnchor.constraint(equalToConstant: 30)
+            ])
+            
+            // Clear the default textLabel since we're using custom views
+            cell.textLabel?.text = nil
         }
         
         cell.backgroundColor = .clear
         cell.selectionStyle = .none
+        cell.layer.cornerRadius = 15
+        cell.layer.masksToBounds = true
         
-        // Custom selection background for artist cells and back button
-        let backgroundView = UIView()
-        backgroundView.backgroundColor = UIColor(hex: "#A789FD")
-        cell.selectedBackgroundView = backgroundView
+        // Remove any selected background view to prevent built-in selection styling
+        cell.selectedBackgroundView = nil
         
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // Clear previous selection borders
-        if let previousSelectedIndex = selectedCategoryIndex,
-           let previousSelectedCell = tableView.cellForRow(at: IndexPath(row: previousSelectedIndex, section: 0)) {
-            previousSelectedCell.layer.borderWidth = 0
-        }
-        
-        // Set border for currently selected cell (matching Music Videos screen)
-        if let selectedCell = tableView.cellForRow(at: indexPath) {
-            selectedCell.layer.borderWidth = 2
-            selectedCell.layer.borderColor = UIColor(hex: "#A789FD").cgColor
-        }
+        // Immediately deselect to prevent built-in selection styling
+        tableView.deselectRow(at: indexPath, animated: false)
         
         if isShowingArtists {
-            if indexPath.row == 0 {
-                // Back button pressed - return to categories
-                isShowingArtists = false
-                isShowingVideos = false
-                selectedCategory = nil
-                selectedArtist = nil
-                currentArtists = []
-                currentVideos = []
-                selectedCategoryIndex = nil // Reset selection
-                selectedBannerIndex = nil // Reset banner selection
-                categoryTableView.reloadData()
-                categoryCollectionView.reloadData()
-                updateCollectionViewLayout(forVideos: false)
-            } else {
-                // Artist selected - load their videos
-                let artistIndex = indexPath.row - 1
-                selectedArtist = currentArtists[artistIndex]
-                fetchVideosForArtist(artistName: selectedArtist!)
-                print("Selected artist: \(selectedArtist!)")
+            // Clear previous selection styling for all artist cells
+            for i in 0..<currentArtists.count {
+                if let cell = tableView.cellForRow(at: IndexPath(row: i, section: 0)) {
+                    cell.layer.borderWidth = 0
+                    // Clear any background color from built-in selection
+                    cell.contentView.backgroundColor = .clear
+                    cell.contentView.layer.cornerRadius = 0
+                    cell.contentView.layer.masksToBounds = false
+                    // Update custom label color and hide arrow for artist cells
+                    if let artistLabel = cell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                        artistLabel.textColor = .white
+                    }
+                    if let arrowIcon = cell.contentView.viewWithTag(999) {
+                        arrowIcon.isHidden = true
+                    }
+                }
             }
+            
+            // Artist selected - apply selection styling and load their videos
+            selectedArtist = currentArtists[indexPath.row]
+            
+            // Apply selection styling to the selected cell
+            if let selectedCell = tableView.cellForRow(at: indexPath) {
+                // Set custom background color for selection with border radius
+                selectedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
+                selectedCell.contentView.layer.cornerRadius = 15
+                selectedCell.contentView.layer.masksToBounds = true
+                // Update custom label color and show arrow
+                if let artistLabel = selectedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                    artistLabel.textColor = .black // Black text on purple background
+                }
+                if let arrowIcon = selectedCell.contentView.viewWithTag(999) {
+                    arrowIcon.isHidden = false // Show arrow when selected
+                }
+            }
+            
+            fetchVideosForArtist(artistName: selectedArtist!)
+            print("Selected artist: \(selectedArtist!)")
         }
     }
     
@@ -437,29 +533,44 @@ extension LiveShowsTabViewController: UITableViewDataSource, UITableViewDelegate
         coordinator.addCoordinatedAnimations({
             if let nextFocusedIndexPath = context.nextFocusedIndexPath {
                 if let nextFocusedCell = tableView.cellForRow(at: nextFocusedIndexPath) {
-                    // Check if this is the "Back to Categories" button (row 0 when showing artists)
-                    if self.isShowingArtists && nextFocusedIndexPath.row == 0 {
-                        // Special styling for back button: black text on purple background
-                        nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
-                        nextFocusedCell.textLabel?.textColor = .black
-                    } else {
-                        // Normal styling for artist names
-                        nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
-                        nextFocusedCell.textLabel?.textColor = .white
+                    // Normal styling for artist names
+                    nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
+                    nextFocusedCell.contentView.layer.cornerRadius = 15
+                    nextFocusedCell.contentView.layer.masksToBounds = true
+                    // When focused, text should be black on purple background
+                    if let artistLabel = nextFocusedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                        artistLabel.textColor = .black
                     }
+                    // Do not show/hide arrow on focus - only on selection
                     nextFocusedCell.contentView.transform = CGAffineTransform.identity
                 }
             }
             if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
                 if let previouslyFocusedCell = tableView.cellForRow(at: previouslyFocusedIndexPath) {
-                    previouslyFocusedCell.contentView.backgroundColor = UIColor.clear
-                    // Restore original text color
-                    if self.isShowingArtists && previouslyFocusedIndexPath.row == 0 {
-                        // Back button: restore purple text
-                        previouslyFocusedCell.textLabel?.textColor = UIColor(hex: "#A789FD")
+                    // Check if this artist is still selected
+                    if previouslyFocusedIndexPath.row >= 0 && previouslyFocusedIndexPath.row < self.currentArtists.count {
+                        let artistName = self.currentArtists[previouslyFocusedIndexPath.row]
+                        if self.selectedArtist == artistName {
+                            // Keep selected styling (black text on purple, arrow remains visible)
+                            previouslyFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
+                            previouslyFocusedCell.contentView.layer.cornerRadius = 15
+                            previouslyFocusedCell.contentView.layer.masksToBounds = true
+                            if let artistLabel = previouslyFocusedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                                artistLabel.textColor = .black
+                            }
+                            // Arrow stays visible for selected item
+                        } else {
+                            // Return to normal styling (white text on clear, arrow remains hidden)
+                            previouslyFocusedCell.contentView.backgroundColor = UIColor.clear
+                            previouslyFocusedCell.contentView.layer.cornerRadius = 0
+                            previouslyFocusedCell.contentView.layer.masksToBounds = false
+                            if let artistLabel = previouslyFocusedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                                artistLabel.textColor = .white
+                            }
+                            // Arrow stays hidden for non-selected item
+                        }
                     } else {
-                        // Artist names: restore white text
-                        previouslyFocusedCell.textLabel?.textColor = .white
+                        previouslyFocusedCell.contentView.backgroundColor = UIColor.clear
                     }
                     previouslyFocusedCell.contentView.transform = CGAffineTransform.identity
                 }
@@ -513,8 +624,22 @@ extension LiveShowsTabViewController: UICollectionViewDataSource, UICollectionVi
         } else {
             // Banner selected - switch sidebar to show artists for this category
             let selectedCategoryData = categories[indexPath.item]
+            let previousBannerIndex = selectedBannerIndex
             selectedCategory = selectedCategoryData
             selectedBannerIndex = indexPath.item // Track selected banner
+            
+            // Update banner selection states without full reload
+            // First, update the previously selected banner to remove purple outline
+            if let previousIndex = previousBannerIndex,
+               let previousCell = categoryCollectionView.cellForItem(at: IndexPath(item: previousIndex, section: 0)) as? CategoryBannerCell {
+                let previousCategory = categories[previousIndex]
+                previousCell.configure(with: previousCategory, isSelected: false)
+            }
+            
+            // Then, update the newly selected banner to show purple outline
+            if let currentCell = categoryCollectionView.cellForItem(at: indexPath) as? CategoryBannerCell {
+                currentCell.configure(with: selectedCategoryData, isSelected: true)
+            }
             
             // Sort artists alphabetically before displaying
             let unsortedArtists = selectedCategoryData.fields.artistNames ?? []
@@ -522,17 +647,8 @@ extension LiveShowsTabViewController: UICollectionViewDataSource, UICollectionVi
             
             isShowingArtists = true
             
-            // Update collection view to show selected state
-            categoryCollectionView.reloadData()
-            
-            // Update sidebar to show artists
+            // Only update sidebar to show artists - don't reload banners
             categoryTableView.reloadData()
-            
-            // Auto-select the back button initially
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                let backButtonIndexPath = IndexPath(row: 0, section: 0)
-                self.categoryTableView.selectRow(at: backButtonIndexPath, animated: false, scrollPosition: .none)
-            }
             
             print("Selected category: \(selectedCategoryData.fields.categoryName)")
             print("Artists: \(currentArtists)")
@@ -700,15 +816,14 @@ class LiveShowVideoCell: UICollectionViewCell {
         
         coordinator.addCoordinatedAnimations({
             if self.isFocused {
-                // Only scale and glow the image, not the text
-                self.imageView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-                self.imageView.layer.shadowColor = UIColor(hex: "#A789FD").cgColor
-                self.imageView.layer.shadowOffset = CGSize(width: 0, height: 0)
-                self.imageView.layer.shadowOpacity = 0.8
-                self.imageView.layer.shadowRadius = 10
+                // Apply same styling as Music Videos page: background color, corner radius, and scale
+                self.backgroundColor = UIColor(hex: "292631")
+                self.layer.cornerRadius = 10
+                self.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
             } else {
-                self.imageView.transform = .identity
-                self.imageView.layer.shadowOpacity = 0
+                // Reset to clear background and normal size
+                self.backgroundColor = .clear
+                self.transform = .identity
             }
         }, completion: nil)
     }
@@ -1053,7 +1168,7 @@ func sortAndArrangeCategories(completion: @escaping (Result<[Category], Error>) 
         
         do {
             let airtableResponse = try JSONDecoder().decode(CategoryAirtableResponse.self, from: data)
-            let categories = airtableResponse.records.map { record in
+            var categories = airtableResponse.records.map { record in
                 Category(
                     id: record.id,
                     fields: CategoryFields(
@@ -1070,11 +1185,40 @@ func sortAndArrangeCategories(completion: @escaping (Result<[Category], Error>) 
                     )
                 )
             }
+            
+            // Apply daily shuffle to category banners if needed
+            if shouldShuffleTodayForCategories() {
+                categories.shuffle()
+                updateLastShuffleDateForCategories()
+                print("🎪 ✨ Daily shuffle applied to category banners!")
+            } else {
+                print("🎪 📅 Using existing category order from today")
+            }
+            
             completion(.success(categories))
         } catch {
             completion(.failure(error))
         }
     }.resume()
+}
+
+// MARK: - Daily Shuffle Helper Functions for Categories (Global)
+func shouldShuffleTodayForCategories() -> Bool {
+    let lastShuffleKey = "LastCategoryShuffleDate"
+    let today = Calendar.current.startOfDay(for: Date())
+    
+    if let lastShuffleDate = UserDefaults.standard.object(forKey: lastShuffleKey) as? Date {
+        let lastShuffleDay = Calendar.current.startOfDay(for: lastShuffleDate)
+        return today > lastShuffleDay
+    }
+    
+    // First time opening the app - shuffle
+    return true
+}
+
+func updateLastShuffleDateForCategories() {
+    let lastShuffleKey = "LastCategoryShuffleDate"
+    UserDefaults.standard.set(Date(), forKey: lastShuffleKey)
 }
 
 // MARK: - Airtable Response Models

@@ -132,10 +132,10 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             imageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 40),
             imageView.widthAnchor.constraint(equalToConstant: 98),
             imageView.heightAnchor.constraint(equalToConstant: 77),
-            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -51),
+            playlistTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 50), // Moved more to the right
             playlistTableView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 50), // Adjusted spacing
             playlistTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
-            playlistTableView.widthAnchor.constraint(equalToConstant: 400)
+            playlistTableView.widthAnchor.constraint(equalToConstant: 200) // Reduced width from 400 to 200
         ])
 
         // Playlist images collectionView setup
@@ -205,6 +205,20 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
                 lastSelectedYearIndex = IndexPath(row: index, section: 0)
                 lastFocusedYearIndexPath = lastSelectedYearIndex // Update the last focused year index path
                 playlistTableView.selectRow(at: lastSelectedYearIndex, animated: false, scrollPosition: .none)
+                
+                // Manually update the cell styling since selectRow doesn't trigger didSelectRowAt
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if let selectedCell = self.playlistTableView.cellForRow(at: self.lastSelectedYearIndex!) {
+                        // Update custom label color and show arrow for the selected cell
+                        if let yearLabel = selectedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                            yearLabel.textColor = .black // Black text on purple background
+                        }
+                        if let arrowIcon = selectedCell.contentView.viewWithTag(999) {
+                            arrowIcon.isHidden = false // Show arrow when selected
+                        }
+                    }
+                }
+                
                 updateUIForSelectedPlaylist()
                 return
             }
@@ -410,12 +424,64 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PlaylistYear", for: indexPath)
         let playlist = playlists[indexPath.row]
         let yearText = String(playlist.fields.year)
-        cell.textLabel?.text = yearText
-        cell.textLabel?.font = UIFont(name: "sf_pro-regular", size: 30) ?? UIFont.systemFont(ofSize: 30, weight: .bold)
-        cell.layer.cornerRadius = 10
+        
+        // Clear any existing custom views
+        cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+        
+        // Create container view for year and arrow
+        let containerView = UIView()
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        cell.contentView.addSubview(containerView)
+        
+        // Create year label
+        let yearLabel = UILabel()
+        yearLabel.text = yearText
+        yearLabel.font = UIFont(name: "sf_pro-regular", size: 24) ?? UIFont.systemFont(ofSize: 24, weight: .bold)
+        yearLabel.textAlignment = .center
+        yearLabel.textColor = .white
+        yearLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(yearLabel)
+        
+        // Create arrow icon (initially hidden)
+        let arrowIcon = UIImageView(image: UIImage(systemName: "arrowshape.right.circle.fill"))
+        arrowIcon.tintColor = .black // Black arrow on purple background when selected
+        arrowIcon.translatesAutoresizingMaskIntoConstraints = false
+        arrowIcon.isHidden = true // Hide by default, show only when selected
+        arrowIcon.tag = 999 // Tag to find it later
+        containerView.addSubview(arrowIcon)
+        
+        // Show arrow only if this year is currently selected
+        if indexPath.row == selectedPlaylistIndex {
+            arrowIcon.isHidden = false
+        }
+        
+        // Layout constraints
+        NSLayoutConstraint.activate([
+            // Container fills the cell
+            containerView.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
+            containerView.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
+            containerView.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
+            
+            // Year label centered
+            yearLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor, constant: -10), // Offset slightly left to make room for arrow
+            yearLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            
+            // Arrow icon to the right of the year (made larger)
+            arrowIcon.leadingAnchor.constraint(equalTo: yearLabel.trailingAnchor, constant: 8),
+            arrowIcon.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            arrowIcon.widthAnchor.constraint(equalToConstant: 30),
+            arrowIcon.heightAnchor.constraint(equalToConstant: 30)
+        ])
+        
+        cell.backgroundColor = .clear
+        cell.layer.cornerRadius = 15
+        cell.layer.masksToBounds = true
 
         let bgColorView = UIView()
-        bgColorView.backgroundColor = UIColor.black
+        bgColorView.backgroundColor = UIColor(hex: "#A789FD") // Purple background for selected state
+        bgColorView.layer.cornerRadius = 15
+        bgColorView.layer.masksToBounds = true
         cell.selectedBackgroundView = bgColorView
         cell.layer.borderWidth = 0
         cell.layer.borderColor = UIColor.clear.cgColor
@@ -424,14 +490,30 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        // Clear previous selection styling
         if let previousSelectedIndex = selectedPlaylistIndex,
            let previousSelectedCell = tableView.cellForRow(at: IndexPath(row: previousSelectedIndex, section: 0)) {
             previousSelectedCell.layer.borderWidth = 0
+            // Update custom label color and hide arrow
+            if let yearLabel = previousSelectedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                yearLabel.textColor = .white
+            }
+            if let arrowIcon = previousSelectedCell.contentView.viewWithTag(999) {
+                arrowIcon.isHidden = true
+            }
         }
+        
+        // Apply selection styling - the selectedBackgroundView will handle the purple background
         if let selectedCell = tableView.cellForRow(at: indexPath) {
-            selectedCell.layer.borderWidth = 2
-            selectedCell.layer.borderColor = UIColor(hex: "#A789FD").cgColor
+            // Update custom label color and show arrow
+            if let yearLabel = selectedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                yearLabel.textColor = .black // Black text on purple background
+            }
+            if let arrowIcon = selectedCell.contentView.viewWithTag(999) {
+                arrowIcon.isHidden = false // Show arrow when selected
+            }
         }
+        
         selectedPlaylistIndex = indexPath.row
         lastSelectedYearIndex = indexPath // Update last selected index
 
@@ -445,6 +527,19 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
         let deselectedCell = tableView.cellForRow(at: indexPath)
         deselectedCell?.layer.borderWidth = 0
         deselectedCell?.layer.borderColor = UIColor.clear.cgColor
+        deselectedCell?.backgroundColor = .clear
+        
+        // Update custom label color and hide arrow
+        if let yearLabel = deselectedCell?.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+            yearLabel.textColor = .white
+        }
+        if let arrowIcon = deselectedCell?.contentView.viewWithTag(999) {
+            arrowIcon.isHidden = true
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 50 // Reduced from default height to save vertical space
     }
 
     func tableView(_ tableView: UITableView, didUpdateFocusIn context: UITableViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
@@ -452,14 +547,29 @@ extension PlayListViewController: UITableViewDataSource, UITableViewDelegate {
             if let nextFocusedIndexPath = context.nextFocusedIndexPath {
                 self.lastFocusedYearIndexPath = nextFocusedIndexPath
                 if let nextFocusedCell = tableView.cellForRow(at: nextFocusedIndexPath) {
-                    nextFocusedCell.contentView.backgroundColor = UIColor(hex: "#A789FD")
-                    nextFocusedCell.contentView.transform = CGAffineTransform.identity
+                    // When focused, text should be black on purple background (handled by selectedBackgroundView)
+                    if let yearLabel = nextFocusedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                        yearLabel.textColor = .black
+                    }
+                    // Do not show/hide arrow on focus - only on selection
                 }
             }
             if let previouslyFocusedIndexPath = context.previouslyFocusedIndexPath {
                 if let previouslyFocusedCell = tableView.cellForRow(at: previouslyFocusedIndexPath) {
-                    previouslyFocusedCell.contentView.backgroundColor = UIColor.clear
-                    previouslyFocusedCell.contentView.transform = CGAffineTransform.identity
+                    // When unfocused, check if this cell is still selected
+                    if self.selectedPlaylistIndex == previouslyFocusedIndexPath.row {
+                        // Keep selected styling (black text on purple, arrow remains visible)
+                        if let yearLabel = previouslyFocusedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                            yearLabel.textColor = .black
+                        }
+                        // Arrow stays visible for selected item
+                    } else {
+                        // Return to normal styling (white text on clear, arrow remains hidden)
+                        if let yearLabel = previouslyFocusedCell.contentView.subviews.first?.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                            yearLabel.textColor = .white
+                        }
+                        // Arrow stays hidden for non-selected item
+                    }
                 }
             }
         }, completion: nil)

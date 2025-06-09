@@ -57,7 +57,7 @@ class PlaylistImageCell: UICollectionViewCell {
             imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
             imageView.topAnchor.constraint(equalTo: topAnchor, constant: 10),
-            imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -60)
+            imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -80)
         ])
         imageView.layer.cornerRadius = 8 // Adjust the corner radius as needed
         imageView.layer.masksToBounds = true
@@ -77,7 +77,8 @@ class PlaylistImageCell: UICollectionViewCell {
         NSLayoutConstraint.activate([
             artistNameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             artistNameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-            artistNameLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5)
+            artistNameLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
+            artistNameLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -15) // Add bottom padding
         ])
         artistNameLabel.textAlignment = .left
     }
