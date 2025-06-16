@@ -570,12 +570,28 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             switch result {
             case .success(let fetchedConcerts):
                 print("🎪 LegendaryShowsViewController: Successfully fetched \(fetchedConcerts.count) concerts")
+                
+                // Debug: Check if concerts have banner images
+                for (index, concert) in fetchedConcerts.enumerated() {
+                    if let bannerImages = concert.fields.bannerImage, !bannerImages.isEmpty {
+                        print("🎪 Concert \(index): \(concert.fields.venueName ?? "Unknown") has \(bannerImages.count) banner images")
+                        print("🎪 First banner URL: \(bannerImages.first?.url ?? "No URL")")
+                    } else {
+                        print("🎪 ⚠️ Concert \(index): \(concert.fields.venueName ?? "Unknown") has NO banner images")
+                    }
+                }
+                
                 self.concerts = fetchedConcerts
                 DispatchQueue.main.async {
+                    print("🎪 About to setup banner carousel with \(fetchedConcerts.count) concerts")
                     self.setupBannerCarousel()
+                    self.hideLoadingIndicator()
                 }
             case .failure(let error):
                 print("🎪 LegendaryShowsViewController: Error fetching concerts: \(error)")
+                DispatchQueue.main.async {
+                    self.hideLoadingIndicator()
+                }
             }
         }
     }
@@ -739,14 +755,23 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     private func setupIndividualBannerCarousel(scrollView: UIScrollView, concertsToDisplay: [Concert], tagOffset: Int) {
         // Clear existing banner views from this specific scroll view
         scrollView.subviews.forEach { $0.removeFromSuperview() }
+        
+        print("🎪 Setting up banner carousel with \(concertsToDisplay.count) concerts, tagOffset: \(tagOffset)")
 
         let bannerHeight: CGFloat = 231
         let bannerSpacing: CGFloat = 20
         var currentX: CGFloat = 0
         
         for (index, concert) in concertsToDisplay.enumerated() {
+            print("🎪 Processing concert \(index): \(concert.fields.venueName ?? "Unknown")")
+            
             guard let bannerImages = concert.fields.bannerImage,
-                  let firstBanner = bannerImages.first else { continue }
+                  let firstBanner = bannerImages.first else { 
+                print("🎪 ⚠️ Skipping concert \(index) - no banner images")
+                continue 
+            }
+            
+            print("🎪 Creating banner view for concert \(index), URL: \(firstBanner.url)")
             
             // Create banner image view - no container, just the image
             let bannerImageView = FocusableBannerImageView(frame: .zero)
@@ -762,6 +787,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             bannerImageView.isUserInteractionEnabled = true
             
             scrollView.addSubview(bannerImageView)
+            print("🎪 Added banner image view to scroll view")
             
             // Calculate banner width maintaining aspect ratio (banner images are 2108x556)
             let aspectRatio: CGFloat = 2108.0 / 556.0
@@ -774,62 +800,78 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                 bannerImageView.widthAnchor.constraint(equalToConstant: bannerWidth),
                 bannerImageView.heightAnchor.constraint(equalToConstant: bannerHeight)
             ])
+            print("🎪 Set constraints for banner \(index), position: \(currentX), size: \(bannerWidth)x\(bannerHeight)")
             
             // Load banner image
+            print("🎪 About to load banner image for concert \(index)")
             loadBannerImage(from: firstBanner.url, into: bannerImageView)
             
             currentX += bannerWidth + bannerSpacing
         }
         
         // Set scroll view content size
-        scrollView.contentSize = CGSize(width: max(currentX - bannerSpacing, 0), height: bannerHeight + 20)
+        let finalContentWidth = max(currentX - bannerSpacing, 0)
+        scrollView.contentSize = CGSize(width: finalContentWidth, height: bannerHeight + 20)
+        print("🎪 Set scroll view content size: \(finalContentWidth)x\(bannerHeight + 20)")
     }
     
     private func loadBannerImage(from urlString: String, into imageView: UIImageView) {
-        guard let url = URL(string: urlString) else { return }
+        guard let url = URL(string: urlString) else {
+            print("🖼️ ❌ Invalid banner URL: \(urlString)")
+            return
+        }
         
         // Cancel any existing task for this image view
         imageView.cancelImageLoad()
         
-        // Configure URLSession for better performance with large images
-        let config = URLSessionConfiguration.default
-        config.urlCache = URLCache(memoryCapacity: 50 * 1024 * 1024, diskCapacity: 100 * 1024 * 1024, diskPath: nil) // 50MB memory, 100MB disk
-        config.requestCachePolicy = .returnCacheDataElseLoad
-        let session = URLSession(configuration: config)
+        print("🖼️ 🔄 Starting banner image download: \(urlString)")
         
-        let task = session.dataTask(with: url) { [weak imageView] data, response, error in
+        // Create URLRequest with timeout for better device compatibility
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 30.0 // 30 second timeout
+        request.cachePolicy = .returnCacheDataElseLoad // Use cache if available, otherwise load fresh
+        
+        // Use simple URLSession.shared.dataTask for better device compatibility
+        let task = URLSession.shared.dataTask(with: request) { [weak imageView] data, response, error in
             DispatchQueue.main.async {
-                guard let imageView = imageView, 
-                      let data = data,
-                      error == nil else {
-                    print("🖼️ Failed to load banner image: \(error?.localizedDescription ?? "Unknown error")")
+                guard let imageView = imageView else { return }
+                
+                if let error = error {
+                    // Don't print cancellation errors
+                    if (error as NSError).code == NSURLErrorCancelled {
+                        print("🖼️ 🔄 Banner task cancelled for \(urlString)")
+                        return
+                    }
+                    print("🖼️ ❌ Banner network error for \(urlString): \(error.localizedDescription)")
                     return
                 }
                 
-                // Resize large images to reduce memory usage
-                if let originalImage = UIImage(data: data) {
-                    let resizedImage = self.resizeImageForDisplay(originalImage, targetWidth: 800) // Resize to max 800px width
-                    imageView.image = resizedImage
-                    print("🖼️ ✅ Loaded and resized banner image: \(originalImage.size) -> \(resizedImage.size)")
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("🖼️ 📡 Banner HTTP \(httpResponse.statusCode) for \(urlString)")
+                    if httpResponse.statusCode != 200 {
+                        print("🖼️ ❌ Banner HTTP error \(httpResponse.statusCode) for \(urlString)")
+                        return
+                    }
                 }
+                
+                guard let data = data else {
+                    print("🖼️ ❌ No banner data received for \(urlString)")
+                    return
+                }
+                
+                guard let image = UIImage(data: data) else {
+                    print("🖼️ ❌ Could not create banner image from data for \(urlString)")
+                    return
+                }
+                
+                print("🖼️ ✅ Successfully loaded banner image for \(urlString), size: \(image.size)")
+                imageView.image = image
             }
         }
         
         // Store the task for potential cancellation
         imageView.currentTask = task
         task.resume()
-    }
-    
-    // Helper method to resize images for better memory performance
-    private func resizeImageForDisplay(_ image: UIImage, targetWidth: CGFloat) -> UIImage {
-        let aspectRatio = image.size.height / image.size.width
-        let targetHeight = targetWidth * aspectRatio
-        let targetSize = CGSize(width: targetWidth, height: targetHeight)
-        
-        let renderer = UIGraphicsImageRenderer(size: targetSize)
-        return renderer.image { context in
-            image.draw(in: CGRect(origin: .zero, size: targetSize))
-        }
     }
     
     @objc private func handleBannerSelection(_ notification: Notification) {

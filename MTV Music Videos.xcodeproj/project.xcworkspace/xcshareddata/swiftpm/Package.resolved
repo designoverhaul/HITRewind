@@ -1,5 +1,5 @@
 {
-  "originHash" : "6a9a4ec4bffce9d9f7e09ca03ec084f28f9c78c8ffe1a69b3da592414740df3e",
+  "originHash" : "d5ab603d848cb5e2ab4b19b038a810ac05ca910cef9be9d0c55b7e9407c3ab19",
   "pins" : [
     {
       "identity" : "purchases-ios",
@@ -11,12 +11,12 @@
       }
     },
     {
-      "identity" : "xcdyoutubekit",
+      "identity" : "youtubekit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/cbg-dev-k/XCDYouTubeKit",
+      "location" : "https://github.com/alexeichhorn/YouTubeKit",
       "state" : {
-        "revision" : "f2b1b685c375edca711cc2b229f6bf2bb4588611",
-        "version" : "2.16.0"
+        "revision" : "fae7914e970a116405d89ae9cbbcfb2915824100",
+        "version" : "0.2.8"
       }
     }
   ],
