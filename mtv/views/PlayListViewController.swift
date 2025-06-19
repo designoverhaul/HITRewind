@@ -650,9 +650,12 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
                 return
             }
 
-            print("PlayListViewController: collectionView.didSelectItemAt - Bypassing requireSubscription.")
-            // Play only the selected single video instead of the entire playlist
-            self.playVideoPlaylist(videoIdentifiers: [selectedVideoId], currentIndex: 0)
+            // Video selected - require subscription before playing
+            requireSubscription(on: self) { [weak self] isSubscribed in
+                guard let self = self, isSubscribed else { return }
+                // Play only the selected single video instead of the entire playlist
+                self.playVideoPlaylist(videoIdentifiers: [selectedVideoId], currentIndex: 0)
+            }
         }
     }
 

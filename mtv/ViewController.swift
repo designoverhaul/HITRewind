@@ -16,10 +16,10 @@ class ViewController: UIViewController {
         // Create the tab bar controller
         let tabBarController = UITabBarController()
         
-        // Create Legendary Shows tab (moved to far left)
+        // Create Epic Shows tab (moved to far left)
         let legendaryShowsController = LegendaryShowsViewController()
         legendaryShowsController.tabBarItem = UITabBarItem(
-            title: "Legendary Shows",
+            title: "Epic Shows",
             image: nil,
             tag: 0
         )
@@ -32,10 +32,10 @@ class ViewController: UIViewController {
             tag: 1
         )
         
-        // Create Live Shows tab (Artist-based screen)
+        // Create Concert Directory tab (Artist-based screen)
         let liveShowsController = LiveShowsTabViewController()
         liveShowsController.tabBarItem = UITabBarItem(
-            title: "Live", 
+            title: "Concert Directory", 
             image: nil,
             tag: 2
         )
@@ -58,7 +58,7 @@ class ViewController: UIViewController {
         // Use only the gear emoji as the tab bar item
         settingsController.tabBarItem.title = "⚙️"
         
-        // Add controllers to tab bar (Legendary Shows moved to far left)
+        // Add controllers to tab bar (Epic Shows moved to far left)
         tabBarController.viewControllers = [legendaryShowsController, musicVideosController, liveShowsController, searchController, settingsController]
         
         // Set up the tab bar appearance for tvOS

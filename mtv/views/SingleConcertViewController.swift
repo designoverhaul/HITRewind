@@ -897,8 +897,16 @@ struct ConcertVideoResponse: Codable {
             return
         }
 
-        // Start playing from the selected video index to enable auto-play for subsequent videos
-        playYouTubeVideo(identifier: videoId, currentIndex: indexPath.item)
+        // Video selected - require subscription before playing
+        requireSubscription(on: self) { [weak self] isSubscribed in
+            guard let self = self else { return }
+            if isSubscribed {
+                // Start playing from the selected video index to enable auto-play for subsequent videos
+                self.playYouTubeVideo(identifier: videoId, currentIndex: indexPath.item)
+            } else {
+                // Paywall will be shown by requireSubscription
+            }
+        }
     }
     
     // MARK: - Collection View Focus Handling
