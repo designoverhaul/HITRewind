@@ -18,6 +18,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         Purchases.configure(withAPIKey: "appl_goRXxhJHqIfrgGhdFgBXrSiPTMZ")
+        
+        // Enable sandbox mode for simulator testing
+        #if targetEnvironment(simulator)
+        Purchases.shared.purchasesAreCompletedBy = .revenueCat
+        print("RevenueCat configured for simulator testing")
+        #else
+        print("RevenueCat configured for production")
+        #endif
+        
         print("In app subscription configured")
         // print("RevenueCat configuration temporarily bypassed for debugging.")
 

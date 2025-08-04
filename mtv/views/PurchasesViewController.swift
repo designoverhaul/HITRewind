@@ -94,37 +94,19 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(iconImageView)
 
-        // Weekly Button
-        weeklyButton = UIButton(type: .custom)
-        weeklyButton.setTitle("Weekly - $6.99/week", for: .normal)
-        weeklyButton.setTitleColor(.white, for: .normal)
-        weeklyButton.backgroundColor = UIColor.black.withAlphaComponent(0.3)
-        weeklyButton.layer.cornerRadius = 12
-        weeklyButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        // Weekly Button (selected state)
+        weeklyButton = createPricingButton(price: "$4.99", period: "a week", showSavings: false, isSelected: true)
         weeklyButton.addTarget(self, action: #selector(weeklyButtonTapped), for: .primaryActionTriggered)
-        weeklyButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(weeklyButton)
 
-        // Monthly Button
-        monthlyButton = UIButton(type: .custom)
-        monthlyButton.setTitle("Monthly - $9.99/month (Save 64%)", for: .normal)
-        monthlyButton.setTitleColor(.white, for: .normal)
-        monthlyButton.backgroundColor = UIColor.black.withAlphaComponent(0.3)
-        monthlyButton.layer.cornerRadius = 12
-        monthlyButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        // Monthly Button (unselected state)
+        monthlyButton = createPricingButton(price: "$8.99", period: "a month", showSavings: true, savingsPercent: "58%", isSelected: false)
         monthlyButton.addTarget(self, action: #selector(monthlyButtonTapped), for: .primaryActionTriggered)
-        monthlyButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(monthlyButton)
 
-        // Yearly Button
-        yearlyButton = UIButton(type: .custom)
-        yearlyButton.setTitle("Yearly - $59.99/year (Save 83%)", for: .normal)
-        yearlyButton.setTitleColor(.white, for: .normal)
-        yearlyButton.backgroundColor = UIColor.black.withAlphaComponent(0.3)
-        yearlyButton.layer.cornerRadius = 12
-        yearlyButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        // Yearly Button (unselected state)
+        yearlyButton = createPricingButton(price: "$49.99", period: "a year", showSavings: true, savingsPercent: "81%", isSelected: false)
         yearlyButton.addTarget(self, action: #selector(yearlyButtonTapped), for: .primaryActionTriggered)
-        yearlyButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(yearlyButton)
 
         // "No Thanks" Button
@@ -175,6 +157,222 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             noThanksButton.heightAnchor.constraint(equalToConstant: 60),
         ])
     }
+    
+    private func createPricingButton(price: String, period: String, showSavings: Bool, savingsPercent: String = "", isSelected: Bool = true) -> UIButton {
+        let button = UIButton(type: .custom)
+        
+        if isSelected {
+            // Selected state: Yellow background
+            button.backgroundColor = UIColor(hex: "#FFE135")
+            button.layer.borderWidth = 0
+        } else {
+            // Unselected state: Transparent background with yellow border
+            button.backgroundColor = UIColor.clear
+            button.layer.borderWidth = 2
+            button.layer.borderColor = UIColor(hex: "#FFE135").cgColor
+        }
+        
+        button.layer.cornerRadius = 12
+        button.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Create container view for complex layout
+        let containerView = UIView()
+        containerView.isUserInteractionEnabled = false
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        button.addSubview(containerView)
+        
+        // Determine text color based on selection state
+        let textColor = isSelected ? UIColor.black : UIColor(hex: "#FFE135")
+        
+        // Create horizontal stack for price and period
+        let priceStackView = UIStackView()
+        priceStackView.axis = .horizontal
+        priceStackView.spacing = 4
+        priceStackView.alignment = .lastBaseline
+        priceStackView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(priceStackView)
+        
+        // Price label (bold, larger)
+        let priceLabel = UILabel()
+        priceLabel.text = price
+        priceLabel.textColor = textColor
+        priceLabel.font = UIFont.boldSystemFont(ofSize: 24)
+        priceStackView.addArrangedSubview(priceLabel)
+        
+        // Period label (lighter, smaller)
+        let periodLabel = UILabel()
+        periodLabel.text = period
+        periodLabel.textColor = textColor
+        periodLabel.font = UIFont.systemFont(ofSize: 20, weight: .medium)
+        priceStackView.addArrangedSubview(periodLabel)
+        
+        // Free Trial label (right side)
+        let freeTrialLabel = UILabel()
+        freeTrialLabel.text = "Free Trial"
+        freeTrialLabel.textColor = textColor
+        freeTrialLabel.font = UIFont.boldSystemFont(ofSize: 24)
+        freeTrialLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(freeTrialLabel)
+        
+        // Savings pill (if applicable)
+        if showSavings && !savingsPercent.isEmpty {
+            let savingsPill = UIView()
+            savingsPill.backgroundColor = UIColor(hex: "#8B5CF6") // Purple background
+            savingsPill.layer.cornerRadius = 12
+            savingsPill.translatesAutoresizingMaskIntoConstraints = false
+            containerView.addSubview(savingsPill)
+            
+            let savingsLabel = UILabel()
+            savingsLabel.text = "Save \(savingsPercent)"
+            savingsLabel.textColor = .white
+            savingsLabel.font = UIFont.boldSystemFont(ofSize: 14)
+            savingsLabel.translatesAutoresizingMaskIntoConstraints = false
+            savingsPill.addSubview(savingsLabel)
+            
+            NSLayoutConstraint.activate([
+                savingsPill.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+                savingsPill.topAnchor.constraint(equalTo: containerView.topAnchor, constant: -10),
+                savingsPill.heightAnchor.constraint(equalToConstant: 24),
+                savingsPill.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
+                
+                savingsLabel.centerXAnchor.constraint(equalTo: savingsPill.centerXAnchor),
+                savingsLabel.centerYAnchor.constraint(equalTo: savingsPill.centerYAnchor),
+                savingsLabel.leadingAnchor.constraint(equalTo: savingsPill.leadingAnchor, constant: 12),
+                savingsLabel.trailingAnchor.constraint(equalTo: savingsPill.trailingAnchor, constant: -12)
+            ])
+        }
+        
+        NSLayoutConstraint.activate([
+            containerView.topAnchor.constraint(equalTo: button.topAnchor),
+            containerView.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+            containerView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+            
+            priceStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            priceStackView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            
+            freeTrialLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+            freeTrialLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
+        ])
+        
+        return button
+    }
+    
+    private func updatePricingButton(_ button: UIButton, price: String, period: String, showSavings: Bool, savingsPercent: String = "", isSelected: Bool = true) {
+        // Remove existing subviews
+        button.subviews.forEach { $0.removeFromSuperview() }
+        
+        // Update button styling based on selection state
+        if isSelected {
+            button.backgroundColor = UIColor(hex: "#FFE135")
+            button.layer.borderWidth = 0
+        } else {
+            button.backgroundColor = UIColor.clear
+            button.layer.borderWidth = 2
+            button.layer.borderColor = UIColor(hex: "#FFE135").cgColor
+        }
+        
+        // Recreate the button content
+        let containerView = UIView()
+        containerView.isUserInteractionEnabled = false
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        button.addSubview(containerView)
+        
+        // Determine text color based on selection state
+        let textColor = isSelected ? UIColor.black : UIColor(hex: "#FFE135")
+        
+        // Create horizontal stack for price and period
+        let priceStackView = UIStackView()
+        priceStackView.axis = .horizontal
+        priceStackView.spacing = 4
+        priceStackView.alignment = .lastBaseline
+        priceStackView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(priceStackView)
+        
+        // Price label (bold, larger)
+        let priceLabel = UILabel()
+        priceLabel.text = price
+        priceLabel.textColor = textColor
+        priceLabel.font = UIFont.boldSystemFont(ofSize: 24)
+        priceStackView.addArrangedSubview(priceLabel)
+        
+        // Period label (lighter, smaller)
+        let periodLabel = UILabel()
+        periodLabel.text = period
+        periodLabel.textColor = textColor
+        periodLabel.font = UIFont.systemFont(ofSize: 20, weight: .medium)
+        priceStackView.addArrangedSubview(periodLabel)
+        
+        // Free Trial label (right side)
+        let freeTrialLabel = UILabel()
+        freeTrialLabel.text = "Free Trial"
+        freeTrialLabel.textColor = textColor
+        freeTrialLabel.font = UIFont.boldSystemFont(ofSize: 24)
+        freeTrialLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(freeTrialLabel)
+        
+        // Savings pill (if applicable)
+        if showSavings && !savingsPercent.isEmpty {
+            let savingsPill = UIView()
+            savingsPill.backgroundColor = UIColor(hex: "#8B5CF6") // Purple background
+            savingsPill.layer.cornerRadius = 12
+            savingsPill.translatesAutoresizingMaskIntoConstraints = false
+            containerView.addSubview(savingsPill)
+            
+            let savingsLabel = UILabel()
+            savingsLabel.text = "Save \(savingsPercent)"
+            savingsLabel.textColor = .white
+            savingsLabel.font = UIFont.boldSystemFont(ofSize: 14)
+            savingsLabel.translatesAutoresizingMaskIntoConstraints = false
+            savingsPill.addSubview(savingsLabel)
+            
+            NSLayoutConstraint.activate([
+                savingsPill.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+                savingsPill.topAnchor.constraint(equalTo: containerView.topAnchor, constant: -10),
+                savingsPill.heightAnchor.constraint(equalToConstant: 24),
+                savingsPill.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
+                
+                savingsLabel.centerXAnchor.constraint(equalTo: savingsPill.centerXAnchor),
+                savingsLabel.centerYAnchor.constraint(equalTo: savingsPill.centerYAnchor),
+                savingsLabel.leadingAnchor.constraint(equalTo: savingsPill.leadingAnchor, constant: 12),
+                savingsLabel.trailingAnchor.constraint(equalTo: savingsPill.trailingAnchor, constant: -12)
+            ])
+        }
+        
+        NSLayoutConstraint.activate([
+            containerView.topAnchor.constraint(equalTo: button.topAnchor),
+            containerView.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+            containerView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+            
+            priceStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            priceStackView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            
+            freeTrialLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+            freeTrialLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
+        ])
+    }
+    
+    private func updateSubscribedButton(_ button: UIButton) {
+        // Remove existing subviews
+        button.subviews.forEach { $0.removeFromSuperview() }
+        
+        // Create simple subscribed label
+        let subscribedLabel = UILabel()
+        subscribedLabel.text = "✅ Subscribed"
+        subscribedLabel.textColor = .black
+        subscribedLabel.font = UIFont.boldSystemFont(ofSize: 28)
+        subscribedLabel.textAlignment = .center
+        subscribedLabel.translatesAutoresizingMaskIntoConstraints = false
+        button.addSubview(subscribedLabel)
+        
+        NSLayoutConstraint.activate([
+            subscribedLabel.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+            subscribedLabel.centerYAnchor.constraint(equalTo: button.centerYAnchor)
+        ])
+        
+        button.isEnabled = false
+    }
 
     override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
         super.didUpdateFocus(in: context, with: coordinator)
@@ -182,16 +380,26 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         // Focus gained
         if let nextFocusedButton = context.nextFocusedView as? UIButton {
             coordinator.addCoordinatedAnimations({
-                nextFocusedButton.backgroundColor = .yellow
-                nextFocusedButton.setTitleColor(.black, for: .normal)
+                if nextFocusedButton == self.noThanksButton {
+                    nextFocusedButton.backgroundColor = .yellow
+                    nextFocusedButton.setTitleColor(.black, for: .normal)
+                } else {
+                    // For pricing buttons, just add a subtle scale effect
+                    nextFocusedButton.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+                }
             }, completion: nil)
         }
 
         // Focus lost
         if let previouslyFocusedButton = context.previouslyFocusedView as? UIButton {
             coordinator.addCoordinatedAnimations({
-                previouslyFocusedButton.backgroundColor = UIColor.black.withAlphaComponent(0.3)
-                previouslyFocusedButton.setTitleColor(.white, for: .normal)
+                if previouslyFocusedButton == self.noThanksButton {
+                    previouslyFocusedButton.backgroundColor = .black
+                    previouslyFocusedButton.setTitleColor(.white, for: .normal)
+                } else {
+                    // Reset scale for pricing buttons
+                    previouslyFocusedButton.transform = CGAffineTransform.identity
+                }
             }, completion: nil)
         }
     }
@@ -263,14 +471,14 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         if let weeklyPackage = weeklyPackage {
             let currencyCode = weeklyPackage.storeProduct.currencyCode ?? "$"
             let formattedPrice = (currencyCode == "USD") ? "$\(weeklyPackage.storeProduct.price)" : "\(currencyCode) \(weeklyPackage.storeProduct.price)"
-            weeklyButton.setTitle("Weekly - \(formattedPrice)/week", for: .normal)
+            updatePricingButton(weeklyButton, price: formattedPrice, period: "a week", showSavings: false, isSelected: true)
         }
         
         // Update monthly button
         if let monthlyPackage = monthlyPackage {
             let currencyCode = monthlyPackage.storeProduct.currencyCode ?? "$"
             let formattedPrice = (currencyCode == "USD") ? "$\(monthlyPackage.storeProduct.price)" : "\(currencyCode) \(monthlyPackage.storeProduct.price)"
-            monthlyButton.setTitle("Monthly - \(formattedPrice)/month (Save 64%)", for: .normal)
+            updatePricingButton(monthlyButton, price: formattedPrice, period: "a month", showSavings: true, savingsPercent: "58%", isSelected: false)
         }
         
         // Update yearly button
@@ -283,15 +491,15 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
                     let isSubscribedYearly = customerInfo.entitlements.all.values.contains { $0.isActive && $0.productIdentifier == yearlyPackage.storeProduct.productIdentifier }
                     DispatchQueue.main.async {
                         if isSubscribedYearly {
-                            self.yearlyButton.setTitle("Subscribed (Yearly)", for: .normal)
-                            self.yearlyButton.isEnabled = false // Disable if already subscribed
+                            // For subscribed state, update the button differently
+                            self.updateSubscribedButton(self.yearlyButton)
                         } else {
-                            self.yearlyButton.setTitle("Yearly - \(formattedPrice)/year (Save 83%)", for: .normal)
+                            self.updatePricingButton(self.yearlyButton, price: formattedPrice, period: "a year", showSavings: true, savingsPercent: "81%", isSelected: false)
                         }
                     }
                 } else {
                     DispatchQueue.main.async {
-                        self.yearlyButton.setTitle("Yearly - \(formattedPrice)/year (Save 83%)", for: .normal)
+                        self.updatePricingButton(self.yearlyButton, price: formattedPrice, period: "a year", showSavings: true, savingsPercent: "81%", isSelected: false)
                     }
                 }
             }
@@ -365,12 +573,9 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         let hasActiveEntitlement = customerInfo.entitlements["lifetime"]?.isActive == true
         if hasActiveEntitlement {
             // User is subscribed, update all buttons to show subscribed state
-            weeklyButton.setTitle("✅ Subscribed", for: .normal)
-            weeklyButton.isEnabled = false
-            monthlyButton.setTitle("✅ Subscribed", for: .normal) 
-            monthlyButton.isEnabled = false
-            yearlyButton.setTitle("✅ Subscribed", for: .normal)
-            yearlyButton.isEnabled = false
+            updateSubscribedButton(weeklyButton)
+            updateSubscribedButton(monthlyButton)
+            updateSubscribedButton(yearlyButton)
         } else {
             // User not subscribed, ensure buttons are enabled and show pricing
             weeklyButton.isEnabled = true
@@ -411,5 +616,4 @@ extension PurchasesViewController { // Removed ": PurchasesDelegate"
     //     print("Stub: readyForPromotedProduct bypassed.")
     // }
 }
-
 

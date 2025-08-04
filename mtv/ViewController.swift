@@ -35,7 +35,7 @@ class ViewController: UIViewController {
         // Create Concert Directory tab (Artist-based screen)
         let liveShowsController = LiveShowsTabViewController()
         liveShowsController.tabBarItem = UITabBarItem(
-            title: "Concert Directory", 
+            title: "Fan Cams", 
             image: nil,
             tag: 2
         )
