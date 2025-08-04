@@ -649,12 +649,21 @@ extension LiveShowsViewController: UICollectionViewDataSource, UICollectionViewD
         
         if let videoURL = artists[selectedArtistIndex].fields.videoUrls?[visibleIndex],
            let videoID = extractYouTubeVideoID(from: videoURL) {
+            // Start with custom missing video placeholder
+            cell.imageView.image = UIImage(named: "missing_video") ?? UIImage(systemName: "play.rectangle.fill")!
+            
             let thumbnailURLString = "https://i.ytimg.com/vi/\(videoID)/mqdefault.jpg"
             if let url = URL(string: thumbnailURLString) {
                 URLSession.shared.dataTask(with: url) { data, response, error in
                     if let data = data, let image = UIImage(data: data) {
                         DispatchQueue.main.async {
-                            cell.imageView.image = image
+                            // Check if the image data is too small (likely YouTube's missing video graphic)
+                            if data.count < 1500 { // Less than 1.5KB is likely YouTube's missing video graphic
+                                print("🎸 🔄 LIVE SHOWS DEBUG: Small image data (\(data.count) bytes), likely YouTube missing video graphic, using custom placeholder")
+                                cell.imageView.image = UIImage(named: "missing_video") ?? UIImage(systemName: "play.rectangle.fill")!
+                            } else {
+                                cell.imageView.image = image
+                            }
                         }
                     }
                 }.resume()

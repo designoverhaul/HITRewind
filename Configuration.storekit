@@ -86,7 +86,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "3.99",
+          "displayPrice" : "6.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "1660505882",
@@ -114,14 +114,14 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "2.99",
+          "displayPrice" : "9.99",
           "familyShareable" : false,
           "groupNumber" : 2,
           "internalID" : "1660505883",
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Unlock all years and artists",
+              "description" : "Unlock all years and artists with 64% savings",
               "displayName" : "Monthly Subscription",
               "locale" : "en_US"
             }
@@ -142,14 +142,14 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "24.99",
+          "displayPrice" : "59.99",
           "familyShareable" : false,
           "groupNumber" : 3,
           "internalID" : "1660505981",
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Unlock all years and artists with 30% savings",
+              "description" : "Unlock all years and artists with 83% savings",
               "displayName" : "Yearly Subscription",
               "locale" : "en_US"
             }

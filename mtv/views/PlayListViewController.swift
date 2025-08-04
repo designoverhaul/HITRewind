@@ -16,6 +16,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
     // Store last focused index paths
     private var lastFocusedYearIndexPath: IndexPath?
     private var lastFocusedVideoIndexPath: IndexPath?
+    private var missingVideoIndices: Set<Int> = [] // Track which videos are missing
 
     private var playlistTableView: UITableView!
     private var playlistImagesCollectionView: UICollectionView!
@@ -190,6 +191,9 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             return
         }
 
+        // Clear missing video indices when switching playlists
+        missingVideoIndices.removeAll()
+        
         // Always show videos
         playlistImagesCollectionView.isHidden = false
         updateVisibleVideoIndices()
@@ -598,12 +602,31 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
 
         if let videoURL = playlists[selectedPlaylistIndex].fields.videoUrls?[visibleIndex],
            let videoID = extractYouTubeVideoID(from: videoURL) {
+            // Start with custom missing video placeholder
+            cell.imageView.image = UIImage(named: "missing_video") ?? UIImage(systemName: "play.rectangle.fill")!
+            
             let thumbnailURLString = "https://i.ytimg.com/vi/\(videoID)/mqdefault.jpg"
             if let url = URL(string: thumbnailURLString) {
-                URLSession.shared.dataTask(with: url) { data, response, error in
+                URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
                     if let data = data, let image = UIImage(data: data) {
                         DispatchQueue.main.async {
-                            cell.imageView.image = image
+                            // Check if the image data is too small (likely YouTube's missing video graphic)
+                            if data.count < 1500 { // Less than 1.5KB is likely YouTube's missing video graphic
+                                print("🎸 🔄 PLAYLIST DEBUG: Small image data (\(data.count) bytes), likely YouTube missing video graphic, using custom placeholder")
+                                cell.imageView.image = UIImage(named: "missing_video") ?? UIImage(systemName: "play.rectangle.fill")!
+                                // Mark this video as missing
+                                self?.missingVideoIndices.insert(visibleIndex)
+                                // Disable cell interaction for missing videos
+                                cell.isUserInteractionEnabled = false
+                                cell.alpha = 0.6 // Make it look disabled
+                            } else {
+                                cell.imageView.image = image
+                                // Mark this video as available
+                                self?.missingVideoIndices.remove(visibleIndex)
+                                // Enable cell interaction for available videos
+                                cell.isUserInteractionEnabled = true
+                                cell.alpha = 1.0
+                            }
                         }
                     }
                 }.resume()
@@ -630,6 +653,12 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
                 return
             }
             let actualVideoIndex = visibleVideoIndices[videoIndexInVisible] // Actual index in the full video list for the playlist
+
+            // Check if the selected video is missing
+            if missingVideoIndices.contains(actualVideoIndex) {
+                print("🎸 ❌ PLAYLIST DEBUG: Attempted to play missing video at index \(actualVideoIndex), ignoring selection")
+                return
+            }
 
             // Use mtvVideos which should contain the YouTube video IDs
             guard let allVideoIds = playlist.fields.mtvVideos, !allVideoIds.isEmpty else {
@@ -678,6 +707,8 @@ extension PlayListViewController: UICollectionViewDataSource, UICollectionViewDe
         }, completion: nil)
     }
 
+
+    
     func generatePlaylistFromSelectedVideo(selectedIndexPath: IndexPath) -> [String] {
         guard let selectedPlaylistIndex = selectedPlaylistIndex, selectedPlaylistIndex < playlists.count else {
             return []

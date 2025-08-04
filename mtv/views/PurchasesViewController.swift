@@ -96,7 +96,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
         // Weekly Button
         weeklyButton = UIButton(type: .custom)
-        weeklyButton.setTitle("Weekly - $3.99/week", for: .normal)
+        weeklyButton.setTitle("Weekly - $6.99/week", for: .normal)
         weeklyButton.setTitleColor(.white, for: .normal)
         weeklyButton.backgroundColor = UIColor.black.withAlphaComponent(0.3)
         weeklyButton.layer.cornerRadius = 12
@@ -107,7 +107,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
         // Monthly Button
         monthlyButton = UIButton(type: .custom)
-        monthlyButton.setTitle("Monthly - $6.99/month", for: .normal)
+        monthlyButton.setTitle("Monthly - $9.99/month (Save 64%)", for: .normal)
         monthlyButton.setTitleColor(.white, for: .normal)
         monthlyButton.backgroundColor = UIColor.black.withAlphaComponent(0.3)
         monthlyButton.layer.cornerRadius = 12
@@ -118,7 +118,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
 
         // Yearly Button
         yearlyButton = UIButton(type: .custom)
-        yearlyButton.setTitle("Yearly - $44.99/year (Save 30%)", for: .normal)
+        yearlyButton.setTitle("Yearly - $59.99/year (Save 83%)", for: .normal)
         yearlyButton.setTitleColor(.white, for: .normal)
         yearlyButton.backgroundColor = UIColor.black.withAlphaComponent(0.3)
         yearlyButton.layer.cornerRadius = 12
@@ -270,7 +270,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         if let monthlyPackage = monthlyPackage {
             let currencyCode = monthlyPackage.storeProduct.currencyCode ?? "$"
             let formattedPrice = (currencyCode == "USD") ? "$\(monthlyPackage.storeProduct.price)" : "\(currencyCode) \(monthlyPackage.storeProduct.price)"
-            monthlyButton.setTitle("Monthly - \(formattedPrice)/month", for: .normal)
+            monthlyButton.setTitle("Monthly - \(formattedPrice)/month (Save 64%)", for: .normal)
         }
         
         // Update yearly button
@@ -286,12 +286,12 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
                             self.yearlyButton.setTitle("Subscribed (Yearly)", for: .normal)
                             self.yearlyButton.isEnabled = false // Disable if already subscribed
                         } else {
-                            self.yearlyButton.setTitle("Yearly - \(formattedPrice)/year (Save 30%)", for: .normal)
+                            self.yearlyButton.setTitle("Yearly - \(formattedPrice)/year (Save 83%)", for: .normal)
                         }
                     }
                 } else {
                     DispatchQueue.main.async {
-                        self.yearlyButton.setTitle("Yearly - \(formattedPrice)/year (Save 30%)", for: .normal)
+                        self.yearlyButton.setTitle("Yearly - \(formattedPrice)/year (Save 83%)", for: .normal)
                     }
                 }
             }

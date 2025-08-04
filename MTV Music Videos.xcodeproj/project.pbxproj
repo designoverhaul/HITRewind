@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		14C3BD015D1687B8744CE2BD /* Pods_MTV_Music_VideosTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C75EBC30B7E2877BD1DA6BD /* Pods_MTV_Music_VideosTests.framework */; };
-		180610A254F6926FD85E2FBB /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E5C05D02A362E38E85327C6E /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework */; };
 		1C0B177C2C6BFC2A005E2B06 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = 1C0B177B2C6BFC2A005E2B06 /* ReceiptParser */; };
 		1C0B177E2C6BFC2A005E2B06 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 1C0B177D2C6BFC2A005E2B06 /* RevenueCat */; };
 		1C0B17802C6BFC2A005E2B06 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1C0B177F2C6BFC2A005E2B06 /* RevenueCatUI */; };
@@ -45,7 +43,6 @@
 		936D0C622DF0D1280093E0EB /* YouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 936D0C612DF0D1280093E0EB /* YouTubeKit */; };
 		93F01C5B2DF0EC6E00CE4BD6 /* DebugPlayerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F01C5A2DF0EC6E00CE4BD6 /* DebugPlayerViewController.swift */; };
 		93F0A0792D8B1739000F385C /* Configuration.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 93F0A0782D8B1738000F385C /* Configuration.storekit */; };
-		C96198FA28360AE1A82F3175 /* Pods_MTV_Music_Videos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26356FCCFEDC0BE5D5A4FE44 /* Pods_MTV_Music_Videos.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,7 +63,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		1357EA8FDF9F9165922B229F /* Pods-MTV Music Videos.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music Videos.debug.xcconfig"; path = "Target Support Files/Pods-MTV Music Videos/Pods-MTV Music Videos.debug.xcconfig"; sourceTree = "<group>"; };
 		1C2268F72BD460D900F11B24 /* MTV-Music-Videos-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "MTV-Music-Videos-Info.plist"; sourceTree = "<group>"; };
 		1C2269002BD4667F00F11B24 /* inter.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = inter.ttf; sourceTree = "<group>"; };
 		1C2643D52B9A671D006D5D69 /* MTV Music Videos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MTV Music Videos.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -88,13 +84,7 @@
 		1C4BD6562BA11176002C37C1 /* ImageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCell.swift; sourceTree = "<group>"; };
 		1C4BD6592BA1143B002C37C1 /* VideoDurationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDurationService.swift; sourceTree = "<group>"; };
 		1C7CA4632C71267500CE68EB /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
-		257B92D69144979C24573713 /* Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig"; path = "Target Support Files/Pods-MTV Music Videos-MTV Music VideosUITests/Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig"; sourceTree = "<group>"; };
-		26356FCCFEDC0BE5D5A4FE44 /* Pods_MTV_Music_Videos.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MTV_Music_Videos.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5D2C03F6B52246A0B392B74A58573D16 /* LiveShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveShowsViewController.swift; sourceTree = "<group>"; };
-		615B22DC4B7EDC4F0200989F /* Pods-MTV Music VideosTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music VideosTests.release.xcconfig"; path = "Target Support Files/Pods-MTV Music VideosTests/Pods-MTV Music VideosTests.release.xcconfig"; sourceTree = "<group>"; };
-		6C75EBC30B7E2877BD1DA6BD /* Pods_MTV_Music_VideosTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MTV_Music_VideosTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		7CF56BB119AC16685F00F154 /* Pods-MTV Music VideosTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music VideosTests.debug.xcconfig"; path = "Target Support Files/Pods-MTV Music VideosTests/Pods-MTV Music VideosTests.debug.xcconfig"; sourceTree = "<group>"; };
-		872969662999CF03F7AAE594 /* Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig"; path = "Target Support Files/Pods-MTV Music Videos-MTV Music VideosUITests/Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		933871C52DF108F3006376A6 /* YouTubePlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerService.swift; sourceTree = "<group>"; };
 		933871C72DF1C480006376A6 /* SingleConcertViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleConcertViewController.swift; sourceTree = "<group>"; };
 		935711282DE5E76200A002E0 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
@@ -106,8 +96,6 @@
 		9357113B2DE62A3D00A002E0 /* YouTubeExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeExtensions.swift; sourceTree = "<group>"; };
 		93F01C5A2DF0EC6E00CE4BD6 /* DebugPlayerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPlayerViewController.swift; sourceTree = "<group>"; };
 		93F0A0782D8B1738000F385C /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
-		E5C05D02A362E38E85327C6E /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		F477B31AEA435196BDAEA3D9 /* Pods-MTV Music Videos.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTV Music Videos.release.xcconfig"; path = "Target Support Files/Pods-MTV Music Videos/Pods-MTV Music Videos.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,7 +108,6 @@
 				1C0B177C2C6BFC2A005E2B06 /* ReceiptParser in Frameworks */,
 				1C7CA4642C71267600CE68EB /* StoreKit.framework in Frameworks */,
 				1C0B177E2C6BFC2A005E2B06 /* RevenueCat in Frameworks */,
-				C96198FA28360AE1A82F3175 /* Pods_MTV_Music_Videos.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,7 +115,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				14C3BD015D1687B8744CE2BD /* Pods_MTV_Music_VideosTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -136,7 +122,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				180610A254F6926FD85E2FBB /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -257,9 +242,6 @@
 			isa = PBXGroup;
 			children = (
 				1C7CA4632C71267500CE68EB /* StoreKit.framework */,
-				26356FCCFEDC0BE5D5A4FE44 /* Pods_MTV_Music_Videos.framework */,
-				E5C05D02A362E38E85327C6E /* Pods_MTV_Music_Videos_MTV_Music_VideosUITests.framework */,
-				6C75EBC30B7E2877BD1DA6BD /* Pods_MTV_Music_VideosTests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -277,12 +259,6 @@
 		D3767BF4B764524C0C3C4AE7 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				1357EA8FDF9F9165922B229F /* Pods-MTV Music Videos.debug.xcconfig */,
-				F477B31AEA435196BDAEA3D9 /* Pods-MTV Music Videos.release.xcconfig */,
-				872969662999CF03F7AAE594 /* Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig */,
-				257B92D69144979C24573713 /* Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig */,
-				7CF56BB119AC16685F00F154 /* Pods-MTV Music VideosTests.debug.xcconfig */,
-				615B22DC4B7EDC4F0200989F /* Pods-MTV Music VideosTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -294,7 +270,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1C2643FC2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music Videos" */;
 			buildPhases = (
-				56911945149E68559061E6E8 /* [CP] Check Pods Manifest.lock */,
 				1C2643D12B9A671D006D5D69 /* Sources */,
 				1C2643D22B9A671D006D5D69 /* Frameworks */,
 				1C2643D32B9A671D006D5D69 /* Resources */,
@@ -318,7 +293,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1C2643FF2B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music VideosTests" */;
 			buildPhases = (
-				BB64726C6AE6639131C8078C /* [CP] Check Pods Manifest.lock */,
 				1C2643E42B9A671F006D5D69 /* Sources */,
 				1C2643E52B9A671F006D5D69 /* Frameworks */,
 				1C2643E62B9A671F006D5D69 /* Resources */,
@@ -337,7 +311,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1C2644022B9A671F006D5D69 /* Build configuration list for PBXNativeTarget "MTV Music VideosUITests" */;
 			buildPhases = (
-				230365D264AF79CEE24CE07C /* [CP] Check Pods Manifest.lock */,
 				1C2643EE2B9A671F006D5D69 /* Sources */,
 				1C2643EF2B9A671F006D5D69 /* Frameworks */,
 				1C2643F02B9A671F006D5D69 /* Resources */,
@@ -432,75 +405,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		230365D264AF79CEE24CE07C /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-MTV Music Videos-MTV Music VideosUITests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		56911945149E68559061E6E8 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-MTV Music Videos-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		BB64726C6AE6639131C8078C /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-MTV Music VideosTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1C2643D12B9A671D006D5D69 /* Sources */ = {
@@ -701,12 +605,11 @@
 		};
 		1C2643FD2B9A671F006D5D69 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1357EA8FDF9F9165922B229F /* Pods-MTV Music Videos.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "MTV-Music-Videos-Info.plist";
@@ -720,7 +623,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 5;
+				MARKETING_VERSION = 6.32;
 				PRODUCT_BUNDLE_IDENTIFIER = designoverhaul.mytv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -731,12 +634,11 @@
 		};
 		1C2643FE2B9A671F006D5D69 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = F477B31AEA435196BDAEA3D9 /* Pods-MTV Music Videos.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "MTV-Music-Videos-Info.plist";
@@ -750,7 +652,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 5;
+				MARKETING_VERSION = 6.32;
 				PRODUCT_BUNDLE_IDENTIFIER = designoverhaul.mytv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -761,7 +663,6 @@
 		};
 		1C2644002B9A671F006D5D69 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7CF56BB119AC16685F00F154 /* Pods-MTV Music VideosTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -781,7 +682,6 @@
 		};
 		1C2644012B9A671F006D5D69 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 615B22DC4B7EDC4F0200989F /* Pods-MTV Music VideosTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -801,7 +701,6 @@
 		};
 		1C2644032B9A671F006D5D69 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 872969662999CF03F7AAE594 /* Pods-MTV Music Videos-MTV Music VideosUITests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -819,7 +718,6 @@
 		};
 		1C2644042B9A671F006D5D69 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 257B92D69144979C24573713 /* Pods-MTV Music Videos-MTV Music VideosUITests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

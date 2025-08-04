@@ -5,6 +5,12 @@ import AVKit
 import RevenueCat
 import ObjectiveC
 
+// MARK: - Banner Cache Data Model
+struct BannerCacheEntry: Codable {
+    let url: String
+    let timestamp: Date
+}
+
 // MARK: - UIImageView Extension for ImageCache Support
 extension UIImageView {
     private static var taskKey: UInt8 = 0
@@ -14,14 +20,105 @@ extension UIImageView {
         set { objc_setAssociatedObject(self, &UIImageView.taskKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
     }
     
+    // MARK: - Banner Image Caching
+    private static let bannerCache = NSCache<NSString, UIImage>()
+    private static let bannerCacheKey = "BannerImageCache"
+    private static let bannerCacheURLsKey = "BannerImageCacheURLs"
+    
+    static func clearBannerCache() {
+        bannerCache.removeAllObjects()
+        UserDefaults.standard.removeObject(forKey: bannerCacheKey)
+        UserDefaults.standard.removeObject(forKey: bannerCacheURLsKey)
+    }
+    
+    static func saveBannerToCache(_ image: UIImage, for urlString: String) {
+        let key = NSString(string: urlString)
+        bannerCache.setObject(image, forKey: key)
+        
+        // Store only the URL and timestamp in UserDefaults (much smaller)
+        let cacheEntry = BannerCacheEntry(url: urlString, timestamp: Date())
+        var existingURLs = loadBannerCacheURLsFromDisk()
+        existingURLs[urlString] = cacheEntry
+        saveBannerCacheURLsToDisk(existingURLs)
+        
+        // Store actual image data in Documents directory (much more space)
+        saveBannerImageToDocuments(image, for: urlString)
+    }
+    
+    static func loadBannerFromCache(for urlString: String) -> UIImage? {
+        // First check memory cache
+        let key = NSString(string: urlString)
+        if let cachedImage = bannerCache.object(forKey: key) {
+            return cachedImage
+        }
+        
+        // Then check disk cache
+        let cacheURLs = loadBannerCacheURLsFromDisk()
+        if let cacheEntry = cacheURLs[urlString] {
+            // Check if cache is still valid (7 days)
+            let cacheAge = Date().timeIntervalSince(cacheEntry.timestamp)
+            if cacheAge < 7 * 24 * 60 * 60 { // 7 days in seconds
+                if let image = loadBannerImageFromDocuments(for: urlString) {
+                    // Restore to memory cache
+                    bannerCache.setObject(image, forKey: key)
+                    return image
+                }
+            } else {
+                // Remove expired cache entry
+                var updatedURLs = cacheURLs
+                updatedURLs.removeValue(forKey: urlString)
+                saveBannerCacheURLsToDisk(updatedURLs)
+                removeBannerImageFromDocuments(for: urlString)
+            }
+        }
+        
+        return nil
+    }
+    
+    private static func loadBannerCacheURLsFromDisk() -> [String: BannerCacheEntry] {
+        guard let data = UserDefaults.standard.data(forKey: bannerCacheURLsKey) else { return [:] }
+        return (try? JSONDecoder().decode([String: BannerCacheEntry].self, from: data)) ?? [:]
+    }
+    
+    private static func saveBannerCacheURLsToDisk(_ cache: [String: BannerCacheEntry]) {
+        if let data = try? JSONEncoder().encode(cache) {
+            UserDefaults.standard.set(data, forKey: bannerCacheURLsKey)
+        }
+    }
+    
+    private static func saveBannerImageToDocuments(_ image: UIImage, for urlString: String) {
+        guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let fileName = urlString.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? urlString
+        let fileURL = documentsPath.appendingPathComponent("banner_\(fileName).jpg")
+        
+        if let data = image.jpegData(compressionQuality: 0.7) {
+            try? data.write(to: fileURL)
+        }
+    }
+    
+    private static func loadBannerImageFromDocuments(for urlString: String) -> UIImage? {
+        guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        let fileName = urlString.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? urlString
+        let fileURL = documentsPath.appendingPathComponent("banner_\(fileName).jpg")
+        
+        guard let data = try? Data(contentsOf: fileURL) else { return nil }
+        return UIImage(data: data)
+    }
+    
+    private static func removeBannerImageFromDocuments(for urlString: String) {
+        guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let fileName = urlString.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? urlString
+        let fileURL = documentsPath.appendingPathComponent("banner_\(fileName).jpg")
+        
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+    
     func loadImageFromCache(urlString: String, placeholder: UIImage? = nil) {
         // Cancel any existing download
         currentTask?.cancel()
         
-        // Set placeholder
-        if let placeholder = placeholder {
-            self.image = placeholder
-        }
+        // Always start with our custom missing video placeholder
+        self.image = UIImage(named: "missing_video") ?? UIImage(systemName: "play.rectangle.fill")!
         
         // Validate URL
         guard let url = URL(string: urlString) else {
@@ -63,8 +160,15 @@ extension UIImageView {
                     return
                 }
                 
-                print("🎸 ✅ THUMBNAIL DEBUG: Successfully loaded image for \(urlString)")
-                self?.image = image
+                // Check if the image data is too small (likely YouTube's missing video graphic)
+                // YouTube's missing video graphic is consistently around 1097 bytes
+                if data.count < 1500 { // Less than 1.5KB is likely YouTube's missing video graphic
+                    print("🎸 🔄 THUMBNAIL DEBUG: Small image data (\(data.count) bytes), likely YouTube missing video graphic, using custom placeholder")
+                    self?.image = UIImage(named: "missing_video") ?? UIImage(systemName: "play.rectangle.fill")!
+                } else {
+                    print("🎸 ✅ THUMBNAIL DEBUG: Successfully loaded image for \(urlString) (\(data.count) bytes)")
+                    self?.image = image
+                }
             }
         }
         currentTask?.resume()
@@ -317,6 +421,10 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         super.viewDidLoad()
         setupUI()
         showLoadingIndicator()
+        
+        // Clear old banner cache to fix UserDefaults size issue
+        UIImageView.clearBannerCache()
+        
         fetchConcerts()
         fetchLegendaryShows()
         // fetchFeatured80sVideos() // Temporarily disabled
@@ -336,6 +444,24 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    // MARK: - Network Connectivity Handling
+    
+    private func checkNetworkConnectivity() -> Bool {
+        // Simple network check - you can enhance this with Reachability if needed
+        guard let url = URL(string: "https://www.apple.com") else { return false }
+        
+        let semaphore = DispatchSemaphore(value: 0)
+        var isConnected = false
+        
+        URLSession.shared.dataTask(with: url) { _, response, error in
+            isConnected = (response as? HTTPURLResponse)?.statusCode == 200
+            semaphore.signal()
+        }.resume()
+        
+        _ = semaphore.wait(timeout: .now() + 3.0) // 3 second timeout
+        return isConnected
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -403,18 +529,18 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         bannerScrollView2.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(bannerScrollView2)
 
-        // Collection view setup - 3 columns, full width
+        // Collection view setup - 5 columns, full width
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
         layout.minimumInteritemSpacing = 30
         layout.minimumLineSpacing = 40
         
-        // Calculate item size for 4 columns using full width
+        // Calculate item size for 5 columns using full width
         let screenWidth = UIScreen.main.bounds.width
         let totalHorizontalPadding: CGFloat = 80 // 40 on each side (reduced for full width)
-        let totalSpacing: CGFloat = 3 * 30 // 3 spaces between 4 items
+        let totalSpacing: CGFloat = 4 * 30 // 4 spaces between 5 items
         let availableWidth = screenWidth - totalHorizontalPadding - totalSpacing
-        let itemWidth = availableWidth / 4
+        let itemWidth = availableWidth / 5
         let itemHeight: CGFloat = 330 // Adjusted from 380 to remove extra bottom space
         
         layout.itemSize = CGSize(width: itemWidth, height: itemHeight)
@@ -446,7 +572,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         contentView.addSubview(collectionView2)
         
         // Layout constraints
-        // Calculate height for the first collection view (8 items = 2 rows, given 4 columns)
+        // Calculate height for the first collection view (8 items = 2 rows, given 5 columns)
         let numberOfRowsInFirstGrid = 2
         let firstCollectionViewHeight = (CGFloat(numberOfRowsInFirstGrid) * itemHeight) + (CGFloat(numberOfRowsInFirstGrid - 1) * layout.minimumLineSpacing) + layout.sectionInset.top + layout.sectionInset.bottom
         
@@ -486,7 +612,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             collectionView.topAnchor.constraint(equalTo: bannerScrollView.bottomAnchor, constant: 30),
             collectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            collectionView.heightAnchor.constraint(equalToConstant: firstCollectionViewHeight), // Height for 2 rows of 4 videos
+            collectionView.heightAnchor.constraint(equalToConstant: firstCollectionViewHeight), // Height for 2 rows of 5 videos
 
             // Second Banner carousel (below first collection view)
             bannerScrollView2.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: 30),
@@ -616,11 +742,14 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                 
                 self.legendaryShows = shuffledShows
                 
-                // Split shows for the two collection views (20 total: 8 + 12)
+                // Split shows for the two collection views (16 total: 8 + 8)
                 let splitIndex = 8 // First collection view gets 2 rows (8 items)
+                let secondCollectionLimit = 8 // Second collection view gets 2 rows (8 items)
                 if shuffledShows.count > splitIndex {
                     self.legendaryShows1 = Array(shuffledShows.prefix(splitIndex))
-                    self.legendaryShows2 = Array(shuffledShows.suffix(from: splitIndex))
+                    // Take only 8 items for the second collection view (2 rows)
+                    let remainingShows = Array(shuffledShows.suffix(from: splitIndex))
+                    self.legendaryShows2 = Array(remainingShows.prefix(secondCollectionLimit))
                 } else {
                     self.legendaryShows1 = shuffledShows // If splitIndex or less, all go to the first collection view
                     self.legendaryShows2 = []    // Second collection view is empty
@@ -690,11 +819,14 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         // Shuffle the main array
         legendaryShows.shuffle()
         
-        // Re-split for the two collection views (20 total: 8 + 12)
+        // Re-split for the two collection views (16 total: 8 + 8)
         let splitIndex = 8 // First collection view gets 2 rows (8 items)
+        let secondCollectionLimit = 8 // Second collection view gets 2 rows (8 items)
         if legendaryShows.count > splitIndex {
             legendaryShows1 = Array(legendaryShows.prefix(splitIndex))
-            legendaryShows2 = Array(legendaryShows.suffix(from: splitIndex))
+            // Take only 8 items for the second collection view (2 rows)
+            let remainingShows = Array(legendaryShows.suffix(from: splitIndex))
+            legendaryShows2 = Array(remainingShows.prefix(secondCollectionLimit))
         } else {
             legendaryShows1 = legendaryShows
             legendaryShows2 = []
@@ -734,7 +866,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         if !self.concerts.isEmpty {
             let topBannerConcert = self.concerts[0]
             if let bannerImages = topBannerConcert.fields.bannerImage, let firstBannerImage = bannerImages.first {
-                loadBannerImage(from: firstBannerImage.url, into: topLargeBannerImageView)
+                loadBannerImageWithFallback(from: firstBannerImage.url, into: topLargeBannerImageView, concertName: topBannerConcert.fields.venueName ?? "Unknown")
                 // Consider making topLargeBannerImageView tappable here if needed in the future, with tag 0
                 self.topLargeBannerImageView.tag = 0
             }
@@ -777,7 +909,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             let bannerImageView = FocusableBannerImageView(frame: .zero)
             bannerImageView.contentMode = .scaleAspectFill
             bannerImageView.clipsToBounds = true
-            bannerImageView.backgroundColor = .clear
+            bannerImageView.backgroundColor = UIColor(red: 41/255, green: 38/255, blue: 49/255, alpha: 1.0) // Dark gray placeholder
             bannerImageView.translatesAutoresizingMaskIntoConstraints = false
             bannerImageView.tag = index + tagOffset // For tap handling, ensure unique tags globally
             
@@ -802,9 +934,9 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             ])
             print("🎪 Set constraints for banner \(index), position: \(currentX), size: \(bannerWidth)x\(bannerHeight)")
             
-            // Load banner image
+            // Load banner image with fallback
             print("🎪 About to load banner image for concert \(index)")
-            loadBannerImage(from: firstBanner.url, into: bannerImageView)
+            loadBannerImageWithFallback(from: firstBanner.url, into: bannerImageView, concertName: concert.fields.venueName ?? "Unknown")
             
             currentX += bannerWidth + bannerSpacing
         }
@@ -815,7 +947,75 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         print("🎪 Set scroll view content size: \(finalContentWidth)x\(bannerHeight + 20)")
     }
     
-    private func loadBannerImage(from urlString: String, into imageView: UIImageView) {
+    private func loadBannerImageWithFallback(from urlString: String, into imageView: UIImageView, concertName: String) {
+        // Set a placeholder background immediately
+        imageView.backgroundColor = UIColor(red: 41/255, green: 38/255, blue: 49/255, alpha: 1.0)
+        
+        // First, try to load from cache
+        if let cachedImage = UIImageView.loadBannerFromCache(for: urlString) {
+            print("🖼️ ✅ Loaded banner from cache: \(urlString)")
+            imageView.image = cachedImage
+            imageView.backgroundColor = .clear
+            return
+        }
+        
+        // If no cache, start download with retry logic
+        loadBannerImage(from: urlString, into: imageView) { [weak imageView] success in
+            DispatchQueue.main.async {
+                if !success {
+                    // Create a fallback banner with concert name
+                    self.createFallbackBanner(for: imageView, concertName: concertName)
+                } else {
+                    imageView?.backgroundColor = .clear
+                }
+            }
+        }
+    }
+    
+    private func createFallbackBanner(for imageView: UIImageView?, concertName: String) {
+        guard let imageView = imageView else { return }
+        
+        // Wait for the image view to have proper bounds if needed
+        if imageView.bounds.size.width == 0 || imageView.bounds.size.height == 0 {
+            // Schedule for next layout pass
+            DispatchQueue.main.async {
+                self.createFallbackBanner(for: imageView, concertName: concertName)
+            }
+            return
+        }
+        
+        // Create a simple fallback banner with concert name
+        let bannerSize = imageView.bounds.size
+        let renderer = UIGraphicsImageRenderer(size: bannerSize)
+        
+        let fallbackImage = renderer.image { context in
+            // Background
+            UIColor(red: 41/255, green: 38/255, blue: 49/255, alpha: 1.0).setFill()
+            context.fill(CGRect(origin: .zero, size: bannerSize))
+            
+            // Text
+            let text = concertName
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 18, weight: .medium),
+                .foregroundColor: UIColor.white
+            ]
+            
+            let textSize = text.size(withAttributes: attributes)
+            let textRect = CGRect(
+                x: (bannerSize.width - textSize.width) / 2,
+                y: (bannerSize.height - textSize.height) / 2,
+                width: textSize.width,
+                height: textSize.height
+            )
+            
+            text.draw(in: textRect, withAttributes: attributes)
+        }
+        
+        imageView.image = fallbackImage
+        print("🖼️ 🎨 Created fallback banner for: \(concertName)")
+    }
+    
+    private func loadBannerImage(from urlString: String, into imageView: UIImageView, retryCount: Int = 0, completion: ((Bool) -> Void)? = nil) {
         guard let url = URL(string: urlString) else {
             print("🖼️ ❌ Invalid banner URL: \(urlString)")
             return
@@ -824,15 +1024,22 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         // Cancel any existing task for this image view
         imageView.cancelImageLoad()
         
-        print("🖼️ 🔄 Starting banner image download: \(urlString)")
+        // First, try to load from cache
+        if let cachedImage = UIImageView.loadBannerFromCache(for: urlString) {
+            print("🖼️ ✅ Loaded banner from cache: \(urlString)")
+            imageView.image = cachedImage
+            return
+        }
+        
+        print("🖼️ 🔄 Starting banner image download: \(urlString) (attempt \(retryCount + 1))")
         
         // Create URLRequest with timeout for better device compatibility
         var request = URLRequest(url: url)
         request.timeoutInterval = 30.0 // 30 second timeout
-        request.cachePolicy = .returnCacheDataElseLoad // Use cache if available, otherwise load fresh
+        request.cachePolicy = .reloadIgnoringLocalCacheData // Always try fresh for banners
         
         // Use simple URLSession.shared.dataTask for better device compatibility
-        let task = URLSession.shared.dataTask(with: request) { [weak imageView] data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { [weak imageView, weak self] data, response, error in
             DispatchQueue.main.async {
                 guard let imageView = imageView else { return }
                 
@@ -842,7 +1049,20 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                         print("🖼️ 🔄 Banner task cancelled for \(urlString)")
                         return
                     }
+                    
                     print("🖼️ ❌ Banner network error for \(urlString): \(error.localizedDescription)")
+                    
+                    // Retry logic - up to 2 retries with exponential backoff
+                    if retryCount < 2 {
+                        let delay = Double(retryCount + 1) * 2.0 // 2s, 4s delays
+                        print("🖼️ 🔄 Retrying banner download in \(delay) seconds...")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                            self?.loadBannerImage(from: urlString, into: imageView, retryCount: retryCount + 1, completion: completion)
+                        }
+                    } else {
+                        print("🖼️ ❌ Banner download failed after \(retryCount + 1) attempts: \(urlString)")
+                        completion?(false)
+                    }
                     return
                 }
                 
@@ -850,6 +1070,17 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                     print("🖼️ 📡 Banner HTTP \(httpResponse.statusCode) for \(urlString)")
                     if httpResponse.statusCode != 200 {
                         print("🖼️ ❌ Banner HTTP error \(httpResponse.statusCode) for \(urlString)")
+                        
+                        // Retry on HTTP errors too
+                        if retryCount < 2 {
+                            let delay = Double(retryCount + 1) * 2.0
+                            print("🖼️ 🔄 Retrying banner download after HTTP error in \(delay) seconds...")
+                            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                                self?.loadBannerImage(from: urlString, into: imageView, retryCount: retryCount + 1, completion: completion)
+                            }
+                        } else {
+                            completion?(false)
+                        }
                         return
                     }
                 }
@@ -865,7 +1096,12 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                 }
                 
                 print("🖼️ ✅ Successfully loaded banner image for \(urlString), size: \(image.size)")
+                
+                // Save to cache for future use
+                UIImageView.saveBannerToCache(image, for: urlString)
+                
                 imageView.image = image
+                completion?(true)
             }
         }
         
@@ -1678,12 +1914,21 @@ class MusicVideoCell: UICollectionViewCell {
             let thumbnailURLString = "https://i.ytimg.com/vi/\(videoId)/mqdefault.jpg"
             print("🎸 CELL DEBUG: Generated YouTube thumbnail: \(thumbnailURLString)")
             
+            // Start with custom missing video placeholder
+            self.imageView.image = UIImage(named: "missing_video") ?? UIImage(systemName: "play.rectangle.fill")!
+            
             // Use direct URLSession to avoid complexity and match working view controllers
             if let url = URL(string: thumbnailURLString) {
                 URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
                     if let data = data, let image = UIImage(data: data) {
                         DispatchQueue.main.async {
-                            self?.imageView.image = image
+                            // Check if the image data is too small (likely YouTube's missing video graphic)
+                            if data.count < 1500 { // Less than 1.5KB is likely YouTube's missing video graphic
+                                print("🎸 CELL DEBUG: Small image data (\(data.count) bytes), likely YouTube missing video graphic, using custom placeholder")
+                                self?.imageView.image = UIImage(named: "missing_video") ?? UIImage(systemName: "play.rectangle.fill")!
+                            } else {
+                                self?.imageView.image = image
+                            }
                         }
                     } else {
                         print("🎸 CELL DEBUG: ❌ Failed to load thumbnail: \(error?.localizedDescription ?? "Unknown error")")
