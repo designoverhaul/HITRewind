@@ -164,12 +164,25 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         if isSelected {
             // Selected state: Yellow background
             button.backgroundColor = UIColor(hex: "#FFE135")
-            button.layer.borderWidth = 0
         } else {
-            // Unselected state: Transparent background with yellow border
+            // Unselected state: Transparent background with border view
             button.backgroundColor = UIColor.clear
-            button.layer.borderWidth = 2
-            button.layer.borderColor = UIColor(hex: "#FFE135").cgColor
+            
+            // Create border view instead of using layer.border
+            let borderView = UIView()
+            borderView.backgroundColor = UIColor.clear
+            borderView.layer.borderWidth = 2
+            borderView.layer.borderColor = UIColor(hex: "#FFE135").cgColor
+            borderView.layer.cornerRadius = 12
+            borderView.translatesAutoresizingMaskIntoConstraints = false
+            button.insertSubview(borderView, at: 0) // Insert at bottom
+            
+            NSLayoutConstraint.activate([
+                borderView.topAnchor.constraint(equalTo: button.topAnchor),
+                borderView.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+                borderView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+                borderView.trailingAnchor.constraint(equalTo: button.trailingAnchor)
+            ])
         }
         
         button.layer.cornerRadius = 12
@@ -219,8 +232,9 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             let savingsPill = UIView()
             savingsPill.backgroundColor = UIColor(hex: "#8B5CF6") // Purple background
             savingsPill.layer.cornerRadius = 12
+            savingsPill.layer.zPosition = 10 // Bring to front
             savingsPill.translatesAutoresizingMaskIntoConstraints = false
-            containerView.addSubview(savingsPill)
+            button.addSubview(savingsPill)
             
             let savingsLabel = UILabel()
             savingsLabel.text = "Save \(savingsPercent)"
@@ -230,8 +244,8 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             savingsPill.addSubview(savingsLabel)
             
             NSLayoutConstraint.activate([
-                savingsPill.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
-                savingsPill.topAnchor.constraint(equalTo: containerView.topAnchor, constant: -10),
+                savingsPill.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -20),
+                savingsPill.topAnchor.constraint(equalTo: button.topAnchor, constant: -10),
                 savingsPill.heightAnchor.constraint(equalToConstant: 24),
                 savingsPill.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
                 
@@ -265,11 +279,24 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         // Update button styling based on selection state
         if isSelected {
             button.backgroundColor = UIColor(hex: "#FFE135")
-            button.layer.borderWidth = 0
         } else {
             button.backgroundColor = UIColor.clear
-            button.layer.borderWidth = 2
-            button.layer.borderColor = UIColor(hex: "#FFE135").cgColor
+            
+            // Create border view instead of using layer.border
+            let borderView = UIView()
+            borderView.backgroundColor = UIColor.clear
+            borderView.layer.borderWidth = 2
+            borderView.layer.borderColor = UIColor(hex: "#FFE135").cgColor
+            borderView.layer.cornerRadius = 12
+            borderView.translatesAutoresizingMaskIntoConstraints = false
+            button.insertSubview(borderView, at: 0) // Insert at bottom
+            
+            NSLayoutConstraint.activate([
+                borderView.topAnchor.constraint(equalTo: button.topAnchor),
+                borderView.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+                borderView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+                borderView.trailingAnchor.constraint(equalTo: button.trailingAnchor)
+            ])
         }
         
         // Recreate the button content
@@ -316,8 +343,9 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             let savingsPill = UIView()
             savingsPill.backgroundColor = UIColor(hex: "#8B5CF6") // Purple background
             savingsPill.layer.cornerRadius = 12
+            savingsPill.layer.zPosition = 10 // Bring to front
             savingsPill.translatesAutoresizingMaskIntoConstraints = false
-            containerView.addSubview(savingsPill)
+            button.addSubview(savingsPill)
             
             let savingsLabel = UILabel()
             savingsLabel.text = "Save \(savingsPercent)"
@@ -327,8 +355,8 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             savingsPill.addSubview(savingsLabel)
             
             NSLayoutConstraint.activate([
-                savingsPill.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
-                savingsPill.topAnchor.constraint(equalTo: containerView.topAnchor, constant: -10),
+                savingsPill.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -20),
+                savingsPill.topAnchor.constraint(equalTo: button.topAnchor, constant: -10),
                 savingsPill.heightAnchor.constraint(equalToConstant: 24),
                 savingsPill.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
                 

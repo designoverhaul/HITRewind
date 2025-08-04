@@ -17,17 +17,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        Purchases.configure(withAPIKey: "appl_goRXxhJHqIfrgGhdFgBXrSiPTMZ")
+        // Configure RevenueCat with debug logging
+        Purchases.logLevel = .debug
         
-        // Enable sandbox mode for simulator testing
         #if targetEnvironment(simulator)
+        // For simulator testing, configure RevenueCat to work with StoreKit testing
+        Purchases.configure(withAPIKey: "appl_goRXxhJHqIfrgGhdFgBXrSiPTMZ")
         Purchases.shared.purchasesAreCompletedBy = .revenueCat
-        print("RevenueCat configured for simulator testing")
+        print("🧪 RevenueCat configured for simulator testing with StoreKit configuration")
         #else
-        print("RevenueCat configured for production")
+        Purchases.configure(withAPIKey: "appl_goRXxhJHqIfrgGhdFgBXrSiPTMZ")
+        print("🚀 RevenueCat configured for production")
         #endif
         
-        print("In app subscription configured")
+        print("✅ In app subscription configured")
         // print("RevenueCat configuration temporarily bypassed for debugging.")
 
         // --- Start of added code for DebugPlayerViewController ---
