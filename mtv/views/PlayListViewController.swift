@@ -300,10 +300,12 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             return
         }
 
-        // Check if the selected playlist has visibility flags for its videos
-        visibleVideoIndices = playlists[selectedPlaylistIndex].fields.isVisible.enumerated().compactMap { index, isVisible in
-            isVisible ?? false ? index : nil
-        }
+        // Show first 10 videos per section (2 rows of 5), regardless of isVisible field
+        let maxVideosPerSection = 10
+        let totalVideos = playlists[selectedPlaylistIndex].fields.mtvVideos?.count ?? 0
+        let videosToShow = min(maxVideosPerSection, totalVideos)
+        
+        visibleVideoIndices = Array(0..<videosToShow)
     }
 
     // MARK: - Loading Indicator

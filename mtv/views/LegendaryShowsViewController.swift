@@ -572,7 +572,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         contentView.addSubview(collectionView2)
         
         // Layout constraints
-        // Calculate height for the first collection view (8 items = 2 rows, given 5 columns)
+        // Calculate height for the first collection view (10 items = 2 rows, given 5 columns)
         let numberOfRowsInFirstGrid = 2
         let firstCollectionViewHeight = (CGFloat(numberOfRowsInFirstGrid) * itemHeight) + (CGFloat(numberOfRowsInFirstGrid - 1) * layout.minimumLineSpacing) + layout.sectionInset.top + layout.sectionInset.bottom
         
@@ -742,12 +742,12 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
                 
                 self.legendaryShows = shuffledShows
                 
-                // Split shows for the two collection views (16 total: 8 + 8)
-                let splitIndex = 8 // First collection view gets 2 rows (8 items)
-                let secondCollectionLimit = 8 // Second collection view gets 2 rows (8 items)
+                // Split shows for the two collection views (20 total: 10 + 10)
+                let splitIndex = 10 // First collection view gets 2 rows (10 items)
+                let secondCollectionLimit = 10 // Second collection view gets 2 rows (10 items)
                 if shuffledShows.count > splitIndex {
                     self.legendaryShows1 = Array(shuffledShows.prefix(splitIndex))
-                    // Take only 8 items for the second collection view (2 rows)
+                    // Take only 10 items for the second collection view (2 rows)
                     let remainingShows = Array(shuffledShows.suffix(from: splitIndex))
                     self.legendaryShows2 = Array(remainingShows.prefix(secondCollectionLimit))
                 } else {
@@ -781,7 +781,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             return
         }
 
-        let itemsPerRow = 4
+        let itemsPerRow = 5
         let numberOfRows = (showCount + itemsPerRow - 1) / itemsPerRow // Ceiling division
 
         let itemHeight = layout.itemSize.height
@@ -819,12 +819,12 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         // Shuffle the main array
         legendaryShows.shuffle()
         
-        // Re-split for the two collection views (16 total: 8 + 8)
-        let splitIndex = 8 // First collection view gets 2 rows (8 items)
-        let secondCollectionLimit = 8 // Second collection view gets 2 rows (8 items)
+        // Re-split for the two collection views (20 total: 10 + 10)
+        let splitIndex = 10 // First collection view gets 2 rows (10 items)
+        let secondCollectionLimit = 10 // Second collection view gets 2 rows (10 items)
         if legendaryShows.count > splitIndex {
             legendaryShows1 = Array(legendaryShows.prefix(splitIndex))
-            // Take only 8 items for the second collection view (2 rows)
+            // Take only 10 items for the second collection view (2 rows)
             let remainingShows = Array(legendaryShows.suffix(from: splitIndex))
             legendaryShows2 = Array(remainingShows.prefix(secondCollectionLimit))
         } else {
