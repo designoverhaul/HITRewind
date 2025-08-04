@@ -168,7 +168,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             guard let self = self else { return }
 
             if let customerInfo = customerInfo {
-                self.isSubscribed = customerInfo.entitlements["lifetime"]?.isActive == true
+                self.isSubscribed = !customerInfo.activeSubscriptions.isEmpty
             } else if let error = error {
                 print("Error fetching customer info: \(error.localizedDescription)")
                 self.isSubscribed = false

@@ -8,6 +8,14 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     private var yearlyButton: UIButton!
     private var noThanksButton: UIButton!
     private var weeklyButton: UIButton!
+    
+    // Store current pricing information
+    private var weeklyPrice: String = "$4.99"
+    private var monthlyPrice: String = "$8.99"
+    private var yearlyPrice: String = "$49.99"
+    
+    // Track currently selected button
+    private var currentlySelectedButton: UIButton?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -94,10 +102,13 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(iconImageView)
 
-        // Weekly Button (selected state)
-        weeklyButton = createPricingButton(price: "$4.99", period: "a week", showSavings: false, isSelected: true)
+        // Weekly Button (unselected state)
+        weeklyButton = createPricingButton(price: "$4.99", period: "a week", showSavings: false, isSelected: false)
         weeklyButton.addTarget(self, action: #selector(weeklyButtonTapped), for: .primaryActionTriggered)
         view.addSubview(weeklyButton)
+        
+        // No button selected initially - user must navigate to select
+        currentlySelectedButton = nil
 
         // Monthly Button (unselected state)
         monthlyButton = createPricingButton(price: "$8.99", period: "a month", showSavings: true, savingsPercent: "58%", isSelected: false)
@@ -163,7 +174,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         
         if isSelected {
             // Selected state: Yellow background
-            button.backgroundColor = UIColor(hex: "#FFE135")
+            button.backgroundColor = .yellow
         } else {
             // Unselected state: Transparent background with border view
             button.backgroundColor = UIColor.clear
@@ -172,7 +183,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             let borderView = UIView()
             borderView.backgroundColor = UIColor.clear
             borderView.layer.borderWidth = 2
-            borderView.layer.borderColor = UIColor(hex: "#FFE135").cgColor
+            borderView.layer.borderColor = UIColor.yellow.cgColor
             borderView.layer.cornerRadius = 12
             borderView.translatesAutoresizingMaskIntoConstraints = false
             button.insertSubview(borderView, at: 0) // Insert at bottom
@@ -195,7 +206,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         button.addSubview(containerView)
         
         // Determine text color based on selection state
-        let textColor = isSelected ? UIColor.black : UIColor(hex: "#FFE135")
+        let textColor = isSelected ? UIColor.black : UIColor.yellow
         
         // Create horizontal stack for price and period
         let priceStackView = UIStackView()
@@ -278,7 +289,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         
         // Update button styling based on selection state
         if isSelected {
-            button.backgroundColor = UIColor(hex: "#FFE135")
+            button.backgroundColor = .yellow
         } else {
             button.backgroundColor = UIColor.clear
             
@@ -286,7 +297,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
             let borderView = UIView()
             borderView.backgroundColor = UIColor.clear
             borderView.layer.borderWidth = 2
-            borderView.layer.borderColor = UIColor(hex: "#FFE135").cgColor
+            borderView.layer.borderColor = UIColor.yellow.cgColor
             borderView.layer.cornerRadius = 12
             borderView.translatesAutoresizingMaskIntoConstraints = false
             button.insertSubview(borderView, at: 0) // Insert at bottom
@@ -306,7 +317,7 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         button.addSubview(containerView)
         
         // Determine text color based on selection state
-        let textColor = isSelected ? UIColor.black : UIColor(hex: "#FFE135")
+        let textColor = isSelected ? UIColor.black : UIColor.yellow
         
         // Create horizontal stack for price and period
         let priceStackView = UIStackView()
@@ -411,8 +422,17 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
                 if nextFocusedButton == self.noThanksButton {
                     nextFocusedButton.backgroundColor = .yellow
                     nextFocusedButton.setTitleColor(.black, for: .normal)
-                } else {
-                    // For pricing buttons, just add a subtle scale effect
+                } else if nextFocusedButton == self.weeklyButton {
+                    // Show weekly button in selected state on hover
+                    self.updatePricingButton(self.weeklyButton, price: self.weeklyPrice, period: "a week", showSavings: false, isSelected: true)
+                    nextFocusedButton.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+                } else if nextFocusedButton == self.monthlyButton {
+                    // Show monthly button in selected state on hover
+                    self.updatePricingButton(self.monthlyButton, price: self.monthlyPrice, period: "a month", showSavings: true, savingsPercent: "58%", isSelected: true)
+                    nextFocusedButton.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+                } else if nextFocusedButton == self.yearlyButton {
+                    // Show yearly button in selected state on hover
+                    self.updatePricingButton(self.yearlyButton, price: self.yearlyPrice, period: "a year", showSavings: true, savingsPercent: "81%", isSelected: true)
                     nextFocusedButton.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
                 }
             }, completion: nil)
@@ -424,8 +444,20 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
                 if previouslyFocusedButton == self.noThanksButton {
                     previouslyFocusedButton.backgroundColor = .black
                     previouslyFocusedButton.setTitleColor(.white, for: .normal)
-                } else {
-                    // Reset scale for pricing buttons
+                } else if previouslyFocusedButton == self.weeklyButton {
+                    // Reset weekly button to its actual selection state (check if it's the currently selected button)
+                    let isActuallySelected = self.isButtonCurrentlySelected(self.weeklyButton)
+                    self.updatePricingButton(self.weeklyButton, price: self.weeklyPrice, period: "a week", showSavings: false, isSelected: isActuallySelected)
+                    previouslyFocusedButton.transform = CGAffineTransform.identity
+                } else if previouslyFocusedButton == self.monthlyButton {
+                    // Reset monthly button to its actual selection state
+                    let isActuallySelected = self.isButtonCurrentlySelected(self.monthlyButton)
+                    self.updatePricingButton(self.monthlyButton, price: self.monthlyPrice, period: "a month", showSavings: true, savingsPercent: "58%", isSelected: isActuallySelected)
+                    previouslyFocusedButton.transform = CGAffineTransform.identity
+                } else if previouslyFocusedButton == self.yearlyButton {
+                    // Reset yearly button to its actual selection state
+                    let isActuallySelected = self.isButtonCurrentlySelected(self.yearlyButton)
+                    self.updatePricingButton(self.yearlyButton, price: self.yearlyPrice, period: "a year", showSavings: true, savingsPercent: "81%", isSelected: isActuallySelected)
                     previouslyFocusedButton.transform = CGAffineTransform.identity
                 }
             }, completion: nil)
@@ -433,10 +465,12 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     @objc private func monthlyButtonTapped() {
+        updateButtonSelection(selectedButton: monthlyButton)
         purchaseSubscription(packageType: "monthly")
     }
 
     @objc private func yearlyButtonTapped() {
+        updateButtonSelection(selectedButton: yearlyButton)
         purchaseSubscription(packageType: "yearly")
     }
 
@@ -446,7 +480,22 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
 
     @objc private func weeklyButtonTapped() {
+        updateButtonSelection(selectedButton: weeklyButton)
         purchaseSubscription(packageType: "weekly")
+    }
+    
+    private func updateButtonSelection(selectedButton: UIButton) {
+        // Update the currently selected button tracker
+        currentlySelectedButton = selectedButton
+        
+        // Force update all buttons to ensure only one is selected
+        updatePricingButton(weeklyButton, price: weeklyPrice, period: "a week", showSavings: false, isSelected: selectedButton == weeklyButton)
+        updatePricingButton(monthlyButton, price: monthlyPrice, period: "a month", showSavings: true, savingsPercent: "58%", isSelected: selectedButton == monthlyButton)
+        updatePricingButton(yearlyButton, price: yearlyPrice, period: "a year", showSavings: true, savingsPercent: "81%", isSelected: selectedButton == yearlyButton)
+    }
+    
+    private func isButtonCurrentlySelected(_ button: UIButton) -> Bool {
+        return currentlySelectedButton == button
     }
 
     private func fetchOfferings() {
@@ -495,25 +544,34 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
         let monthlyPackage = offering.monthly
         let yearlyPackage = offering.annual
         
+        // currentlySelectedButton can be nil - no default selection
+        
         // Update weekly button
         if let weeklyPackage = weeklyPackage {
             let currencyCode = weeklyPackage.storeProduct.currencyCode ?? "$"
             let formattedPrice = (currencyCode == "USD") ? "$\(weeklyPackage.storeProduct.price)" : "\(currencyCode) \(weeklyPackage.storeProduct.price)"
-            updatePricingButton(weeklyButton, price: formattedPrice, period: "a week", showSavings: false, isSelected: true)
+            weeklyPrice = formattedPrice
+            updatePricingButton(weeklyButton, price: formattedPrice, period: "a week", showSavings: false, isSelected: currentlySelectedButton == weeklyButton)
         }
         
         // Update monthly button
         if let monthlyPackage = monthlyPackage {
             let currencyCode = monthlyPackage.storeProduct.currencyCode ?? "$"
             let formattedPrice = (currencyCode == "USD") ? "$\(monthlyPackage.storeProduct.price)" : "\(currencyCode) \(monthlyPackage.storeProduct.price)"
-            updatePricingButton(monthlyButton, price: formattedPrice, period: "a month", showSavings: true, savingsPercent: "58%", isSelected: false)
+            monthlyPrice = formattedPrice
+            updatePricingButton(monthlyButton, price: formattedPrice, period: "a month", showSavings: true, savingsPercent: "58%", isSelected: currentlySelectedButton == monthlyButton)
         }
         
         // Update yearly button
         if let yearlyPackage = yearlyPackage {
             let currencyCode = yearlyPackage.storeProduct.currencyCode ?? "$"
             let formattedPrice = (currencyCode == "USD") ? "$\(yearlyPackage.storeProduct.price)" : "\(currencyCode) \(yearlyPackage.storeProduct.price)"
-            // Check subscription status for yearly
+            yearlyPrice = formattedPrice
+            
+            // First, update the button synchronously to maintain proper selection state
+            updatePricingButton(yearlyButton, price: formattedPrice, period: "a year", showSavings: true, savingsPercent: "81%", isSelected: currentlySelectedButton == yearlyButton)
+            
+            // Then check subscription status asynchronously only to potentially show subscribed state
             Purchases.shared.getCustomerInfo { (customerInfo, error) in
                 if let customerInfo = customerInfo {
                     let isSubscribedYearly = customerInfo.entitlements.all.values.contains { $0.isActive && $0.productIdentifier == yearlyPackage.storeProduct.productIdentifier }
@@ -521,13 +579,8 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
                         if isSubscribedYearly {
                             // For subscribed state, update the button differently
                             self.updateSubscribedButton(self.yearlyButton)
-                        } else {
-                            self.updatePricingButton(self.yearlyButton, price: formattedPrice, period: "a year", showSavings: true, savingsPercent: "81%", isSelected: false)
                         }
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        self.updatePricingButton(self.yearlyButton, price: formattedPrice, period: "a year", showSavings: true, savingsPercent: "81%", isSelected: false)
+                        // Don't override the selection state if not subscribed - it's already been set correctly above
                     }
                 }
             }
@@ -570,15 +623,22 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
                 if let error = error {
                     print("DEBUG: Purchase error: \(error.localizedDescription)")
                     self.showAlert(title: "Error", message: error.localizedDescription)
-                } else if let customerInfo = customerInfo, customerInfo.entitlements["lifetime"]?.isActive == true {
-                    print("DEBUG: Purchase successful. Active entitlement: lifetime")
-                    NotificationCenter.default.post(name: Notification.Name("SubscriptionStatusChanged"), object: nil)
-                    self.dismiss(animated: true, completion: nil)
+                } else if let customerInfo = customerInfo {
+                    // Check for active subscriptions
+                    if !customerInfo.activeSubscriptions.isEmpty {
+                        print("DEBUG: Purchase successful. Active subscriptions: \(customerInfo.activeSubscriptions)")
+                        NotificationCenter.default.post(name: Notification.Name("SubscriptionStatusChanged"), object: nil)
+                        self.dismiss(animated: true, completion: nil)
+                    }
+                    else {
+                        print("DEBUG: Purchase failed - no active subscriptions.")
+                        self.showAlert(title: "Purchase Failed", message: "The purchase could not be completed.")
+                    }
                 } else if userCancelled {
                     print("DEBUG: User cancelled the purchase process.")
                 } else {
-                    print("DEBUG: Purchase failed for unknown reason or no active entitlements.")
-                    self.showAlert(title: "Purchase Failed", message: "The purchase could not be completed or no entitlements were activated.")
+                    print("DEBUG: Purchase failed for unknown reason.")
+                    self.showAlert(title: "Purchase Failed", message: "The purchase could not be completed.")
                 }
             }
         }
@@ -597,9 +657,8 @@ class PurchasesViewController: UIViewController, PurchasesDelegate {
     }
     
     private func updateUIBasedOnSubscription(customerInfo: RevenueCat.CustomerInfo) {
-        // Check if user has active "lifetime" entitlement
-        let hasActiveEntitlement = customerInfo.entitlements["lifetime"]?.isActive == true
-        if hasActiveEntitlement {
+        // Check if user has active subscriptions
+        if !customerInfo.activeSubscriptions.isEmpty {
             // User is subscribed, update all buttons to show subscribed state
             updateSubscribedButton(weeklyButton)
             updateSubscribedButton(monthlyButton)

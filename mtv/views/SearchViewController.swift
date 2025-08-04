@@ -449,7 +449,7 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
     private func checkSubscriptionStatus() {
         Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
             if let customerInfo = customerInfo {
-                self?.isSubscribed = customerInfo.entitlements["lifetime"]?.isActive == true
+                self?.isSubscribed = !customerInfo.activeSubscriptions.isEmpty
             } else {
                 self?.isSubscribed = false
             }

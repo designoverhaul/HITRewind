@@ -4,7 +4,7 @@ import RevenueCat
 func requireSubscription(on viewController: UIViewController, completion: @escaping (Bool) -> Void) {
     print("[DEBUG][PaywallGate] requireSubscription called from: \(type(of: viewController))")
     Purchases.shared.getCustomerInfo { customerInfo, error in
-        let isSubscribed = customerInfo?.entitlements["lifetime"]?.isActive == true
+        let isSubscribed = !(customerInfo?.activeSubscriptions.isEmpty ?? true)
         DispatchQueue.main.async {
             print("[DEBUG][PaywallGate] isSubscribed: \(isSubscribed)")
             if isSubscribed {

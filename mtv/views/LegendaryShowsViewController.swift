@@ -1693,7 +1693,7 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
             guard let self = self else { return }
 
             if let customerInfo = customerInfo {
-                self.isSubscribed = customerInfo.entitlements["lifetime"]?.isActive == true
+                self.isSubscribed = !customerInfo.activeSubscriptions.isEmpty
                 print("🌟 LegendaryShowsViewController: User is subscribed: \(self.isSubscribed)")
             } else if let error = error {
                 print("🌟 LegendaryShowsViewController: Error fetching customer info: \(error.localizedDescription)")
