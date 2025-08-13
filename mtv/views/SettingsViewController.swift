@@ -1,4 +1,5 @@
 import UIKit
+import RevenueCat
 
 class SettingsViewController: UIViewController {
     override func viewDidLoad() {
@@ -67,6 +68,18 @@ class SettingsViewController: UIViewController {
         contactSupportLabel.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(contactSupportLabel)
 
+        // Restore Purchases button
+        let restorePurchasesButton = UIButton(type: .custom)
+        restorePurchasesButton.setTitle("Restore Purchases", for: .normal)
+        restorePurchasesButton.setTitleColor(.white, for: .normal)
+        restorePurchasesButton.setTitleColor(.black, for: .focused)
+        restorePurchasesButton.backgroundColor = UIColor(hex: "#8B5CF6")
+        restorePurchasesButton.layer.cornerRadius = 12
+        restorePurchasesButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 20)
+        restorePurchasesButton.addTarget(self, action: #selector(restorePurchasesButtonTapped), for: .primaryActionTriggered)
+        restorePurchasesButton.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(restorePurchasesButton)
+
         // Layout constraints
         NSLayoutConstraint.activate([
             // Logo constraints already set above
@@ -94,11 +107,17 @@ class SettingsViewController: UIViewController {
             eulaLinkLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             eulaLinkLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
 
-            // Contact support label - now the bottom element
+            // Contact support label
             contactSupportLabel.topAnchor.constraint(equalTo: eulaLinkLabel.bottomAnchor, constant: 30),
             contactSupportLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             contactSupportLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            contactSupportLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+
+            // Restore Purchases button - now the bottom element
+            restorePurchasesButton.topAnchor.constraint(equalTo: contactSupportLabel.bottomAnchor, constant: 40),
+            restorePurchasesButton.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            restorePurchasesButton.widthAnchor.constraint(equalToConstant: 300),
+            restorePurchasesButton.heightAnchor.constraint(equalToConstant: 50),
+            restorePurchasesButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         ])
         
         // Add a gear icon to the top right, if this view controller were embedded in a UINavigationController
@@ -109,8 +128,64 @@ class SettingsViewController: UIViewController {
         // However, this view controller is not currently in a navigation stack by default.
     }
 
+    override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+        super.didUpdateFocus(in: context, with: coordinator)
+        
+        // Focus gained - button gets focused
+        if let nextFocusedButton = context.nextFocusedView as? UIButton {
+            coordinator.addCoordinatedAnimations({
+                nextFocusedButton.backgroundColor = .yellow
+                nextFocusedButton.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+            }, completion: nil)
+        }
+        
+        // Focus lost - button loses focus
+        if let previouslyFocusedButton = context.previouslyFocusedView as? UIButton {
+            coordinator.addCoordinatedAnimations({
+                previouslyFocusedButton.backgroundColor = UIColor(hex: "#8B5CF6")
+                previouslyFocusedButton.transform = CGAffineTransform.identity
+            }, completion: nil)
+        }
+    }
+
     @objc func settingsButtonTapped() {
         // Handle settings button tap
         print("Settings button tapped")
+    }
+
+    @objc func restorePurchasesButtonTapped() {
+        print("[DEBUG] Restore Purchases button tapped")
+        
+        Purchases.shared.restorePurchases { [weak self] customerInfo, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("[DEBUG] Restore purchases error: \(error.localizedDescription)")
+                    self?.showAlert(title: "Error", message: "Failed to restore purchases: \(error.localizedDescription)")
+                } else if let customerInfo = customerInfo {
+                    print("[DEBUG] Restore purchases successful")
+                    print("[DEBUG] Active subscriptions: \(customerInfo.activeSubscriptions)")
+                    print("[DEBUG] All entitlements: \(customerInfo.entitlements.all.keys)")
+                    
+                    let hasActiveSubscription = !customerInfo.activeSubscriptions.isEmpty
+                    let hasLifetimePurchase = customerInfo.entitlements.all.values.contains { entitlement in
+                        entitlement.productIdentifier == "hitrewind_ifetime_subscription" && entitlement.isActive
+                    }
+                    
+                    if hasActiveSubscription || hasLifetimePurchase {
+                        self?.showAlert(title: "Success", message: "Your purchases have been restored!")
+                    } else {
+                        self?.showAlert(title: "No Purchases Found", message: "No previous purchases were found to restore.")
+                    }
+                } else {
+                    self?.showAlert(title: "Error", message: "An unknown error occurred while restoring purchases.")
+                }
+            }
+        }
+    }
+
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
     }
 } 

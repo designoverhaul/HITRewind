@@ -4,9 +4,18 @@ import RevenueCat
 func requireSubscription(on viewController: UIViewController, completion: @escaping (Bool) -> Void) {
     print("[DEBUG][PaywallGate] requireSubscription called from: \(type(of: viewController))")
     Purchases.shared.getCustomerInfo { customerInfo, error in
-        let isSubscribed = !(customerInfo?.activeSubscriptions.isEmpty ?? true)
+        let hasActiveSubscription = !(customerInfo?.activeSubscriptions.isEmpty ?? true)
+        let hasLifetimePurchase = customerInfo?.entitlements.all.values.contains { entitlement in
+            entitlement.productIdentifier == "hitrewind_ifetime_subscription" && entitlement.isActive
+        } ?? false
+        
+        let isSubscribed = hasActiveSubscription || hasLifetimePurchase
+        
         DispatchQueue.main.async {
+            print("[DEBUG][PaywallGate] hasActiveSubscription: \(hasActiveSubscription)")
+            print("[DEBUG][PaywallGate] hasLifetimePurchase: \(hasLifetimePurchase)")
             print("[DEBUG][PaywallGate] isSubscribed: \(isSubscribed)")
+            
             if isSubscribed {
                 completion(true)
             } else {
