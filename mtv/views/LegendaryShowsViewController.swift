@@ -878,10 +878,15 @@ class LegendaryShowsViewController: UIViewController, AVPlayerViewControllerDele
         let carousel1Data = Array(concertsForCarousels.prefix(halfWay))
         let carousel2Data = Array(concertsForCarousels.suffix(from: halfWay))
 
-        setupIndividualBannerCarousel(scrollView: bannerScrollView, concertsToDisplay: carousel1Data, tagOffset: tagOffsetForFirstCarousel)
+        // Limit each banner row to 4 items
+        let maxBannersPerRow = 4
+        let limitedCarousel1Data = Array(carousel1Data.prefix(maxBannersPerRow))
+        let limitedCarousel2Data = Array(carousel2Data.prefix(maxBannersPerRow))
+
+        setupIndividualBannerCarousel(scrollView: bannerScrollView, concertsToDisplay: limitedCarousel1Data, tagOffset: tagOffsetForFirstCarousel)
         
-        let tagOffsetForSecondCarousel = tagOffsetForFirstCarousel + carousel1Data.count
-        setupIndividualBannerCarousel(scrollView: bannerScrollView2, concertsToDisplay: carousel2Data, tagOffset: tagOffsetForSecondCarousel)
+        let tagOffsetForSecondCarousel = tagOffsetForFirstCarousel + limitedCarousel1Data.count
+        setupIndividualBannerCarousel(scrollView: bannerScrollView2, concertsToDisplay: limitedCarousel2Data, tagOffset: tagOffsetForSecondCarousel)
     }
 
     private func setupIndividualBannerCarousel(scrollView: UIScrollView, concertsToDisplay: [Concert], tagOffset: Int) {

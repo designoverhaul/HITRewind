@@ -300,12 +300,9 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             return
         }
 
-        // Show first 10 videos per section (2 rows of 5), regardless of isVisible field
-        let maxVideosPerSection = 10
+        // Show all videos available for the selected year/playlist
         let totalVideos = playlists[selectedPlaylistIndex].fields.mtvVideos?.count ?? 0
-        let videosToShow = min(maxVideosPerSection, totalVideos)
-        
-        visibleVideoIndices = Array(0..<videosToShow)
+        visibleVideoIndices = Array(0..<totalVideos)
     }
 
     // MARK: - Loading Indicator

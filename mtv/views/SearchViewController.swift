@@ -9,7 +9,6 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
     // MARK: - UI Elements
     private let searchTextField: FocusableSearchTextField = {
         let textField = FocusableSearchTextField()
-        textField.placeholder = "Search"
         textField.textColor = .white
         textField.backgroundColor = UIColor.black.withAlphaComponent(0.8)
         textField.layer.cornerRadius = 12
@@ -18,10 +17,6 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         textField.font = UIFont.systemFont(ofSize: 18)
         textField.textAlignment = .left
         textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.attributedPlaceholder = NSAttributedString(
-            string: "Search",
-            attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray]
-        )
         return textField
     }()
     

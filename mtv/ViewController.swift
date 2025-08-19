@@ -1476,17 +1476,33 @@ class SearchService {
     }
     
     private func searchInVideosTable(query: String, completion: @escaping (Result<[SearchResult], Error>) -> Void) {
-        // Search both artist names and song titles with OR condition
-        let formula = "OR(FIND(UPPER('\(query)'), UPPER(ARRAYJOIN({artistName}, ', '))), FIND(UPPER('\(query)'), UPPER({title})))"
-        let urlString = "https://api.airtable.com/v0/\(baseId)/Videos?filterByFormula=\(formula.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+        // Search artist names, song titles, and year; coerce values to text with &"" so FIND works on arrays/strings
+        // Escape single quotes for Airtable by doubling them
+        let safeQuery = query.replacingOccurrences(of: "'", with: "''")
+        let formula = "OR(" +
+            "FIND(UPPER('\(safeQuery)'), UPPER({artistName}&\"\"))," +
+            "FIND(UPPER('\(safeQuery)'), UPPER({title}&\"\"))," +
+            "FIND(UPPER('\(safeQuery)'), UPPER({year}&\"\"))" +
+        ")"
+        let strictAllowed = CharacterSet.urlQueryAllowed.subtracting(CharacterSet(charactersIn: "&+?="))
+        let encodedFormula = formula.addingPercentEncoding(withAllowedCharacters: strictAllowed) ?? ""
+        let urlString = "https://api.airtable.com/v0/\(baseId)/Videos?filterByFormula=\(encodedFormula)&view=Grid%20view"
         
         performSearch(urlString: urlString, type: .video, query: query, completion: completion)
     }
     
     private func searchInMTvVideosTable(query: String, completion: @escaping (Result<[SearchResult], Error>) -> Void) {
-        // Search both artist names and song titles with OR condition
-        let formula = "OR(FIND(UPPER('\(query)'), UPPER({artistName})), FIND(UPPER('\(query)'), UPPER({Title})))"
-        let urlString = "https://api.airtable.com/v0/\(baseId)/MTvVideos?filterByFormula=\(formula.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+        // Search artist names, song titles, and year; coerce values to text with &"" so FIND works on arrays/strings
+        // Escape single quotes for Airtable by doubling them
+        let safeQuery = query.replacingOccurrences(of: "'", with: "''")
+        let formula = "OR(" +
+            "FIND(UPPER('\(safeQuery)'), UPPER({artistName}&\"\"))," +
+            "FIND(UPPER('\(safeQuery)'), UPPER({Title}&\"\"))," +
+            "FIND(UPPER('\(safeQuery)'), UPPER({Year}&\"\"))" +
+        ")"
+        let strictAllowed = CharacterSet.urlQueryAllowed.subtracting(CharacterSet(charactersIn: "&+?="))
+        let encodedFormula = formula.addingPercentEncoding(withAllowedCharacters: strictAllowed) ?? ""
+        let urlString = "https://api.airtable.com/v0/\(baseId)/MTvVideos?filterByFormula=\(encodedFormula)&view=Grid%20view"
         
         performSearch(urlString: urlString, type: .mtvVideo, query: query, completion: completion)
     }
