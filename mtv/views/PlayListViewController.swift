@@ -168,7 +168,7 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             guard let self = self else { return }
 
             if let customerInfo = customerInfo {
-                self.isSubscribed = !customerInfo.activeSubscriptions.isEmpty
+                self.isSubscribed = customerInfo.entitlements["lifetime"]?.isActive == true
             } else if let error = error {
                 print("Error fetching customer info: \(error.localizedDescription)")
                 self.isSubscribed = false
@@ -300,9 +300,12 @@ class PlayListViewController: UIViewController, AVPlayerViewControllerDelegate {
             return
         }
 
-        // Show all videos available for the selected year/playlist
+        // Show first 10 videos per section (2 rows of 5), regardless of isVisible field
+        let maxVideosPerSection = 10
         let totalVideos = playlists[selectedPlaylistIndex].fields.mtvVideos?.count ?? 0
-        visibleVideoIndices = Array(0..<totalVideos)
+        let videosToShow = min(maxVideosPerSection, totalVideos)
+        
+        visibleVideoIndices = Array(0..<videosToShow)
     }
 
     // MARK: - Loading Indicator
