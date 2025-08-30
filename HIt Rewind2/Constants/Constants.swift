@@ -1,0 +1,33 @@
+//
+//  Constants.swift
+//  HIt Rewind2
+//
+//  Created by Aaron Heine on 8/24/25.
+//
+
+import Foundation
+
+// MARK: - Airtable Configuration
+struct AirtableConfig {
+    static let apiKey = "pat9HXwt4uUaLl3SC.3a38959399a2a1d101c726e5e3ce154b37661244db837be7698a27cd18fd764b"
+    static let playListUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/MTvPlaylists"
+    static let liveShowsUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/LiveShows"
+    static let legendaryShowsUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/LegendaryShows"
+    static let concertsUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/Concerts"
+    static let categoriesUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/Category"
+    static let artistsUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/Artists"
+    static let videosUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/Videos"
+}
+
+// MARK: - YouTube Configuration
+struct YouTubeConfig {
+    static let apiKey = "AIzaSyChKL0fUHEfc1AlKe0ks53Y2wT78gxLiJE"
+    static let baseURL = "https://www.googleapis.com/youtube/v3"
+}
+
+// MARK: - App Configuration
+struct AppConfig {
+    static let appName = "Hit Rewind"
+    static let version = "2.0"
+    static let useCloudKit = false
+}
