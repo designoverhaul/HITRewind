@@ -169,32 +169,47 @@ struct VideoThumbnailView: View {
     // MARK: - Video Information
     private var videoInfo: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .top) {
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.hitRewindPrimaryText)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                
-                Spacer()
-                
-                // Hide year for concert videos since they're all from the same year
-                if !hideArtistAndYear {
-                    Text(year)
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                // iPad: Horizontal layout
+                HStack(alignment: .top) {
+                    Text(title)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(.hitRewindPurple)
+                        .foregroundColor(.hitRewindPrimaryText)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    
+                    Spacer()
+                    
+                    // Show artist name on the right instead of year (since all videos in a year feed are the same year)
+                    if shouldShowArtistName && !hideArtistAndYear && !hideArtistName {
+                        Text(artist)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.hitRewindPurple)
+                            .lineLimit(1)
+                    }
                 }
-            }
-            
-            // Only show artist name on Music Videos page where there are multiple artists
-            // For Fan Cams and Concert Videos, don't show artist name since all videos are from the same artist
-            if shouldShowArtistName && !hideArtistAndYear && !hideArtistName {
-                Text(artist)
-                    .font(.caption)
-                    .foregroundColor(.hitRewindSecondaryText)
-                    .lineLimit(1)
+            } else {
+                // iPhone: Vertical layout
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.hitRewindPrimaryText)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    if shouldShowArtistName && !hideArtistAndYear && !hideArtistName {
+                        Text(artist)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.hitRewindPurple)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
             }
         }
     }

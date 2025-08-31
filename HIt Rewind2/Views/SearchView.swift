@@ -8,11 +8,19 @@
 import SwiftUI
 
 struct SearchView: View {
+    let initialSearchText: String?
+    let autoSearch: Bool
+    
     @StateObject private var searchService = SearchService.shared
     @State private var searchText = ""
     @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
-    @State private var selectedResult: SearchResult?
+    @Environment(\.dismiss) private var dismiss
+    
+    init(initialSearchText: String? = nil, autoSearch: Bool = false) {
+        self.initialSearchText = initialSearchText
+        self.autoSearch = autoSearch
+    }
     
     // Responsive grid columns
     private var gridColumns: [GridItem] {
@@ -30,6 +38,38 @@ struct SearchView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // Custom header row for all devices
+                HStack {
+                    // Back button on left
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Back")
+                                .font(.custom(AppFont.ticketingName(), size: 16))
+                        }
+                        .foregroundColor(.hitRewindPurple)
+                    }
+                    
+                    Spacer()
+                    
+                    // Logo centered
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
+                    
+                    Spacer()
+                    
+                    // Empty space for settings (not implemented yet)
+                    Text("")
+                        .frame(width: 24)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(Color.hitRewindBackground)
+                
+                
                 // Search Bar
                 searchBar
                 
@@ -50,24 +90,8 @@ struct SearchView: View {
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 8) {
-                        Image("logo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 28)
-                    }
-                }
-            }
-        }
-        .navigationDestination(item: $selectedResult) { result in
-            SingleVideoView(
-                videoId: result.videoId,
-                videoTitle: result.title,
-                artistName: result.artistName,
-                year: result.year
-            )
+            .navigationBarBackButtonHidden(true)
+            .navigationBarHidden(true)
         }
         .onChange(of: searchText) { _, newValue in
             // Cancel previous search task
@@ -82,6 +106,34 @@ struct SearchView: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            if let initialText = initialSearchText {
+                print("🔍 SearchView appeared with initial search text: '\(initialText)'")
+                searchText = initialText
+                if autoSearch {
+                    print("🔍 Auto-search triggered for: '\(initialText)'")
+                    // Add small delay to ensure UI is ready
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        searchService.searchContent(query: initialText)
+                    }
+                }
+            } else {
+                print("🔍 SearchView appeared with no initial search text")
+            }
+            
+            // Listen for artist search notifications
+            NotificationCenter.default.addObserver(forName: .searchArtist, object: nil, queue: .main) { notification in
+                if let userInfo = notification.userInfo,
+                   let artistName = userInfo["artistName"] as? String {
+                    print("🔍 Received artist search notification for: '\(artistName)'")
+                    searchText = artistName
+                    searchService.searchContent(query: artistName)
+                }
+            }
+        }
+        .onDisappear {
+            NotificationCenter.default.removeObserver(self, name: .searchArtist, object: nil)
         }
     }
     
@@ -125,11 +177,7 @@ struct SearchView: View {
     
     private var emptySearchView: some View {
         VStack(spacing: 24) {
-            Text("Find your favorite artists, music videos, and live performances. Search by artist name, song title, or year.")
-                .font(.body)
-                .foregroundColor(.hitRewindSecondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+            // Empty state - no message
         }
         .padding(.top, 80)
     }
@@ -197,7 +245,18 @@ struct SearchView: View {
                 ForEach(searchService.searchResults) { result in
                     SearchResultCard(result: result)
                         .onTapGesture {
-                            selectedResult = result
+                            print("🔍 Video card tapped: \(result.title) by \(result.artistName)")
+                            // Use the same notification system as other video cards
+                            NotificationCenter.default.post(
+                                name: .videoPlayerPresented,
+                                object: nil,
+                                userInfo: [
+                                    "videoId": result.videoId,
+                                    "title": result.title,
+                                    "artist": result.artistName,
+                                    "year": result.year
+                                ]
+                            )
                         }
                 }
             }
@@ -262,6 +321,9 @@ struct SearchResultCard: View {
                         )
                 }
                 .padding(8)
+                .onTapGesture {
+                    // Prevent tap from propagating to card
+                }
             }
             
             VStack(alignment: .leading, spacing: 4) {

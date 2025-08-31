@@ -20,15 +20,37 @@ struct ConcertDetailView: View {
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                // Hero section with large concert image
-                heroSection
-                
-                // Concert details and videos
-                contentSection
+        VStack(alignment: .leading, spacing: 0) {
+            // iPad only: Custom header row (Row 2)
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                HStack {
+                    // No sidebar icon for Concert Detail page
+                    Spacer()
+                    
+                    // Logo centered
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(Color.hitRewindBackground)
+            }
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Hero section with large concert image
+                    heroSection
+                    
+                    // Concert details and videos
+                    contentSection
+                }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -36,13 +58,64 @@ struct ConcertDetailView: View {
             print("🎪 ConcertDetailView loaded for: \(concert.fields.artistName) - \(concert.fields.venueName ?? "Unknown Venue")")
             await loadConcertVideos()
         }
+        .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 8) {
-                    Image("logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 28)
+            // iPad: Row 1 (System Navigation Bar) - back button left, search/settings right
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Back")
+                                .font(.custom(AppFont.ticketingName(), size: 16))
+                        }
+                        .foregroundColor(.hitRewindPurple)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack(spacing: 16) {
+                        NavigationLink(destination: SearchView()) {
+                            Text("🔍")
+                        }
+                        NavigationLink(destination: SettingsView()) {
+                            Text("⚙️")
+                        }
+                    }
+                }
+            } else {
+                // iPhone: Keep existing toolbar structure
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 8) {
+                        Image("logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 28)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Back")
+                                .font(.custom(AppFont.ticketingName(), size: 16))
+                        }
+                        .foregroundColor(.hitRewindPurple)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack(spacing: 16) {
+                        NavigationLink(destination: SearchView()) {
+                            Text("🔍")
+                        }
+                        NavigationLink(destination: SettingsView()) {
+                            Text("⚙️")
+                        }
+                    }
                 }
             }
         }

@@ -24,14 +24,18 @@ class SearchService: ObservableObject {
     // MARK: - Search Methods
     
     func searchContent(query: String) {
+        print("🔍 SearchService.searchContent called with query: '\(query)'")
+        
         // Cancel previous search
         searchTask?.cancel()
         
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            print("🔍 Empty query, clearing results")
             searchResults = []
             return
         }
         
+        print("🔍 Starting new search task for: '\(query)'")
         searchTask = Task {
             await performSearch(query: query)
         }
@@ -59,6 +63,13 @@ class SearchService: ObservableObject {
             }
             
             searchResults = sortedResults
+            print("🔍 Search completed. Found \(sortedResults.count) results for query: '\(query)'")
+            if !sortedResults.isEmpty {
+                print("🔍 First few results:")
+                for (index, result) in sortedResults.prefix(3).enumerated() {
+                    print("🔍   \(index + 1). \(result.title) by \(result.artistName) (\(result.year))")
+                }
+            }
             
         } catch {
             // Don't show cancellation errors to user
@@ -318,6 +329,44 @@ class SearchService: ObservableObject {
         }
         
         return score
+    }
+    
+    private func extractYouTubeVideoID(from videoURL: String) -> String? {
+        guard let url = URL(string: videoURL) else { return nil }
+        let host = (url.host ?? "").replacingOccurrences(of: "www.", with: "").lowercased()
+        let path = url.path
+
+        // 1) Short links: youtu.be/<id>
+        if host == "youtu.be" {
+            let components = path.split(separator: "/")
+            if let first = components.first { return String(first) }
+        }
+
+        // 2) Standard watch URL: youtube.com/watch?v=<id>
+        if host.contains("youtube.com") {
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+                if let v = components.queryItems?.first(where: { $0.name.lowercased() == "v" })?.value, !v.isEmpty {
+                    return v
+                }
+                if let vi = components.queryItems?.first(where: { $0.name.lowercased() == "vi" })?.value, !vi.isEmpty {
+                    return vi
+                }
+            }
+
+            // 3) Embed URL: /embed/<id>
+            if path.lowercased().hasPrefix("/embed/") {
+                let comps = path.split(separator: "/")
+                if comps.count >= 2 { return String(comps[1]) }
+            }
+
+            // 4) Shorts URL: /shorts/<id>
+            if path.lowercased().hasPrefix("/shorts/") {
+                let comps = path.split(separator: "/")
+                if comps.count >= 2 { return String(comps[1]) }
+            }
+        }
+
+        return nil
     }
 }
 

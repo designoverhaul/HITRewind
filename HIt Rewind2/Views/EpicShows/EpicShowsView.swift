@@ -17,37 +17,72 @@ struct EpicShowsView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: contentSpacing) {
-                    if airtableService.isLoading {
-                        loadingView
-                    } else if let errorMessage = airtableService.errorMessage {
-                        errorView(message: errorMessage)
-                    } else {
-                        epicShowsContent
-                    }
-                }
-                .padding(.top, contentPadding)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-            }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
+                // iPad only: Custom header row (Row 2)
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    HStack {
+                        Spacer()
+                        
+                        // Logo centered
                         Image("logo")
                             .resizable()
                             .scaledToFit()
                             .frame(height: 28)
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
-                        NavigationLink(destination: SearchView()) {
-                            Text("🔍")
+                        
+                        Spacer()
+                        
+                        // Search and settings on right
+                        HStack(spacing: 16) {
+                            NavigationLink(destination: SearchView()) {
+                                Text("🔍")
+                            }
+                            NavigationLink(destination: SettingsView()) {
+                                Text("⚙️")
+                            }
                         }
-                        NavigationLink(destination: SettingsView()) {
-                            Text("⚙️")
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
+                    .background(Color.hitRewindBackground)
+                }
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: contentSpacing) {
+                        if airtableService.isLoading {
+                            loadingView
+                        } else if let errorMessage = airtableService.errorMessage {
+                            errorView(message: errorMessage)
+                        } else {
+                            epicShowsContent
+                        }
+                    }
+                    .padding(.top, contentPadding)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
+            }
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(UIDevice.current.userInterfaceIdiom == .pad)
+            .toolbar {
+                // iPhone only: Keep existing toolbar structure
+                if UIDevice.current.userInterfaceIdiom != .pad {
+                    ToolbarItem(placement: .principal) {
+                        HStack(spacing: 8) {
+                            Image("logo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 28)
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        HStack(spacing: 16) {
+                            NavigationLink(destination: SearchView()) {
+                                Text("🔍")
+                            }
+                            NavigationLink(destination: SettingsView()) {
+                                Text("⚙️")
+                            }
                         }
                     }
                 }
@@ -56,6 +91,7 @@ struct EpicShowsView: View {
                 await loadEpicShowsDataIfNeeded()
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
     }
     
     // MARK: - Epic Shows Content
@@ -109,9 +145,8 @@ struct EpicShowsView: View {
                                 artistName: show.fields.artist,
                                 year: "\(show.fields.year)"
                             )) {
-                                LegendaryShowThumbnailView(show: show, videoId: videoId, showDuration: false, showHeart: false)
+                                LegendaryShowThumbnailView(show: show, videoId: videoId, showDuration: true, showHeart: true)
                             }
-                            .buttonStyle(.plain)
                             .frame(width: videoThumbnailWidth)
                         }
                     }
@@ -124,14 +159,13 @@ struct EpicShowsView: View {
     // MARK: - Loading & Error Views
     private var loadingView: some View {
         VStack(spacing: 24) {
-            ProgressView()
-                .tint(.hitRewindPurple)
-                .scaleEffect(1.5)
+            TuningIndicatorView()
             
-            Text("Loading Epic Shows...")
+            Text("Tuning...")
                 .font(.title3)
                 .fontWeight(.medium)
                 .foregroundColor(.hitRewindSecondaryText)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.top, 100)
@@ -296,7 +330,7 @@ struct SettingsView: View {
     @State private var showingContactSheet = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // Account Section
                 if authService.isAuthenticated {
@@ -435,6 +469,19 @@ struct SettingsView: View {
     // MARK: - Legal Section
     private var legalSection: some View {
         Section("Legal & Privacy") {
+            Link(destination: URL(string: "https://designoverhaul.com/privacy-policy-hit-rewind/")!) {
+                HStack {
+                    Image(systemName: "hand.raised")
+                        .foregroundColor(.hitRewindPurple)
+                    Text("Privacy Policy")
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundColor(.hitRewindSecondaryText)
+                        .font(.caption)
+                }
+            }
+            
             Button(action: {
                 showingCopyrightAlert = true
             }) {
@@ -761,6 +808,37 @@ struct LegendaryShowThumbnailView: View {
             // Duration loading failed, but we can continue without it
             print("Failed to load video info for \(videoId): \(error)")
         }
+    }
+}
+
+// MARK: - Custom Tuning Indicator
+struct TuningIndicatorView: View {
+    @State private var animationOffset: CGFloat = 0
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<5, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.hitRewindPurple)
+                    .frame(width: 4, height: barHeight(for: index))
+                    .animation(
+                        .easeInOut(duration: 0.6)
+                        .repeatForever()
+                        .delay(Double(index) * 0.1),
+                        value: animationOffset
+                    )
+            }
+        }
+        .onAppear {
+            animationOffset = 1
+        }
+    }
+    
+    private func barHeight(for index: Int) -> CGFloat {
+        let baseHeight: CGFloat = 20
+        let maxHeight: CGFloat = 40
+        let progress = (sin(animationOffset + Double(index) * 0.5) + 1) / 2
+        return baseHeight + (maxHeight - baseHeight) * progress
     }
 }
 

@@ -27,7 +27,6 @@ struct ArtistSidebarView: View {
                 .foregroundColor(.hitRewindPurple)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color.hitRewindCardBackground)
             }
             .buttonStyle(PlainButtonStyle())
             

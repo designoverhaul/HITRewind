@@ -34,46 +34,131 @@ struct ArtistSongsView: View {
     // Device and orientation detection for grid layout
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        Group {
-            if videos.isEmpty {
-                ProgressView()
-                    .tint(.hitRewindPurple)
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HitRewindHeadline(text: artistName)
-                            .padding(.horizontal, gridPadding)
-                    }
-                    .padding(.top, gridPadding)
+        VStack(alignment: .leading, spacing: 0) {
+            // iPad only: Custom header row (Row 2)
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                HStack {
+                    // No sidebar icon for Artist Songs page
+                    Spacer()
                     
-                    LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
-                        ForEach(videos) { item in
-                            NavigationLink(
-                                destination: SingleVideoView(
-                                    videoId: item.videoId,
-                                    videoTitle: item.title,
-                                    artistName: artistName,
-                                    year: item.year
-                                )
-                            ) {
-                                VideoThumbnailView(
-                                    videoId: item.videoId,
-                                    title: item.title,
-                                    artist: artistName,
-                                    year: item.year,
-                                    onTap: {},
-                                    hideArtistName: true
-                                )
+                    // Logo centered
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(Color.hitRewindBackground)
+            }
+            
+            Group {
+                if videos.isEmpty {
+                    ProgressView()
+                        .tint(.hitRewindPurple)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HitRewindHeadline(text: artistName)
+                                .padding(.horizontal, gridPadding)
+                        }
+                        .padding(.top, gridPadding)
+                        
+                        LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
+                            ForEach(videos) { item in
+                                NavigationLink(
+                                    destination: SingleVideoView(
+                                        videoId: item.videoId,
+                                        videoTitle: item.title,
+                                        artistName: artistName,
+                                        year: item.year
+                                    )
+                                ) {
+                                    VideoThumbnailView(
+                                        videoId: item.videoId,
+                                        title: item.title,
+                                        artist: artistName,
+                                        year: item.year,
+                                        onTap: {},
+                                        hideArtistName: true
+                                    )
+                                }
                             }
                         }
+                        .padding(gridPadding)
                     }
-                    .padding(gridPadding)
                 }
             }
         }
-        .navigationTitle(artistName)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .navigationBarHidden(UIDevice.current.userInterfaceIdiom != .pad)
+        .toolbar {
+            // iPad: Row 1 (System Navigation Bar) - back button left, search/settings right
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Back")
+                                .font(.custom(AppFont.ticketingName(), size: 16))
+                        }
+                        .foregroundColor(.hitRewindPurple)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack(spacing: 16) {
+                        NavigationLink(destination: SearchView()) {
+                            Text("🔍")
+                        }
+                        NavigationLink(destination: SettingsView()) {
+                            Text("⚙️")
+                        }
+                    }
+                }
+            } else {
+                // iPhone: Keep existing toolbar structure
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 8) {
+                        Image("logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 28)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Back")
+                                .font(.custom(AppFont.ticketingName(), size: 16))
+                        }
+                        .foregroundColor(.hitRewindPurple)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack(spacing: 16) {
+                        NavigationLink(destination: SearchView()) {
+                            Text("🔍")
+                        }
+                        NavigationLink(destination: SettingsView()) {
+                            Text("⚙️")
+                        }
+                    }
+                }
+            }
+        }
         .task {
             await loadArtistVideos()
         }

@@ -44,33 +44,90 @@ struct FanCamsView: View {
     
     // MARK: - iPad Layout
     private var iPadLayout: some View {
-        NavigationSplitView {
+        Group {
             if currentMode == .categories {
-                CategorySidebarView(
-                    categories: availableCategories,
-                    selectedCategory: $selectedCategory,
-                    onCategorySelected: handleCategorySelection
-                )
-                .navigationTitle("Genre")
-            } else {
-                ArtistSidebarView(
-                    artists: artistsInCategory,
-                    selectedArtist: $selectedArtist,
-                    onArtistSelected: handleArtistSelection,
-                    onBackToCategories: {
-                        currentMode = .categories
-                        selectedCategory = nil
-                        selectedArtist = nil
+                // Top level: show categories in main area, no sidebar
+                VStack(alignment: .leading, spacing: 0) {
+                    // Custom header row
+                    HStack {
+                        Spacer()
+                        
+                        // Logo centered
+                        Image("logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 28)
+                        
+                        Spacer()
+                        
+                        // Search and settings on right
+                        HStack(spacing: 16) {
+                            NavigationLink(destination: SearchView()) {
+                                Text("🔍")
+                            }
+                            NavigationLink(destination: SettingsView()) {
+                                Text("⚙️")
+                            }
+                        }
                     }
-                )
-                .navigationTitle(selectedCategory?.name ?? "Artists")
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
+                    .background(Color.hitRewindBackground)
+                    
+                    contentView
+                }
+            } else {
+                // Artist mode: show sidebar with artists
+                HStack(spacing: 0) {
+                    // Artist sidebar
+                    ArtistSidebarView(
+                        artists: artistsInCategory,
+                        selectedArtist: $selectedArtist,
+                        onArtistSelected: handleArtistSelection,
+                        onBackToCategories: {
+                            currentMode = .categories
+                            selectedCategory = nil
+                            selectedArtist = nil
+                        }
+                    )
+                    .frame(width: 200)
+                    .background(Color.hitRewindBackground)
+                    
+                    // Main content area
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Custom header row
+                        HStack {
+                            Spacer()
+                            
+                            // Logo centered
+                            Image("logo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 28)
+                            
+                            Spacer()
+                            
+                            // Search and settings on right
+                            HStack(spacing: 16) {
+                                NavigationLink(destination: SearchView()) {
+                                    Text("🔍")
+                                }
+                                NavigationLink(destination: SettingsView()) {
+                                    Text("⚙️")
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 16)
+                        .background(Color.hitRewindBackground)
+                        
+                        contentView
+                    }
+                }
             }
-        } detail: {
-            contentView
-                .navigationTitle(navigationTitleString)
-                .navigationBarTitleDisplayMode(.large)
         }
-        .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
+        .navigationTitle("")
+        .navigationBarHidden(true)
     }
     
     // MARK: - iPhone Layout
@@ -251,7 +308,7 @@ struct FanCamsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text(selectedArtist?.fields.title ?? "Fan Cam Videos")
-                    .font(.largeTitle)
+                    .font(.custom(AppFont.ticketingName(), size: 24))
                     .fontWeight(.bold)
                     .foregroundColor(.hitRewindPrimaryText)
                     .padding(.horizontal, gridPadding)
@@ -272,7 +329,7 @@ struct FanCamsView: View {
                             artist: item.artist,
                             year: item.year,
                             onTap: {},
-                            hideArtistAndYear: true
+                            hideArtistName: true
                         )
                     }
                 }
@@ -341,7 +398,7 @@ struct FanCamsView: View {
     
     private var columnCount: Int {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            return horizontalSizeClass == .regular ? 4 : 3
+            return 3
         } else {
             return verticalSizeClass == .regular ? 1 : 2
         }
@@ -349,7 +406,7 @@ struct FanCamsView: View {
     
     private var categoryColumnCount: Int {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            return horizontalSizeClass == .regular ? 3 : 2
+            return horizontalSizeClass == .regular ? 2 : 3
         } else {
             return verticalSizeClass == .regular ? 1 : 2
         }
@@ -376,11 +433,40 @@ struct FanCamsView: View {
     private func handleCategorySelection(_ category: FanCamCategory) {
         print("📂 Category selected: \(category.name)")
         selectedCategory = category
-        currentMode = .artist
-        selectedArtist = nil
-        visibleVideoIndices = []
-        Task {
-            await airtableService.fetchVideoCounts(for: category.artists)
+        
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            // iPad: Skip artist selection screen and go directly to a random artist
+            currentMode = .artist
+            Task {
+                await airtableService.fetchVideoCounts(for: category.artists)
+                // Pick a random artist from the category
+                let randomArtistName = category.artists.randomElement() ?? category.artists.first ?? ""
+                await selectRandomArtist(named: randomArtistName)
+            }
+        } else {
+            // iPhone: Show artist selection screen as before
+            currentMode = .artist
+            selectedArtist = nil
+            visibleVideoIndices = []
+            Task {
+                await airtableService.fetchVideoCounts(for: category.artists)
+            }
+        }
+    }
+    
+    private func selectRandomArtist(named artistName: String) async {
+        print("🎲 Randomly selecting artist: \(artistName)")
+        if let loaded = try? await airtableService.fetchArtist(byName: artistName) {
+            await MainActor.run {
+                selectedArtist = loaded
+                updateVisibleVideoIndices()
+                let visibleFlags = loaded.fields.isVisible
+                let urlsCount = loaded.fields.videoUrls?.count ?? 0
+                let titlesCount = loaded.fields.videoTitles?.count ?? 0
+                print("🎵 Loaded random artist: \(loaded.fields.title) urls=\(urlsCount) titles=\(titlesCount) isVisibleCount=\(visibleFlags.count) visibleIndices=\(visibleVideoIndices.count)")
+            }
+        } else {
+            print("⚠️ Failed to load random artist: \(artistName)")
         }
     }
     

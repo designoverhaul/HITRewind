@@ -26,7 +26,6 @@ class YouTubePlayerCoordinator: NSObject, ObservableObject, YTPlayerViewDelegate
 
     func playerViewDidBecomeReady(_ playerView: YTPlayerView) {
         self.playerView = playerView
-        print("YouTube player is ready")
 
         // Get initial duration
         playerView.duration { [weak self] duration, error in
@@ -37,25 +36,28 @@ class YouTubePlayerCoordinator: NSObject, ObservableObject, YTPlayerViewDelegate
     }
 
     func playerView(_ playerView: YTPlayerView, receivedError error: YTPlayerError) {
-        print("YouTube player error: \(error.rawValue)")
     }
 
     func playerView(_ playerView: YTPlayerView, didChangeTo state: YTPlayerState) {
         DispatchQueue.main.async {
             self.isPlaying = state == .playing
+            
+            // Notify ContentView of player state change
+            NotificationCenter.default.post(
+                name: .playerStateChanged,
+                object: nil,
+                userInfo: ["isPlaying": state == .playing]
+            )
         }
-        print("Player state changed to: \(state.rawValue)")
     }
 
     // MARK: - Player Control Methods
     func play() {
         playerView?.playVideo()
-        print("🎥 Play command sent")
     }
 
     func pause() {
         playerView?.pauseVideo()
-        print("🎥 Pause command sent")
     }
 
     func togglePlayPause() {
@@ -68,12 +70,10 @@ class YouTubePlayerCoordinator: NSObject, ObservableObject, YTPlayerViewDelegate
 
     func skipForward(seconds: Float = 10) {
         playerView?.seek(toSeconds: currentTime + seconds, allowSeekAhead: true)
-        print("🎥 Skip forward \(seconds) seconds")
     }
 
     func skipBackward(seconds: Float = 10) {
         playerView?.seek(toSeconds: max(0, currentTime - seconds), allowSeekAhead: true)
-        print("🎥 Skip backward \(seconds) seconds")
     }
 
     func seekTo(seconds: Float) {
@@ -145,7 +145,12 @@ struct SingleVideoView: View {
 
     private var videoHeight: CGFloat {
         let screenWidth = UIScreen.main.bounds.width
-        return screenWidth * 9/16
+        let standardHeight = screenWidth * 9/16
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return standardHeight * 1.15 // 15% taller for iPad
+        } else {
+            return standardHeight * 1.5 // 50% taller for iPhone
+        }
     }
     
     private var videoWidth: CGFloat {
@@ -169,7 +174,6 @@ struct SingleVideoView: View {
             externalScreens = (UIScreen.screens as [UIScreen]).filter { $0 != UIScreen.main }
         }
         isAirPlayActive = !externalScreens.isEmpty
-        print("🎥 AirPlay detection: \(isAirPlayActive) (external screens: \(externalScreens.count))")
     }
 
     private func updateLayoutForAirPlay() {
@@ -180,15 +184,97 @@ struct SingleVideoView: View {
 extension SingleVideoView {
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
-            
-            // Just the video player - centered in screen
+            // Custom header for all devices
             VStack {
+                HStack {
+                    // Back button on left
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Back")
+                                .font(.custom(AppFont.ticketingName(), size: 16))
+                        }
+                        .foregroundColor(.hitRewindPurple)
+                    }
+                    
+                    Spacer()
+                    
+                    // Logo centered
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
+                    
+                    Spacer()
+                    
+                    // Empty space for balance
+                    Text("")
+                        .frame(width: 50)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(Color.hitRewindBackground)
+                
                 Spacer()
-                VideoPlayerView(videoId: videoId, coordinator: playerCoordinator)
-                    .frame(width: videoWidth, height: videoHeight)
-                    .background(Color.black)
-                Spacer()
+            }
+            .zIndex(1)
+            
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                VStack(spacing: 16) {
+                    Spacer()
+                    
+                    // Video info section above player
+                    VStack(alignment: .leading, spacing: 8) {
+                        // Year
+                        Text(year)
+                            .font(.custom(AppFont.ticketingName(), size: 14))
+                            .foregroundColor(.gray)
+                        
+                        // Video name and artist name row
+                        HStack(alignment: .bottom) {
+                            Text(videoTitle)
+                                .font(.custom(AppFont.ticketingName(), size: 18))
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.leading)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                // Switch to search tab and search for artist
+                                NotificationCenter.default.post(
+                                    name: .searchArtist,
+                                    object: nil,
+                                    userInfo: ["artistName": artistName]
+                                )
+                                // Dismiss this view first, then switch to search
+                                dismiss()
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    NotificationCenter.default.post(
+                                        name: .switchToSearch,
+                                        object: nil
+                                    )
+                                }
+                            }) {
+                                Text(artistName)
+                                    .font(.custom(AppFont.ticketingName(), size: 16))
+                                    .foregroundColor(.hitRewindPurple)
+                                    .multilineTextAlignment(.trailing)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(width: videoWidth)
+                    
+                    // Video player
+                    VideoPlayerView(videoId: videoId, coordinator: playerCoordinator)
+                        .frame(width: videoWidth, height: videoHeight)
+                        .background(Color.black)
+                    
+                    Spacer()
+                }
             }
         }
         .onAppear {
@@ -211,6 +297,9 @@ extension SingleVideoView {
             NotificationCenter.default.addObserver(forName: .playerSkipForward, object: nil, queue: .main) { _ in
                 playerCoordinator.skipForward(seconds: 10)
             }
+            NotificationCenter.default.addObserver(forName: .playerSkip60Forward, object: nil, queue: .main) { _ in
+                playerCoordinator.skipForward(seconds: 60)
+            }
             
             // Notify ContentView that video player is presented
             NotificationCenter.default.post(
@@ -231,44 +320,15 @@ extension SingleVideoView {
             NotificationCenter.default.removeObserver(self, name: .playerSkipBackward, object: nil)
             NotificationCenter.default.removeObserver(self, name: .playerTogglePlayPause, object: nil)
             NotificationCenter.default.removeObserver(self, name: .playerSkipForward, object: nil)
+            NotificationCenter.default.removeObserver(self, name: .playerSkip60Forward, object: nil)
             
             // Notify ContentView that video player is dismissed
             NotificationCenter.default.post(name: .videoPlayerDismissed, object: nil)
         }
         .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarHidden(false)
-        .navigationBarBackButtonHidden(false)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 8) {
-                    Image("logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 28)
-                }
-            }
-
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { dismiss() }) {
-                    Text("Back")
-                        .font(.custom(AppFont.ticketingName(), size: 20))
-                        .foregroundColor(.hitRewindPurple)
-                }
-            }
-
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 16) {
-                    NavigationLink(destination: SearchView()) {
-                        Text("🔍")
-                    }
-                    NavigationLink(destination: SettingsView()) {
-                        Text("⚙️")
-                    }
-                }
-            }
-        }
-        .ignoresSafeArea(.all, edges: .top)
+        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
+        .ignoresSafeArea(.all)
         .background(
             NavigationConfigurator { nc in
                 nc.hidesBarsOnSwipe = false

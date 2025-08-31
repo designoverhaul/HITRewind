@@ -39,27 +39,31 @@ struct MusicVideosView: View {
     
     // MARK: - iPad Layout
     private var iPadLayout: some View {
-        NavigationSplitView {
+        HStack(spacing: 0) {
+            // Permanent sidebar
             YearSidebarView(
                 years: availableYears,
                 selectedYear: $selectedYear,
                 onYearSelected: handleYearSelection
             )
-            .navigationTitle("Years")
-        } detail: {
-            VStack(alignment: .leading, spacing: 16) {
-                // Custom title header
+            .frame(width: 200)
+            .background(Color.hitRewindBackground)
+            
+            // Main content area
+            VStack(alignment: .leading, spacing: 0) {
+                // Custom header row
                 HStack {
-                    Text("New Music Videos \(String(selectedYear ?? 2025))")
-                        .font(.custom(AppFont.ticketingName(), size: 28))
-                        .fontWeight(.bold)
-                        .foregroundColor(.hitRewindPrimaryText)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
+                    Spacer()
+                    
+                    // Logo centered
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
                     
                     Spacer()
                     
-                    // Search and Settings buttons
+                    // Search and settings on right
                     HStack(spacing: 16) {
                         NavigationLink(destination: SearchView()) {
                             Text("🔍")
@@ -68,16 +72,16 @@ struct MusicVideosView: View {
                             Text("⚙️")
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 16)
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(Color.hitRewindBackground)
                 
                 videoGridView
             }
-            .navigationTitle("")
-            .navigationBarHidden(true)
         }
-        .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
+        .navigationTitle("")
+        .navigationBarHidden(true)
     }
     
     // MARK: - iPhone Layout
@@ -220,7 +224,7 @@ struct MusicVideosView: View {
     
     private var columnCount: Int {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            return horizontalSizeClass == .regular ? 4 : 3
+            return 3
         } else {
             return verticalSizeClass == .regular ? 1 : 2
         }

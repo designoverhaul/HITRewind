@@ -16,6 +16,10 @@ extension Notification.Name {
     static let playerSkipBackward = Notification.Name("playerSkipBackward")
     static let playerTogglePlayPause = Notification.Name("playerTogglePlayPause")
     static let playerSkipForward = Notification.Name("playerSkipForward")
+    static let playerSkip60Forward = Notification.Name("playerSkip60Forward")
+    static let playerStateChanged = Notification.Name("playerStateChanged")
+    static let  searchArtist = Notification.Name("searchArtist")
+    static let switchToSearch = Notification.Name("switchToSearch")
 }
 
 struct ContentView: View {
@@ -27,6 +31,144 @@ struct ContentView: View {
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
     @State private var isAirPlayActive = false
+    @State private var isVideoPlaying = false
+    @State private var navigateToSearch = false
+    @State private var searchArtistName = ""
+    
+    private func videoInfoSection(for videoInfo: (id: String, title: String, artist: String, year: String)) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Year
+            Text(videoInfo.year)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            // Video name and artist name row - horizontally aligned
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(videoInfo.title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Button(action: {
+                    // Switch to search tab (index 5) and set search text
+                    selectedTab = 5
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        NotificationCenter.default.post(
+                            name: .searchArtist,
+                            object: nil,
+                            userInfo: ["artistName": videoInfo.artist]
+                        )
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Text(videoInfo.artist)
+                            .font(.subheadline)
+                            .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
+                            .lineLimit(1)
+                        
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
+                    }
+                }
+            }
+        }
+    }
+    
+    private func controlButtonsSection(for videoInfo: (id: String, title: String, artist: String, year: String)) -> some View {
+        HStack(spacing: 16) {
+            Spacer(minLength: 0)
+            Button(action: {
+                if authService.isAuthenticated {
+                    favoritesService.toggleFavorite(videoId: videoInfo.id, title: videoInfo.title, artist: videoInfo.artist, year: videoInfo.year)
+                } else {
+                    authService.signInWithApple()
+                }
+            }) {
+                Image(systemName: favoritesService.isFavorited(videoInfo.id) ? "heart.fill" : "heart")
+                    .font(.system(size: 20))
+                    .foregroundColor(favoritesService.isFavorited(videoInfo.id) ? .red : Color(red: 0.65, green: 0.53, blue: 0.99))
+                    .frame(width: 60, height: 60)
+                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+            }
+
+            Button(action: {
+                NotificationCenter.default.post(name: .playerSkipBackward, object: nil)
+            }) {
+                Image(systemName: "gobackward.10")
+                    .font(.system(size: 24))
+                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
+                    .frame(width: 60, height: 60)
+                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+            }
+
+            Button(action: {
+                NotificationCenter.default.post(name: .playerTogglePlayPause, object: nil)
+            }) {
+                Image(systemName: isVideoPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
+                    .frame(width: 60, height: 60)
+                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+            }
+
+            Button(action: {
+                NotificationCenter.default.post(name: .playerSkipForward, object: nil)
+            }) {
+                Image(systemName: "goforward.10")
+                    .font(.system(size: 24))
+                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
+                    .frame(width: 60, height: 60)
+                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+            }
+
+            Button(action: {
+                NotificationCenter.default.post(name: .playerSkip60Forward, object: nil)
+            }) {
+                Image(systemName: "goforward.60")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
+                    .frame(width: 60, height: 60)
+                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+            }
+            
+            Spacer(minLength: 0)
+        }
+    }
+    
+    private var videoPlayerControlsOverlay: some View {
+        Group {
+            if showingVideoPlayer, let videoInfo = currentVideoInfo {
+                VStack {
+                    Spacer()
+                    
+                    VStack(spacing: 14) {
+                        videoInfoSection(for: videoInfo)
+                        controlButtonsSection(for: videoInfo)
+                    }
+                    .padding(.horizontal, 12)
+                    
+                    Color.clear
+                        .frame(height: 80)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -40,7 +182,7 @@ struct ContentView: View {
             MusicVideosView()
                 .tabItem {
                     Image(systemName: "movieclapper")
-                    Text("Music Videos")
+                    Text("MTV")
                 }
                 .tag(1)
             
@@ -54,7 +196,7 @@ struct ContentView: View {
             FanCamsView()
                 .tabItem {
                     Image(systemName: "ticket")
-                    Text("Live Shows")
+                    Text("Live")
                 }
                 .tag(3)
             
@@ -64,143 +206,15 @@ struct ContentView: View {
                     Text("Favorites")
                 }
                 .tag(4)
-        }
-        .overlay(
-            // Video player controls overlay - positioned above tab bar
-            Group {
-                if showingVideoPlayer, let videoInfo = currentVideoInfo {
-                    VStack {
-                        Spacer() // Push controls to bottom
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 0)
-                                    .stroke(Color.orange, lineWidth: 2) // DEBUG: Orange border around Spacer
-                            )
-                        VStack(spacing: 8) {
-                        // Video info
-                        VStack(spacing: 4) {
-                            Text(videoInfo.year)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            HStack {
-                                Text(videoInfo.title)
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                                    .lineLimit(2)
-                                    .multilineTextAlignment(.leading)
-
-                                Spacer()
-
-                                Text(videoInfo.artist)
-                                    .font(.subheadline)
-                                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
-                                    .lineLimit(1)
-                            }
-                        }
-                        .padding(.horizontal, 24)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(Color.green, lineWidth: 2) // DEBUG: Green border
-                        )
-
-                        // Control buttons
-                        HStack(spacing: 16) {
-                            Button(action: {
-                                if authService.isAuthenticated {
-                                    favoritesService.toggleFavorite(videoId: videoInfo.id, title: videoInfo.title, artist: videoInfo.artist, year: videoInfo.year)
-                                } else {
-                                    authService.signInWithApple()
-                                }
-                            }) {
-                                Image(systemName: favoritesService.isFavorited(videoInfo.id) ? "heart.fill" : "heart")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(favoritesService.isFavorited(videoInfo.id) ? .red : Color(red: 0.65, green: 0.53, blue: 0.99))
-                                    .frame(width: 60, height: 60)
-                                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-                            }
-
-                            Button(action: {
-                                // Send notification to VideoPlayerView to skip backward
-                                NotificationCenter.default.post(name: .playerSkipBackward, object: nil)
-                            }) {
-                                Image(systemName: "gobackward.10")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
-                                    .frame(width: 60, height: 60)
-                                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-                            }
-
-                            Button(action: {
-                                // Send notification to VideoPlayerView to toggle play/pause
-                                NotificationCenter.default.post(name: .playerTogglePlayPause, object: nil)
-                            }) {
-                                Image(systemName: "play.fill") // Static icon for now
-                                    .font(.system(size: 24))
-                                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
-                                    .frame(width: 60, height: 60)
-                                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-                            }
-
-                            Button(action: {
-                                // Send notification to VideoPlayerView to skip forward
-                                NotificationCenter.default.post(name: .playerSkipForward, object: nil)
-                            }) {
-                                Image(systemName: "goforward.10")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
-                                    .frame(width: 60, height: 60)
-                                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-                            }
-
-                            Button(action: {
-                                AirPlayHelper.shared.showAirPlayPicker()
-                            }) {
-                                Image(systemName: "airplayvideo")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
-                                    .frame(width: 60, height: 60)
-                                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-                            }
-                        }
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.yellow, lineWidth: 2) // DEBUG: Yellow border
-                        )
-                        }
-                        .padding(.horizontal, 24)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.red, lineWidth: 3) // DEBUG: Red border around controls
-                        )
-                        
-                        // Fixed height spacer to keep controls above tab bar
-                        Color.clear
-                            .frame(height: 100)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 0)
-                                    .stroke(Color.purple, lineWidth: 2) // DEBUG: Purple border for tab bar spacer
-                            )
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 0)
-                            .stroke(Color.blue, lineWidth: 4) // DEBUG: Blue border around full VStack
-                    )
+            
+            SearchView()
+                .tabItem {
+                    Image(systemName: "magnifyingglass")
+                    Text("Search")
                 }
-            }
-        )
+                .tag(5)
+        }
+        .overlay(videoPlayerControlsOverlay)
         .accentColor(Color.hitRewindPurple)
         .onChange(of: selectedTab) { oldValue, newValue in
             if newValue == 2 {
@@ -229,6 +243,16 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .videoPlayerDismissed)) { _ in
             showingVideoPlayer = false
             currentVideoInfo = nil
+            isVideoPlaying = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .playerStateChanged)) { notification in
+            if let userInfo = notification.userInfo,
+               let isPlaying = userInfo["isPlaying"] as? Bool {
+                isVideoPlaying = isPlaying
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToSearch)) { _ in
+            selectedTab = 5
         }
     }
     
@@ -326,7 +350,52 @@ struct FavoritesView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 0) {
+            // iPad only: Custom header row (Row 2)
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                HStack {
+                    // Sort button (left aligned) - only show when authenticated and has favorites
+                    if authService.isAuthenticated && !favoritesService.favoriteVideos.isEmpty {
+                        Button(action: {
+                            showingSortOptions = true
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.up.arrow.down")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.hitRewindPurple)
+                                Text("Sort")
+                                    .font(.custom(AppFont.ticketingName(), size: 16))
+                                    .foregroundColor(.hitRewindPurple)
+                            }
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    // Logo centered
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
+                    
+                    Spacer()
+                    
+                    // Search and settings on right
+                    HStack(spacing: 16) {
+                        NavigationLink(destination: SearchView()) {
+                            Text("🔍")
+                        }
+                        NavigationLink(destination: SettingsView()) {
+                            Text("⚙️")
+                        }
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(Color.hitRewindBackground)
+            }
+            
             Group {
                 if !authService.isAuthenticated {
                     signInPromptView
@@ -336,14 +405,20 @@ struct FavoritesView: View {
                     favoritesGridView
                 }
             }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+        }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+.navigationBarHidden(false)
+        .toolbar {
+            // iPhone only: Keep existing toolbar structure
+            if UIDevice.current.userInterfaceIdiom != .pad {
                 ToolbarItem(placement: .principal) {
-                    Text("Favorites")
-                        .font(.custom(AppFont.ticketingName(), size: 18))
-                        .fontWeight(.bold)
-                        .foregroundColor(.hitRewindPrimaryText)
+                    HStack(spacing: 8) {
+                        Image("logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 28)
+                    }
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
                     if authService.isAuthenticated && !favoritesService.favoriteVideos.isEmpty {
@@ -353,6 +428,10 @@ struct FavoritesView: View {
                             Image(systemName: "arrow.up.arrow.down")
                                 .foregroundColor(.hitRewindPurple)
                         }
+                    } else {
+                        // Empty space to maintain layout
+                        Color.clear
+                            .frame(width: 44, height: 44)
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -374,6 +453,7 @@ struct FavoritesView: View {
                 }
             }
             Button("Cancel", role: .cancel) { }
+        }
         }
     }
     
@@ -448,9 +528,12 @@ struct FavoritesView: View {
                             title: favorite.title,
                             artist: favorite.artist,
                             year: favorite.year,
-                            onTap: {}
+                            onTap: {
+                                print("🎥 Favorite video tapped: \(favorite.title) by \(favorite.artist)")
+                            }
                         )
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
             .padding(gridSpacing)
