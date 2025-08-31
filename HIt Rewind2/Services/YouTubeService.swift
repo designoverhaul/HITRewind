@@ -18,6 +18,7 @@ struct YouTubeVideo: Codable {
     let id: String
     let snippet: YouTubeVideoSnippet
     let contentDetails: YouTubeContentDetails?
+    let status: YouTubeStatus?
 }
 
 struct YouTubeVideoSnippet: Codable {
@@ -44,42 +45,130 @@ struct YouTubeThumbnail: Codable {
 
 struct YouTubeContentDetails: Codable {
     let duration: String
+    let embeddable: Bool? // Whether the video can be embedded
+}
+
+struct YouTubeStatus: Codable {
+    let privacyStatus: String
+    let embeddable: Bool?
 }
 
 // MARK: - YouTube Service
-@MainActor
 class YouTubeService: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
+
     private let session = URLSession.shared
-    
+
     // MARK: - Video Information
     func getVideoInfo(videoId: String) async throws -> YouTubeVideo {
-        guard !YouTubeConfig.apiKey.isEmpty && YouTubeConfig.apiKey != "YOUR_YOUTUBE_API_KEY_HERE" else {
+        let apiKey = YouTubeConfig.apiKey
+        guard !apiKey.isEmpty && apiKey != "YOUR_YOUTUBE_API_KEY_HERE" else {
             throw YouTubeError.missingAPIKey
         }
-        
-        let urlString = "\(YouTubeConfig.baseURL)/videos?part=snippet,contentDetails&id=\(videoId)&key=\(YouTubeConfig.apiKey)"
-        
+
+        let urlString = "\(YouTubeConfig.baseURL)/videos?part=snippet,contentDetails,status&id=\(videoId)&key=\(apiKey)"
         guard let url = URL(string: urlString) else {
             throw YouTubeError.invalidURL
         }
-        
+
         do {
             let (data, _) = try await session.data(from: url)
-            let response = try JSONDecoder().decode(YouTubeVideoResponse.self, from: data)
+            let youTubeResponse = try JSONDecoder().decode(YouTubeVideoResponse.self, from: data)
             
-            guard let video = response.items.first else {
+            guard let video = youTubeResponse.items.first else {
                 throw YouTubeError.videoNotFound
             }
-            
+
             return video
         } catch {
             throw YouTubeError.networkError(error)
         }
     }
-    
+
+    // MARK: - Check Video Embeddability
+    func checkVideoEmbeddability(videoId: String) async throws -> Bool {
+        let video = try await getVideoInfo(videoId: videoId)
+
+        let contentEmbeddable = video.contentDetails?.embeddable ?? false
+        let statusEmbeddable = video.status?.embeddable ?? false
+        let isPublic = video.status?.privacyStatus == "public"
+        let isEmbeddable = contentEmbeddable || statusEmbeddable
+
+        return isPublic && isEmbeddable
+    }
+
+    // MARK: - Quick API Test (Call this to diagnose issues)
+    func quickAPITest() async {
+        print("\n🔍 === YOUTUBE API STATUS CHECK ===")
+        print("⏰ Time: \(Date().formatted())")
+        print("🔑 API Key: \(YouTubeConfig.apiKey.prefix(10))...")
+
+        let status = await checkAPIStatus()
+        print("📊 Overall Status: \(status.isValid ? "✅ WORKING" : "❌ ISSUES DETECTED")")
+
+        if let error = status.error {
+            print("❌ Error Details: \(error)")
+        }
+
+        if let quota = status.quotaInfo {
+            print("📈 Quota Info: \(quota)")
+        }
+
+        // Additional API health checks
+        await performAPIHealthCheck()
+
+        print("====================================\n")
+    }
+
+    // MARK: - API Health Check
+    private func performAPIHealthCheck() async {
+        print("\n🏥 API HEALTH CHECK:")
+
+        // Test different endpoints
+        let endpoints = [
+            "search": "search?part=snippet&type=video&q=test&maxResults=1",
+            "videos": "videos?part=snippet&id=dQw4w9WgXcQ",
+            "channels": "channels?part=snippet&id=UCuAXFkgsw1L7xaCfnd5JJOw"
+        ]
+
+        for (name, path) in endpoints {
+            let urlString = "\(YouTubeConfig.baseURL)/\(path)&key=\(YouTubeConfig.apiKey)"
+            guard let url = URL(string: urlString) else {
+                print("❌ \(name): Invalid URL")
+                continue
+            }
+
+            do {
+                let startTime = Date()
+                let (data, response) = try await session.data(from: url)
+                let duration = Date().timeIntervalSince(startTime)
+
+                if let httpResponse = response as? HTTPURLResponse {
+                    let status = httpResponse.statusCode
+                    print("✅ \(name): \(status) (\(String(format: "%.2f", duration))s)")
+
+                    // Check for quota exceeded or blocking
+                    if status == 403 {
+                        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                           let error = json["error"] as? [String: Any],
+                           let errors = error["errors"] as? [[String: Any]],
+                           let firstError = errors.first,
+                           let reason = firstError["reason"] as? String {
+                            print("   🚫 Access Issue: \(reason)")
+                        } else {
+                            print("   🚫 Access Forbidden (403)")
+                        }
+                    } else if status == 400 {
+                        print("   ⚠️ Bad Request (400) - Check API key format")
+                    }
+                }
+            } catch {
+                print("❌ \(name): Failed - \(error.localizedDescription)")
+            }
+        }
+    }
+
     // MARK: - Thumbnail URL Generation
     func getThumbnailURL(for videoId: String, quality: ThumbnailQuality = .medium) -> URL? {
         let urlString: String
@@ -108,6 +197,139 @@ class YouTubeService: ObservableObject {
         return URL(string: "https://www.youtube.com/watch?v=\(videoId)")
     }
     
+    // MARK: - API Key Validation
+    func validateAPIKey() async -> Bool {
+        let apiKey = YouTubeConfig.apiKey
+        if apiKey.isEmpty || apiKey == "YOUR_YOUTUBE_API_KEY_HERE" {
+            return false
+        }
+
+        let testVideoId = "dQw4w9WgXcQ"
+        do {
+            _ = try await getVideoInfo(videoId: testVideoId)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    // MARK: - API Status Check
+    func checkAPIStatus() async -> (isValid: Bool, error: String?, quotaInfo: String?) {
+        print("🔍 DEBUG: Checking YouTube API status...")
+
+        guard !YouTubeConfig.apiKey.isEmpty && YouTubeConfig.apiKey != "YOUR_YOUTUBE_API_KEY_HERE" else {
+            return (false, "API key is missing or placeholder", nil)
+        }
+
+        // Test with multiple videos to check for patterns
+        let testVideos = [
+            "dQw4w9WgXcQ", // Rick Astley (highly popular, should work)
+            "jNQXAC9IVRw", // YouTube's first video
+            "kJQP7kiw5Fk"  // Despacito (very popular)
+        ]
+
+        var results: [(videoId: String, success: Bool, error: String?)] = []
+
+        for videoId in testVideos {
+            do {
+                let startTime = Date()
+                let video = try await getVideoInfo(videoId: videoId)
+                let endTime = Date()
+                let duration = endTime.timeIntervalSince(startTime)
+
+                results.append((videoId, true, nil))
+                print("✅ DEBUG: API test successful for \(videoId) - \(video.snippet.title) (\(String(format: "%.2f", duration))s)")
+
+                // If any video works, API is generally functional
+                return (true, nil, "API appears functional - some videos may be restricted")
+            } catch let error as YouTubeError {
+                results.append((videoId, false, error.localizedDescription))
+                print("❌ DEBUG: API test failed for \(videoId) - \(error.localizedDescription)")
+            } catch {
+                results.append((videoId, false, error.localizedDescription))
+                print("❌ DEBUG: API test failed for \(videoId) - \(error.localizedDescription)")
+            }
+        }
+
+        // Analyze results
+        let successCount = results.filter { $0.success }.count
+        let failureCount = results.filter { !$0.success }.count
+
+        if failureCount == testVideos.count {
+            return (false, "All API calls failed - check API key and network", nil)
+        } else if successCount > 0 {
+            return (true, "API partially functional - some videos restricted", "\(successCount)/\(testVideos.count) videos accessible")
+        } else {
+            return (false, "API key may be invalid or quota exceeded", nil)
+        }
+    }
+
+    // MARK: - Comprehensive Debug Diagnostics
+    func runVideoDiagnostics(videoId: String) async {
+        print("🔍 ============= YOUTUBE VIDEO DIAGNOSTICS =============")
+        print("🎬 Testing video: \(videoId)")
+
+        // 1. Check API Status
+        print("\n1️⃣ YOUTUBE API STATUS:")
+        let apiStatus = await checkAPIStatus()
+        print("   API Status: \(apiStatus.isValid ? "✅" : "❌")")
+        if let error = apiStatus.error {
+            print("   Error: \(error)")
+        }
+        if let quota = apiStatus.quotaInfo {
+            print("   Quota Info: \(quota)")
+        }
+
+        // 2. Check Network Connectivity
+        print("\n2️⃣ NETWORK CONNECTIVITY:")
+        let networkTest = await testNetworkConnectivity()
+        print("   Network Available: \(networkTest ? "✅" : "❌")")
+
+        // 3. Check Video ID Format
+        print("\n3️⃣ VIDEO ID VALIDATION:")
+        let idValid = isValidYouTubeVideoId(videoId)
+        print("   Video ID Format: \(idValid ? "✅" : "❌")")
+
+        // 4. Test YouTube API Call
+        print("\n4️⃣ YOUTUBE API CALL:")
+        do {
+            let video = try await getVideoInfo(videoId: videoId)
+            print("   API Call Successful: ✅")
+            print("   Video Title: \(video.snippet.title)")
+            print("   Channel: \(video.snippet.channelTitle)")
+        } catch {
+            print("   API Call Failed: ❌")
+            print("   Error: \(error.localizedDescription)")
+        }
+
+        // 5. Check Thumbnail URLs
+        print("\n5️⃣ THUMBNAIL URLS:")
+        let qualities: [ThumbnailQuality] = [.default, .medium, .high, .standard, .maxres]
+        for quality in qualities {
+            let url = getThumbnailURL(for: videoId, quality: quality)
+            print("   \(quality): \(url?.absoluteString ?? "nil")")
+        }
+
+        print("\n🔍 ============= END DIAGNOSTICS =============\n")
+    }
+
+    private func testNetworkConnectivity() async -> Bool {
+        do {
+            let testURL = URL(string: "https://www.google.com")!
+            let (_, response) = try await session.data(from: testURL)
+            return (response as? HTTPURLResponse)?.statusCode == 200
+        } catch {
+            return false
+        }
+    }
+
+    private func isValidYouTubeVideoId(_ videoId: String) -> Bool {
+        let videoIdPattern = "^[a-zA-Z0-9_-]{11}$"
+        let regex = try? NSRegularExpression(pattern: videoIdPattern)
+        let range = NSRange(location: 0, length: videoId.utf16.count)
+        return regex?.firstMatch(in: videoId, range: range) != nil
+    }
+
     // MARK: - Duration Formatting
     func formatDuration(_ isoDuration: String) -> String {
         // Parse ISO 8601 duration format (PT4M13S -> 4:13, PT1H5M30S -> 65:30)
