@@ -40,128 +40,155 @@ struct ArtistSongsView: View {
         VStack(alignment: .leading, spacing: 0) {
             // iPad only: Custom header row (Row 2)
             if UIDevice.current.userInterfaceIdiom == .pad {
-                HStack {
-                    // No sidebar icon for Artist Songs page
-                    Spacer()
-                    
-                    // Logo centered
-                    Image("logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 28)
-                    
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
-                .background(Color.hitRewindBackground)
+                iPadHeaderView
             }
             
-            Group {
-                if videos.isEmpty {
-                    ProgressView()
-                        .tint(.hitRewindPurple)
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HitRewindHeadline(text: artistName)
-                                .padding(.horizontal, gridPadding)
-                        }
-                        .padding(.top, gridPadding)
-                        
-                        LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
-                            ForEach(videos) { item in
-                                NavigationLink(
-                                    destination: SingleVideoView(
-                                        videoId: item.videoId,
-                                        videoTitle: item.title,
-                                        artistName: artistName,
-                                        year: item.year
-                                    )
-                                ) {
-                                    VideoThumbnailView(
-                                        videoId: item.videoId,
-                                        title: item.title,
-                                        artist: artistName,
-                                        year: item.year,
-                                        onTap: {},
-                                        hideArtistName: true
-                                    )
-                                }
-                            }
-                        }
-                        .padding(gridPadding)
-                    }
-                }
-            }
+            mainContentView
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .navigationBarHidden(UIDevice.current.userInterfaceIdiom != .pad)
         .toolbar {
-            // iPad: Row 1 (System Navigation Bar) - back button left, search/settings right
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Back")
-                                .font(.custom(AppFont.ticketingName(), size: 16))
-                        }
-                        .foregroundColor(.hitRewindPurple)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
-                        NavigationLink(destination: SearchView()) {
-                            Text("🔍")
-                        }
-                        NavigationLink(destination: SettingsView()) {
-                            Text("⚙️")
-                        }
-                    }
-                }
-            } else {
-                // iPhone: Keep existing toolbar structure
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 8) {
-                        Image("logo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 28)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Back")
-                                .font(.custom(AppFont.ticketingName(), size: 16))
-                        }
-                        .foregroundColor(.hitRewindPurple)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
-                        NavigationLink(destination: SearchView()) {
-                            Text("🔍")
-                        }
-                        NavigationLink(destination: SettingsView()) {
-                            Text("⚙️")
-                        }
-                    }
-                }
-            }
+            toolbarContent
         }
         .task {
             await loadArtistVideos()
         }
+    }
+    
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        // iPad: Row 1 (System Navigation Bar) - back button left, search/settings right
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back")
+                            .font(.custom(AppFont.ticketingName(), size: 16))
+                    }
+                    .foregroundColor(.hitRewindPurple)
+                }
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                HStack(spacing: 16) {
+                    NavigationLink(destination: SearchView()) {
+                        Text("🔍")
+                    }
+                    NavigationLink(destination: SettingsView()) {
+                        Text("⚙️")
+                    }
+                }
+            }
+        } else {
+            // iPhone: Keep existing toolbar structure
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 8) {
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
+                }
+            }
+            
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back")
+                            .font(.custom(AppFont.ticketingName(), size: 16))
+                    }
+                    .foregroundColor(.hitRewindPurple)
+                }
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                HStack(spacing: 16) {
+                    NavigationLink(destination: SearchView()) {
+                        Text("🔍")
+                    }
+                    NavigationLink(destination: SettingsView()) {
+                        Text("⚙️")
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Subviews
+    
+    private var iPadHeaderView: some View {
+        HStack {
+            // No sidebar icon for Artist Songs page
+            Spacer()
+            
+            // Logo centered
+            Image("logo")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 28)
+            
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
+        .background(Color.hitRewindBackground)
+    }
+    
+    private var mainContentView: some View {
+        Group {
+            if videos.isEmpty {
+                loadingView
+            } else {
+                videosScrollView
+            }
+        }
+    }
+    
+    private var loadingView: some View {
+        ProgressView()
+            .tint(.hitRewindPurple)
+    }
+    
+    private var videosScrollView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                HitRewindHeadline(text: artistName)
+                    .padding(.horizontal, gridPadding)
+            }
+            .padding(.top, gridPadding)
+            
+            videosGridView
+        }
+    }
+    
+    private var videosGridView: some View {
+        LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
+            ForEach(videos) { item in
+                NavigationLink(
+                    destination: SingleVideoView(
+                        youtubeURL: "https://www.youtube.com/watch?v=\(item.videoId)",
+                        videoTitle: item.title,
+                        artistName: artistName,
+                        year: item.year
+                    )
+                ) {
+                    VideoThumbnailView(
+                        videoId: item.videoId,
+                        title: item.title,
+                        artist: artistName,
+                        year: item.year,
+                        onTap: {},
+                        hideArtistName: true
+                    )
+                }
+            }
+        }
+        .padding(gridPadding)
     }
     
     private func loadArtistVideos() async {
@@ -202,7 +229,8 @@ struct ArtistSongsView: View {
     
     private var columnCount: Int {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            return horizontalSizeClass == .regular ? 4 : 3
+            // iPad: 2 columns in portrait, 3 columns in landscape
+            return horizontalSizeClass == .regular ? 3 : 2
         } else {
             return verticalSizeClass == .regular ? 1 : 2
         }

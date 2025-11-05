@@ -6,17 +6,20 @@
 //
 
 import SwiftUI
+import SuperwallKit
 
 struct FanCamsView: View {
     @StateObject private var airtableService = AirtableService()
     @StateObject private var youtubeService = YouTubeService()
-    
+    @ObservedObject private var paywallService = PaywallService.shared
+
     @State private var selectedCategory: FanCamCategory?
     @State private var selectedArtist: Playlist?
     @State private var visibleVideoIndices: [Int] = []
     @State private var showCategorySidebar = false
     @State private var currentMode: FanCamMode = .categories
-    
+    @State private var navigationDestination: SingleVideoView?
+
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -317,12 +320,9 @@ struct FanCamsView: View {
             
             LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
                 ForEach(visibleVideos) { item in
-                    NavigationLink(destination: SingleVideoView(
-                        videoId: item.id,
-                        videoTitle: item.title,
-                        artistName: item.artist,
-                        year: item.year
-                    )) {
+                    Button(action: {
+                        handleVideoTap(item: item)
+                    }) {
                         VideoThumbnailView(
                             videoId: item.id,
                             title: item.title,
@@ -332,10 +332,23 @@ struct FanCamsView: View {
                             hideArtistName: true
                         )
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .id(selectedArtist?.id)
             .padding(gridPadding)
+            .background(
+                NavigationLink(
+                    destination: navigationDestination,
+                    isActive: Binding(
+                        get: { navigationDestination != nil },
+                        set: { if !$0 { navigationDestination = nil } }
+                    )
+                ) {
+                    EmptyView()
+                }
+                .hidden()
+            )
         }
     }
 
@@ -430,6 +443,34 @@ struct FanCamsView: View {
     }
     
     // MARK: - Helper Methods
+
+    private func handleVideoTap(item: VisibleVideo) {
+        let videoDestination = SingleVideoView(
+            youtubeURL: item.originalURL,
+            videoTitle: item.title,
+            artistName: item.artist,
+            year: item.year
+        )
+
+        // Check if video is locked
+        if paywallService.isVideoLocked(item.id) {
+            print("🔒 Video \(item.id) is locked, presenting paywall")
+
+            // Use Superwall's register method with closure
+            // The closure ONLY executes if user has subscription
+            Task { @MainActor in
+                await Superwall.shared.register(placement: "MainPlacement") {
+                    print("✅ User has access, navigating to video")
+                    self.navigationDestination = videoDestination
+                }
+            }
+        } else {
+            // Video is unlocked, navigate directly
+            print("🔓 Video \(item.id) is unlocked, navigating")
+            navigationDestination = videoDestination
+        }
+    }
+
     private func handleCategorySelection(_ category: FanCamCategory) {
         print("📂 Category selected: \(category.name)")
         selectedCategory = category
@@ -527,7 +568,8 @@ struct FanCamsView: View {
 
 // MARK: - Visible Video Model
 private struct VisibleVideo: Identifiable {
-    let id: String   // YouTube videoId
+    let id: String        // YouTube videoId (for VideoThumbnailView compatibility)
+    let originalURL: String  // Full YouTube URL with timestamps
     let title: String
     let artist: String
     let year: String
@@ -544,7 +586,7 @@ private extension FanCamsView {
                 let artistName = artist.fields.artistNames?[safe: index] ?? artist.fields.title
                 // Use individual video year if available, fallback to artist year
                 let videoYear = artist.fields.videoYears?[safe: index] ?? String(artist.fields.year)
-                result.append(VisibleVideo(id: videoId, title: title, artist: artistName, year: videoYear))
+                result.append(VisibleVideo(id: videoId, originalURL: url, title: title, artist: artistName, year: videoYear))
             }
         }
         // Sort by year (newest first), then by title

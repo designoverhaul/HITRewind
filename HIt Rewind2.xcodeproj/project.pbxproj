@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		939457572E5C9A1400465F32 /* YouTubeiOSPlayerHelper in Frameworks */ = {isa = PBXBuildFile; productRef = 939457562E5C9A1400465F32 /* YouTubeiOSPlayerHelper */; };
+		939882B42E946A970039DD36 /* SuperwallKit in Frameworks */ = {isa = PBXBuildFile; productRef = 939882B32E946A970039DD36 /* SuperwallKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				939457572E5C9A1400465F32 /* YouTubeiOSPlayerHelper in Frameworks */,
+				939882B42E946A970039DD36 /* SuperwallKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +120,7 @@
 			name = "HIt Rewind2";
 			packageProductDependencies = (
 				939457562E5C9A1400465F32 /* YouTubeiOSPlayerHelper */,
+				939882B32E946A970039DD36 /* SuperwallKit */,
 			);
 			productName = "HIt Rewind2";
 			productReference = 939457042E5BB71E00465F32 /* HIt Rewind2.app */;
@@ -203,6 +206,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				939457552E5C9A1400465F32 /* XCRemoteSwiftPackageReference "youtube-ios-player-helper" */,
+				939882B22E946A970039DD36 /* XCRemoteSwiftPackageReference "Superwall-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 939457052E5BB71E00465F32 /* Products */;
@@ -410,7 +414,10 @@
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "HIt-Rewind2-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Hit Rewind";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -420,7 +427,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2;
 				PRODUCT_BUNDLE_IDENTIFIER = designoverhaul.mytv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -440,7 +447,10 @@
 				DEVELOPMENT_TEAM = 8Z26HLRJ65;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "HIt-Rewind2-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Hit Rewind";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -450,7 +460,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2;
 				PRODUCT_BUNDLE_IDENTIFIER = designoverhaul.mytv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -581,6 +591,14 @@
 				minimumVersion = 1.0.4;
 			};
 		};
+		939882B22E946A970039DD36 /* XCRemoteSwiftPackageReference "Superwall-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/superwall/Superwall-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.8.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -588,6 +606,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 939457552E5C9A1400465F32 /* XCRemoteSwiftPackageReference "youtube-ios-player-helper" */;
 			productName = YouTubeiOSPlayerHelper;
+		};
+		939882B32E946A970039DD36 /* SuperwallKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 939882B22E946A970039DD36 /* XCRemoteSwiftPackageReference "Superwall-iOS" */;
+			productName = SuperwallKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

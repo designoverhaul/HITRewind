@@ -9,6 +9,15 @@ import Foundation
 import AVFoundation
 import Combine
 
+// MARK: - Array Extension for Batching
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
+    }
+}
+
 // MARK: - YouTube Models
 struct YouTubeVideoResponse: Codable {
     let items: [YouTubeVideo]
@@ -18,6 +27,7 @@ struct YouTubeVideo: Codable {
     let id: String
     let snippet: YouTubeVideoSnippet
     let contentDetails: YouTubeContentDetails?
+    let statistics: YouTubeStatistics?
     let status: YouTubeStatus?
 }
 
@@ -48,6 +58,10 @@ struct YouTubeContentDetails: Codable {
     let embeddable: Bool? // Whether the video can be embedded
 }
 
+struct YouTubeStatistics: Codable {
+    let viewCount: String?
+}
+
 struct YouTubeStatus: Codable {
     let privacyStatus: String
     let embeddable: Bool?
@@ -58,32 +72,95 @@ class YouTubeService: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
-    private let session = URLSession.shared
+    // Custom URLSession with more robust network configuration
+    private lazy var session: URLSession = {
+        let config = URLSessionConfiguration.default
+        
+        // Increase timeouts for flaky connections
+        config.timeoutIntervalForRequest = 15.0
+        config.timeoutIntervalForResource = 30.0
+        
+        // Disable HTTP/3 (QUIC) to avoid protocol issues
+        config.httpMaximumConnectionsPerHost = 4
+        config.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        
+        // Allow cellular data
+        config.allowsCellularAccess = true
+        config.allowsExpensiveNetworkAccess = true
+        config.allowsConstrainedNetworkAccess = true
+        
+        return URLSession(configuration: config)
+    }()
 
     // MARK: - Video Information
     func getVideoInfo(videoId: String) async throws -> YouTubeVideo {
+        let videos = try await getBatchVideoInfo(videoIds: [videoId])
+        guard let video = videos[videoId] else {
+            throw YouTubeError.videoNotFound
+        }
+        return video
+    }
+    
+    // MARK: - Batch Video Information (Much more efficient!)
+    func getBatchVideoInfo(videoIds: [String]) async throws -> [String: YouTubeVideo] {
         let apiKey = YouTubeConfig.apiKey
         guard !apiKey.isEmpty && apiKey != "YOUR_YOUTUBE_API_KEY_HERE" else {
             throw YouTubeError.missingAPIKey
         }
-
-        let urlString = "\(YouTubeConfig.baseURL)/videos?part=snippet,contentDetails,status&id=\(videoId)&key=\(apiKey)"
-        guard let url = URL(string: urlString) else {
-            throw YouTubeError.invalidURL
-        }
-
-        do {
-            let (data, _) = try await session.data(from: url)
-            let youTubeResponse = try JSONDecoder().decode(YouTubeVideoResponse.self, from: data)
+        
+        // YouTube API supports up to 50 video IDs in a single request
+        let batchSize = 50
+        var allVideos: [String: YouTubeVideo] = [:]
+        
+        // Process videos in batches of 50
+        for batch in videoIds.chunked(into: batchSize) {
+            let videoIdsString = batch.joined(separator: ",")
+            let urlString = "\(YouTubeConfig.baseURL)/videos?part=snippet,contentDetails,statistics,status&id=\(videoIdsString)&key=\(apiKey)"
             
-            guard let video = youTubeResponse.items.first else {
-                throw YouTubeError.videoNotFound
+            guard let url = URL(string: urlString) else {
+                throw YouTubeError.invalidURL
             }
-
-            return video
-        } catch {
-            throw YouTubeError.networkError(error)
+            
+            do {
+                // Create request with timeout
+                var request = URLRequest(url: url)
+                request.timeoutInterval = 15.0
+                request.setValue("application/json", forHTTPHeaderField: "Accept")
+                request.setValue("gzip, deflate", forHTTPHeaderField: "Accept-Encoding")
+                
+                let (data, response) = try await session.data(for: request)
+                
+                // Check HTTP response
+                if let httpResponse = response as? HTTPURLResponse {
+                    guard 200...299 ~= httpResponse.statusCode else {
+                        print("🎬 YouTube API HTTP error: \(httpResponse.statusCode)")
+                        throw YouTubeError.networkError(NSError(domain: "HTTPError", code: httpResponse.statusCode))
+                    }
+                }
+                
+                // Validate data before decoding
+                guard !data.isEmpty else {
+                    print("🎬 YouTube API returned empty response")
+                    throw YouTubeError.networkError(NSError(domain: "EmptyResponse", code: -1))
+                }
+                
+                let youTubeResponse = try JSONDecoder().decode(YouTubeVideoResponse.self, from: data)
+                
+                // Map videos by ID for easy lookup
+                for video in youTubeResponse.items {
+                    allVideos[video.id] = video
+                }
+                
+            } catch let decodingError as DecodingError {
+                print("🎬 YouTube API JSON decode error: \(decodingError)")
+                throw YouTubeError.networkError(decodingError)
+            } catch {
+                print("🎬 YouTube API network error: \(error.localizedDescription)")
+                throw YouTubeError.networkError(error)
+            }
         }
+        
+        return allVideos
     }
 
     // MARK: - Check Video Embeddability

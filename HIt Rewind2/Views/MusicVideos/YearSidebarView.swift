@@ -11,7 +11,7 @@ struct YearSidebarView: View {
     let years: [Int]
     @Binding var selectedYear: Int?
     let onYearSelected: (Int) -> Void
-    
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 2) {
@@ -35,7 +35,7 @@ struct YearRowView: View {
     let year: Int
     let isSelected: Bool
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: onTap) {
             HStack {
@@ -43,9 +43,9 @@ struct YearRowView: View {
                     .font(.custom(AppFont.ticketingName(), size: 24))
                     .fontWeight(isSelected ? .bold : .medium)
                     .foregroundColor(isSelected ? .black : .hitRewindPrimaryText)
-                
+
                 Spacer()
-                
+
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.black)

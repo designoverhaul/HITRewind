@@ -25,9 +25,14 @@ struct YouTubeConfig {
     static let baseURL = "https://www.googleapis.com/youtube/v3"
 }
 
+// MARK: - Superwall Configuration
+struct SuperwallConfig {
+    static let apiKey = "pk_AM59bLbkjLlzMlLOJWEWn"
+}
+
 // MARK: - App Configuration
 struct AppConfig {
     static let appName = "Hit Rewind"
     static let version = "2.0"
-    static let useCloudKit = false
+    static let useCloudKit = true
 }

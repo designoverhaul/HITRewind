@@ -6,11 +6,24 @@
 //
 
 import SwiftUI
+import SuperwallKit
 
 struct EpicShowsView: View {
     @StateObject private var airtableService = AirtableService()
+    @StateObject private var youtubeService = YouTubeService()
+    @ObservedObject private var paywallService = PaywallService.shared
     @State private var lastDataLoadDate: Date?
-    
+
+    // Cached shuffled data for performance
+    @State private var cachedRandomConcerts: [Concert] = []
+    @State private var cachedSortedLegendaryCategories: [LegendaryCategory] = []
+
+    // Cached YouTube data for batch loading
+    @State private var cachedVideoData: [String: YouTubeVideo] = [:]
+
+    // Navigation state
+    @State private var navigationDestination: SingleVideoView?
+
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -97,7 +110,7 @@ struct EpicShowsView: View {
     // MARK: - Epic Shows Content
     private var epicShowsContent: some View {
         LazyVStack(alignment: .leading, spacing: sectionSpacing) {
-            let uniqueRandomConcerts = Array(randomConcerts.prefix(sortedLegendaryCategories.count))
+            let uniqueRandomConcerts = Array(cachedRandomConcerts.prefix(cachedSortedLegendaryCategories.count))
             
             // Full-width, single banner (no scrolling row)
             if let bannerConcert = uniqueRandomConcerts.first {
@@ -105,10 +118,10 @@ struct EpicShowsView: View {
             }
             
             // Dynamic Legendary categories from Videos table (Last Dance always last)
-            ForEach(Array(sortedLegendaryCategories.enumerated()), id: \.element.id) { index, category in
+            ForEach(Array(cachedSortedLegendaryCategories.enumerated()), id: \.element.id) { index, category in
                 legendaryCategorySection(category: category)
                 // Insert another unique banner between sections (but not after the last section)
-                if index < sortedLegendaryCategories.count - 1,
+                if index < cachedSortedLegendaryCategories.count - 1,
                    index + 1 < uniqueRandomConcerts.count {
                     singleConcertBanner(concert: uniqueRandomConcerts[index + 1])
                 }
@@ -139,20 +152,36 @@ struct EpicShowsView: View {
                 HStack(spacing: videoSpacing) {
                     ForEach(shows, id: \.id) { show in
                         if let videoId = extractYouTubeVideoID(from: show.fields.youtubeUrl) {
-                            NavigationLink(destination: SingleVideoView(
-                                videoId: videoId,
-                                videoTitle: show.fields.title,
-                                artistName: show.fields.artist,
-                                year: "\(show.fields.year)"
-                            )) {
-                                LegendaryShowThumbnailView(show: show, videoId: videoId, showDuration: true, showHeart: true)
+                            Button(action: {
+                                handleVideoTap(show: show, videoId: videoId)
+                            }) {
+                                LegendaryShowThumbnailView(
+                                    show: show,
+                                    videoId: videoId,
+                                    showDuration: true,
+                                    showHeart: true,
+                                    cachedVideoData: cachedVideoData[videoId]
+                                )
                             }
+                            .buttonStyle(.plain)
                             .frame(width: videoThumbnailWidth)
                         }
                     }
                 }
                 .padding(.horizontal, contentPadding)
             }
+            .background(
+                NavigationLink(
+                    destination: navigationDestination,
+                    isActive: Binding(
+                        get: { navigationDestination != nil },
+                        set: { if !$0 { navigationDestination = nil } }
+                    )
+                ) {
+                    EmptyView()
+                }
+                .hidden()
+            )
         }
     }
     
@@ -296,7 +325,34 @@ struct EpicShowsView: View {
     }
     
     // MARK: - Helper Methods
-    
+
+    private func handleVideoTap(show: LegendaryShow, videoId: String) {
+        let videoDestination = SingleVideoView(
+            youtubeURL: show.fields.youtubeUrl,
+            videoTitle: show.fields.title,
+            artistName: show.fields.artist,
+            year: "\(show.fields.year)"
+        )
+
+        // Check if video is locked
+        if paywallService.isVideoLocked(videoId) {
+            print("🔒 Video \(videoId) is locked, presenting paywall")
+
+            // Use Superwall's register method with closure
+            // The closure ONLY executes if user has subscription
+            Task { @MainActor in
+                await Superwall.shared.register(placement: "MainPlacement") {
+                    print("✅ User has access, navigating to video")
+                    self.navigationDestination = videoDestination
+                }
+            }
+        } else {
+            // Video is unlocked, navigate directly
+            print("🔓 Video \(videoId) is unlocked, navigating")
+            navigationDestination = videoDestination
+        }
+    }
+
     private func loadEpicShowsDataIfNeeded() async {
         // Check if we need to reload data (once per day)
         let now = Date()
@@ -314,20 +370,122 @@ struct EpicShowsView: View {
     
     private func loadEpicShowsData() async {
         print("🎬 Loading fresh Epic Shows data...")
-        async let categoriesTask = airtableService.fetchLegendaryCategoriesFromVideos()
-        async let concertsTask = airtableService.fetchConcerts()
-        await categoriesTask
-        await concertsTask
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask {
+                await self.airtableService.fetchLegendaryCategoriesFromVideos()
+            }
+            group.addTask {
+                await self.airtableService.fetchConcerts()
+            }
+        }
         print("🎬 Loaded \(airtableService.legendaryCategories.count) legendary categories and \(airtableService.concerts.count) concerts")
+        
+        // Update cached shuffled data
+        await updateCachedData()
+    }
+    
+    private func updateCachedData() async {
+        await MainActor.run {
+            cachedRandomConcerts = airtableService.concerts.shuffled()
+            
+            let categories = airtableService.legendaryCategories
+            var otherCategories = categories.filter { $0.name != "Last Dance" }
+            let lastDanceCategory = categories.first { $0.name == "Last Dance" }
+            
+            // Sort other categories alphabetically
+            otherCategories.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            
+            // Add "Last Dance" at the end if it exists
+            if let lastDance = lastDanceCategory {
+                otherCategories.append(lastDance)
+            }
+            
+            cachedSortedLegendaryCategories = otherCategories
+        }
+        
+        // Batch load YouTube data for all videos
+        await loadYouTubeBatchData()
+    }
+    
+    private func loadYouTubeBatchData() async {
+        // Emergency disable: Skip YouTube API if persistent network issues
+        // Uncomment this line if YouTube API keeps failing:
+        // return
+        
+        // Collect all video IDs from legendary shows (max 8 per category)
+        // Epic Shows displays 6 categories × 8 videos = 48 videos max
+        // This fits perfectly in YouTube's 50-video batch limit!
+        var allVideoIds: [String] = []
+        
+        for category in cachedSortedLegendaryCategories {
+            // Take first 8 shuffled shows per category (matching UI display)
+            let shows = Array(category.shows.shuffled().prefix(8))
+            for show in shows {
+                if let videoId = extractYouTubeVideoID(from: show.fields.youtubeUrl) {
+                    allVideoIds.append(videoId)
+                }
+            }
+        }
+        
+        // Only load if we have video IDs and cache is empty
+        guard !allVideoIds.isEmpty else { return }
+        
+        // Retry logic for network failures
+        let maxRetries = 2
+        var lastError: Error?
+        
+        for attempt in 1...maxRetries {
+            do {
+                print("🎬 Batch loading YouTube data for \(allVideoIds.count) videos (≤48, single API call) - attempt \(attempt)...")
+                let videoData = try await youtubeService.getBatchVideoInfo(videoIds: allVideoIds)
+                
+                await MainActor.run {
+                    cachedVideoData = videoData
+                    print("🎬 Successfully cached YouTube data for \(videoData.count) videos in single batch")
+                }
+                return // Success - exit retry loop
+                
+            } catch {
+                lastError = error
+                let errorDesc = error.localizedDescription
+                
+                // Check if this is a retryable network error
+                if errorDesc.contains("network connection was lost") || 
+                   errorDesc.contains("cannot parse response") ||
+                   errorDesc.contains("timed out") {
+                    
+                    if attempt < maxRetries {
+                        print("🎬 Network error (attempt \(attempt)/\(maxRetries)): \(errorDesc)")
+                        print("🎬 Retrying YouTube batch load in 2 seconds...")
+                        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 second delay
+                        continue
+                    }
+                }
+                
+                // Non-retryable error or max retries reached
+                break
+            }
+        }
+        
+        // All retries failed
+        if let error = lastError {
+            print("🎬 Failed to batch load YouTube data after \(maxRetries) attempts: \(error.localizedDescription)")
+        }
+        print("🎬 Epic Shows will display without video durations")
+        // Continue without YouTube data - thumbnails will still work with Airtable data
     }
 }
 
 
 struct SettingsView: View {
+    var shouldRestartOnboarding: Binding<Bool>?
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @StateObject private var authService = AuthenticationService.shared
     @StateObject private var favoritesService = FavoritesService.shared
+    @EnvironmentObject private var reviewService: ReviewRequestService
     @State private var showingCopyrightAlert = false
     @State private var showingContactSheet = false
+    @State private var showingDeleteAccountAlert = false
     
     var body: some View {
         NavigationStack {
@@ -336,7 +494,7 @@ struct SettingsView: View {
                 if authService.isAuthenticated {
                     accountSection
                 }
-                
+
                 // Data & Sync Section
                 dataSection
                 
@@ -345,7 +503,10 @@ struct SettingsView: View {
                 
                 // Support Section
                 supportSection
-                
+
+                // Testing Section (for development)
+                testingSection
+
                 // App Information Section
                 appInfoSection
             }
@@ -359,6 +520,14 @@ struct SettingsView: View {
             Button("OK") { }
         } message: {
             Text(copyrightNotice)
+        }
+        .alert("Delete Account", isPresented: $showingDeleteAccountAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                authService.deleteAccount()
+            }
+        } message: {
+            Text("This will permanently delete your account and all associated data from this device. Your favorites will be cleared and you will be signed out. This action cannot be undone.")
         }
     }
     
@@ -402,9 +571,20 @@ struct SettingsView: View {
                         .foregroundColor(.white)
                 }
             }
+
+            Button(action: {
+                showingDeleteAccountAlert = true
+            }) {
+                HStack {
+                    Image(systemName: "trash")
+                        .foregroundColor(.hitRewindPurple)
+                    Text("Delete Account")
+                        .foregroundColor(.white)
+                }
+            }
         }
     }
-    
+
     // MARK: - Data & Sync Section
     private var dataSection: some View {
         Section("Data & Sync") {
@@ -434,7 +614,7 @@ struct SettingsView: View {
                 .disabled(favoritesService.syncStatus == .syncing)
             } else {
                 Button(action: {
-                    authService.signInWithApple()
+                    NotificationCenter.default.post(name: .showSignInSheet, object: nil)
                 }) {
                     HStack {
                         Image(systemName: "person.badge.plus")
@@ -547,6 +727,27 @@ struct SettingsView: View {
         }
     }
     
+    // MARK: - Testing Section
+    private var testingSection: some View {
+        Section("Testing & Development") {
+            Button(action: {
+                hasCompletedOnboarding = false
+                shouldRestartOnboarding?.wrappedValue = false
+            }) {
+                HStack {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundColor(.hitRewindPurple)
+                    Text("Restart Onboarding")
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.hitRewindSecondaryText)
+                        .font(.caption)
+                }
+            }
+        }
+    }
+
     // MARK: - App Info Section
     private var appInfoSection: some View {
         Section("About") {
@@ -647,13 +848,19 @@ struct LegendaryShowThumbnailView: View {
     let videoId: String
     let showDuration: Bool
     let showHeart: Bool
+    let cachedVideoData: YouTubeVideo?
     
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
     @StateObject private var youtubeService = YouTubeService()
+    @ObservedObject private var paywallService = PaywallService.shared
     @State private var duration: String = ""
     @State private var showingRemoveFavoriteConfirmation = false
-    
+
+    private var displayTitle: String {
+        paywallService.isVideoLocked(videoId) ? "\(show.fields.title) 🔒" : show.fields.title
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Thumbnail with play overlay
@@ -718,26 +925,13 @@ struct LegendaryShowThumbnailView: View {
                     
                     // Heart button (top-right) - only show if showHeart is true
                     if showHeart {
-                        Button(action: {
-                            if authService.isAuthenticated {
-                                if favoritesService.isFavorited(videoId) {
-                                    showingRemoveFavoriteConfirmation = true
-                                } else {
-                                    favoritesService.toggleFavorite(videoId: videoId, title: show.fields.title, artist: show.fields.artist, year: "\(show.fields.year)")
-                                }
-                            } else {
-                                authService.signInWithApple()
-                            }
-                        }) {
-                            Image(systemName: favoritesService.isFavorited(videoId) ? "heart.fill" : "heart")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(favoritesService.isFavorited(videoId) ? .red : .white)
-                                .frame(width: 28, height: 28)
-                                .background(Color.black.opacity(0.7))
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
-                        }
-                        .buttonStyle(.plain)
+                        LegendaryFavoriteButton(
+                            videoId: videoId,
+                            show: show,
+                            showingRemoveConfirmation: $showingRemoveFavoriteConfirmation
+                        )
+                        .environmentObject(authService)
+                        .environmentObject(favoritesService)
                         .padding(.trailing, 4)  // Closer to right edge (reduced from 8)
                         .padding(.top, 4)       // Higher up (reduced from 8)
                     }
@@ -785,7 +979,7 @@ struct LegendaryShowThumbnailView: View {
             }
             
             // Title smaller underneath
-            Text(show.fields.title)
+            Text(displayTitle)
                 .font(.caption)
                 .foregroundColor(.hitRewindSecondaryText)
                 .lineLimit(1)
@@ -793,21 +987,18 @@ struct LegendaryShowThumbnailView: View {
     }
     
     private func loadVideoData() async {
-        // Only load video duration from YouTube API if showDuration is true
+        // Only load video duration from cached data if showDuration is true
         guard showDuration else { return }
         
-        do {
-            let video = try await youtubeService.getVideoInfo(videoId: videoId)
-            if let contentDetails = video.contentDetails {
-                let formattedDuration = youtubeService.formatDuration(contentDetails.duration)
-                await MainActor.run {
-                    duration = formattedDuration
-                }
+        // Use cached data if available, otherwise skip duration
+        if let cachedVideo = cachedVideoData,
+           let contentDetails = cachedVideo.contentDetails {
+            let formattedDuration = youtubeService.formatDuration(contentDetails.duration)
+            await MainActor.run {
+                duration = formattedDuration
             }
-        } catch {
-            // Duration loading failed, but we can continue without it
-            print("Failed to load video info for \(videoId): \(error)")
         }
+        // No fallback to individual API calls - rely on batch loading
     }
 }
 
@@ -839,6 +1030,57 @@ struct TuningIndicatorView: View {
         let maxHeight: CGFloat = 40
         let progress = (sin(animationOffset + Double(index) * 0.5) + 1) / 2
         return baseHeight + (maxHeight - baseHeight) * progress
+    }
+}
+
+// MARK: - Legendary Favorite Button
+struct LegendaryFavoriteButton: View {
+    let videoId: String
+    let show: LegendaryShow
+    @Binding var showingRemoveConfirmation: Bool
+
+    @EnvironmentObject var authService: AuthenticationService
+    @EnvironmentObject var favoritesService: FavoritesService
+
+    @State private var isFavorited: Bool = false
+
+    var body: some View {
+        Button(action: {
+            print("🎪 Legendary favorite button tapped for: \(show.fields.title)")
+            if authService.isAuthenticated {
+                print("🎪 User authenticated, current isFavorited: \(isFavorited)")
+                if isFavorited {
+                    print("🎪 Showing remove confirmation")
+                    showingRemoveConfirmation = true
+                } else {
+                    print("🎪 Adding to favorites...")
+                    favoritesService.toggleFavorite(videoId: videoId, title: show.fields.title, artist: show.fields.artist, year: "\(show.fields.year)")
+                    // Update local state immediately
+                    isFavorited = true
+                    print("🎪 Local state set to favorited")
+                }
+            } else {
+                print("🎪 User not authenticated, showing sign-in sheet")
+                NotificationCenter.default.post(name: .showSignInSheet, object: nil)
+            }
+        }) {
+            Image(systemName: isFavorited ? "heart.fill" : "heart")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(isFavorited ? .red : .white)
+                .frame(width: 28, height: 28)
+                .background(Color.black.opacity(0.7))
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+        }
+        .buttonStyle(.plain)
+        .onAppear {
+            // Initialize the state when the view appears
+            isFavorited = favoritesService.isFavorited(videoId)
+        }
+        .onReceive(favoritesService.objectWillChange) { _ in
+            // Update state when favorites change
+            isFavorited = favoritesService.isFavorited(videoId)
+        }
     }
 }
 

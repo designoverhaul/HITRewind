@@ -30,11 +30,17 @@ struct VideoThumbnailView: View {
     @StateObject private var youtubeService = YouTubeService()
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
+    @ObservedObject private var paywallService = PaywallService.shared
     @State private var thumbnailImage: Image?
     @State private var duration: String = ""
+    @State private var viewCount: String = ""
     @State private var isLoading = true
     @State private var showingRemoveFavoriteConfirmation = false
     @State private var heartBounceEffect = false
+
+    private var displayTitle: String {
+        paywallService.isVideoLocked(videoId) ? "\(title) 🔒" : title
+    }
     
     var body: some View {
         // NavigationLink version - no button wrapper to avoid gesture conflicts
@@ -76,10 +82,10 @@ struct VideoThumbnailView: View {
                                 ProgressView()
                                     .tint(.hitRewindPurple)
                             } else {
-                                // Fallback icon
-                                Image(systemName: "play.rectangle.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.hitRewindSecondaryText)
+                                // Custom fallback image
+                                Image("missing")
+                                    .resizable()
+                                    .scaledToFill()
                             }
                         }
                 }
@@ -96,31 +102,16 @@ struct VideoThumbnailView: View {
                     Spacer()
                     
                     // Heart button (top-right)
-                    Button(action: {
-                        if authService.isAuthenticated {
-                            if favoritesService.isFavorited(videoId) {
-                                // Show confirmation for removing from favorites
-                                showingRemoveFavoriteConfirmation = true
-                            } else {
-                                // Add to favorites immediately
-                                favoritesService.toggleFavorite(videoId: videoId, title: title, artist: artist, year: year)
-                                // Trigger bounce animation
-                                heartBounceEffect = true
-                            }
-                        } else {
-                            authService.signInWithApple()
-                        }
-                    }) {
-                        Image(systemName: favoritesService.isFavorited(videoId) ? "heart.fill" : "heart")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(favoritesService.isFavorited(videoId) ? .red : .white)
-                            .symbolEffect(.bounce, value: heartBounceEffect)
-                            .frame(width: 28, height: 28)
-                            .background(Color.black.opacity(0.7))
-                            .clipShape(Circle())
-                            .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
-                    }
-                    .buttonStyle(.plain)
+                    ThumbnailFavoriteButton(
+                        videoId: videoId,
+                        title: title,
+                        artist: artist,
+                        year: year,
+                        bounceEffect: $heartBounceEffect,
+                        showingRemoveConfirmation: $showingRemoveFavoriteConfirmation
+                    )
+                    .environmentObject(authService)
+                    .environmentObject(favoritesService)
                     .padding(.trailing, 8)
                     .padding(.top, 8)
                 }
@@ -172,43 +163,72 @@ struct VideoThumbnailView: View {
             if UIDevice.current.userInterfaceIdiom == .pad {
                 // iPad: Horizontal layout
                 HStack(alignment: .top) {
-                    Text(title)
+                    Text(displayTitle)
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.hitRewindPrimaryText)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                    
+
                     Spacer()
-                    
-                    // Show artist name on the right instead of year (since all videos in a year feed are the same year)
-                    if shouldShowArtistName && !hideArtistAndYear && !hideArtistName {
-                        Text(artist)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.hitRewindPurple)
-                            .lineLimit(1)
+
+                    // Show year when we're hiding artist name (artist-specific views), otherwise show artist name
+                    if !hideArtistAndYear {
+                        if hideArtistName {
+                            // Artist-specific view: show year on the right with ticketing font
+                            Text(year)
+                                .font(.custom(AppFont.ticketingName(), size: 15))
+                                .fontWeight(.medium)
+                                .foregroundColor(.hitRewindPurple)
+                                .lineLimit(1)
+                        } else if shouldShowArtistName {
+                            // Normal view: show artist name on the right
+                            Text(artist)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.hitRewindPurple)
+                                .lineLimit(1)
+                        }
                     }
                 }
             } else {
-                // iPhone: Vertical layout
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                // iPhone: Horizontal layout (same as iPad for consistency)
+                HStack(alignment: .top) {
+                    Text(displayTitle)
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.hitRewindPrimaryText)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    if shouldShowArtistName && !hideArtistAndYear && !hideArtistName {
-                        Text(artist)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.hitRewindPurple)
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Spacer()
+
+                    // Show year when we're hiding artist name (artist-specific views), otherwise show artist name
+                    if !hideArtistAndYear {
+                        if hideArtistName {
+                            // Artist-specific view: show year on the right with ticketing font
+                            Text(year)
+                                .font(.custom(AppFont.ticketingName(), size: 15))
+                                .fontWeight(.medium)
+                                .foregroundColor(.hitRewindPurple)
+                                .lineLimit(1)
+                        } else if shouldShowArtistName {
+                            // Normal view: show artist name on the right
+                            Text(artist)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.hitRewindPurple)
+                                .lineLimit(1)
+                        }
                     }
+                }
+                
+                // View count (below artist/year)
+                if !viewCount.isEmpty {
+                    Text(viewCount)
+                        .font(.caption2)
+                        .foregroundColor(.hitRewindSecondaryText)
+                        .lineLimit(1)
                 }
             }
         }
@@ -288,15 +308,110 @@ struct VideoThumbnailView: View {
         do {
             let video = try await youtubeService.getVideoInfo(videoId: videoId)
             
-            if let contentDetails = video.contentDetails {
-                let formattedDuration = youtubeService.formatDuration(contentDetails.duration)
-                await MainActor.run {
+            await MainActor.run {
+                // Duration
+                if let contentDetails = video.contentDetails {
+                    let formattedDuration = youtubeService.formatDuration(contentDetails.duration)
                     duration = formattedDuration
+                }
+                
+                // View count
+                if let statistics = video.statistics,
+                   let viewCountString = statistics.viewCount,
+                   let viewCountNumber = Int(viewCountString) {
+                    viewCount = formatViewCount(viewCountNumber)
                 }
             }
         } catch {
-            // Duration loading failed, but we can continue without it
+            // Video info loading failed, but we can continue without it
             print("Failed to load video info for \(videoId): \(error)")
+        }
+    }
+    
+    private func formatViewCount(_ count: Int) -> String {
+        let formatter = NumberFormatter()
+        
+        switch count {
+        case 1_000_000...:
+            let millions = Double(count) / 1_000_000.0
+            if millions >= 10 {
+                formatter.maximumFractionDigits = 0
+            } else {
+                formatter.maximumFractionDigits = 1
+            }
+            return "\(formatter.string(from: NSNumber(value: millions)) ?? "0")M views"
+            
+        case 1_000...:
+            let thousands = Double(count) / 1_000.0
+            if thousands >= 10 {
+                formatter.maximumFractionDigits = 0
+            } else {
+                formatter.maximumFractionDigits = 1
+            }
+            return "\(formatter.string(from: NSNumber(value: thousands)) ?? "0")K views"
+            
+        default:
+            formatter.numberStyle = .decimal
+            return "\(formatter.string(from: NSNumber(value: count)) ?? "0") views"
+        }
+    }
+}
+
+// MARK: - Thumbnail Favorite Button
+struct ThumbnailFavoriteButton: View {
+    let videoId: String
+    let title: String
+    let artist: String
+    let year: String
+    @Binding var bounceEffect: Bool
+    @Binding var showingRemoveConfirmation: Bool
+
+    @EnvironmentObject var authService: AuthenticationService
+    @EnvironmentObject var favoritesService: FavoritesService
+
+    @State private var isFavorited: Bool = false
+
+    var body: some View {
+        Button(action: {
+            print("🎥 Thumbnail favorite button tapped for: \(title)")
+            if authService.isAuthenticated {
+                print("🎥 User authenticated, current isFavorited: \(isFavorited)")
+                if isFavorited {
+                    // Show confirmation for removing from favorites
+                    print("🎥 Showing remove confirmation")
+                    showingRemoveConfirmation = true
+                } else {
+                    // Add to favorites immediately
+                    print("🎥 Adding to favorites...")
+                    favoritesService.toggleFavorite(videoId: videoId, title: title, artist: artist, year: year)
+                    // Update local state immediately
+                    isFavorited = true
+                    print("🎥 Local state set to favorited")
+                    // Trigger bounce animation
+                    bounceEffect = true
+                }
+            } else {
+                print("🎥 User not authenticated, showing sign-in sheet")
+                NotificationCenter.default.post(name: .showSignInSheet, object: nil)
+            }
+        }) {
+            Image(systemName: isFavorited ? "heart.fill" : "heart")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(isFavorited ? .red : .white)
+                .symbolEffect(.bounce, value: bounceEffect)
+                .frame(width: 28, height: 28)
+                .background(Color.black.opacity(0.7))
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+        }
+        .buttonStyle(.plain)
+        .onAppear {
+            // Initialize the state when the view appears
+            isFavorited = favoritesService.isFavorited(videoId)
+        }
+        .onReceive(favoritesService.objectWillChange) { _ in
+            // Update state when favorites change
+            isFavorited = favoritesService.isFavorited(videoId)
         }
     }
 }

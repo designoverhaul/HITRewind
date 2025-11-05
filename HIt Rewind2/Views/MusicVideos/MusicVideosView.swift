@@ -6,16 +6,19 @@
 //
 
 import SwiftUI
+import SuperwallKit
 
 struct MusicVideosView: View {
     @StateObject private var airtableService = AirtableService()
     @StateObject private var youtubeService = YouTubeService()
-    
+    @ObservedObject private var paywallService = PaywallService.shared
+
     @State private var selectedYear: Int?
     @State private var selectedPlaylist: Playlist?
     @State private var visibleVideoIndices: [Int] = []
     @State private var showYearSidebar = false
-    
+    @State private var navigationDestination: SingleVideoView?
+
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -179,23 +182,45 @@ struct MusicVideosView: View {
     
     private var videoGrid: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .center, spacing: 16) {
                 Text("New Music Videos \(String(selectedYear ?? 2025))")
                     .font(.custom(AppFont.ticketingName(), size: 28))
                     .fontWeight(.bold)
                     .foregroundColor(.hitRewindPrimaryText)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
                     .padding(.horizontal, gridPadding)
+
+                // Year selector button (iPhone only - iPad has permanent sidebar)
+                if UIDevice.current.userInterfaceIdiom != .pad {
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showYearSidebar.toggle()
+                            }
+                        }) {
+                            Text("Change Year")
+                                .font(.custom(AppFont.ticketingName(), size: 16))
+                                .foregroundColor(.hitRewindPurple)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.hitRewindPurple, lineWidth: 1.5)
+                                )
+                        }
+                        Spacer()
+                    }
+                }
             }
             .padding(.top, gridPadding)
             
             LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
                 ForEach(visibleVideos) { item in
-                    NavigationLink(destination: SingleVideoView(
-                        videoId: item.id,
-                        videoTitle: item.title,
-                        artistName: item.artist,
-                        year: item.year
-                    )) {
+                    Button(action: {
+                        handleVideoTap(item: item)
+                    }) {
                         VideoThumbnailView(
                             videoId: item.id,
                             title: item.title,
@@ -204,10 +229,23 @@ struct MusicVideosView: View {
                             onTap: {}
                         )
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .id(selectedPlaylist?.id)
             .padding(gridPadding)
+            .background(
+                NavigationLink(
+                    destination: navigationDestination,
+                    isActive: Binding(
+                        get: { navigationDestination != nil },
+                        set: { if !$0 { navigationDestination = nil } }
+                    )
+                ) {
+                    EmptyView()
+                }
+                .hidden()
+            )
         }
     }
     
@@ -248,6 +286,33 @@ struct MusicVideosView: View {
         handleYearSelection(firstYear)
     }
     
+    private func handleVideoTap(item: VisibleVideo) {
+        let videoDestination = SingleVideoView(
+            youtubeURL: item.originalURL,
+            videoTitle: item.title,
+            artistName: item.artist,
+            year: item.year
+        )
+
+        // Check if video is locked
+        if paywallService.isVideoLocked(item.id) {
+            print("🔒 Video \(item.id) is locked, presenting paywall")
+
+            // Use Superwall's register method with closure
+            // The closure ONLY executes if user has subscription
+            Task { @MainActor in
+                await Superwall.shared.register(placement: "MainPlacement") {
+                    print("✅ User has access, navigating to video")
+                    self.navigationDestination = videoDestination
+                }
+            }
+        } else {
+            // Video is unlocked, navigate directly
+            print("🔓 Video \(item.id) is unlocked, navigating")
+            navigationDestination = videoDestination
+        }
+    }
+
     private func handleYearSelection(_ year: Int) {
         print("📅 Year selected: \(String(year))")
         selectedYear = year
@@ -270,7 +335,8 @@ struct MusicVideosView: View {
 
 // MARK: - Visible Video Model
 private struct VisibleVideo: Identifiable {
-    let id: String   // YouTube videoId
+    let id: String        // YouTube videoId (for VideoThumbnailView compatibility)
+    let originalURL: String  // Full YouTube URL with timestamps
     let title: String
     let artist: String
     let year: String
@@ -285,7 +351,7 @@ private extension MusicVideosView {
                let videoId = extractYouTubeVideoID(from: url) {
                 let title = playlist.fields.videoTitles?[safe: index] ?? "Unknown Title"
                 let artist = playlist.fields.artistNames?[safe: index] ?? "Unknown Artist"
-                result.append(VisibleVideo(id: videoId, title: title, artist: artist, year: String(playlist.fields.year)))
+                result.append(VisibleVideo(id: videoId, originalURL: url, title: title, artist: artist, year: String(playlist.fields.year)))
             }
         }
         return result

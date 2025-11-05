@@ -1,6 +1,24 @@
 {
-  "originHash" : "3c8ab2275141eb35fec179e8227d28d31f75270b4632a95936f4929dd8dc92bf",
+  "originHash" : "b6316d2d806121b4b0b03fd40fb76667fe88fd3152d526e8a3ff2622bf936b75",
   "pins" : [
+    {
+      "identity" : "superscript-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/superwall/Superscript-iOS",
+      "state" : {
+        "revision" : "59227a3450de9b06857986bc317be387bca3ed4b",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "superwall-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/superwall/Superwall-iOS",
+      "state" : {
+        "revision" : "8f9c4879f43bf46e6fcb0d378b8d32465d7653ff",
+        "version" : "4.8.3"
+      }
+    },
     {
       "identity" : "youtube-ios-player-helper",
       "kind" : "remoteSourceControl",

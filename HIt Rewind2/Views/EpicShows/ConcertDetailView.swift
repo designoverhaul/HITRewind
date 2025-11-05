@@ -6,17 +6,20 @@
 //
 
 import SwiftUI
+import SuperwallKit
 
 struct ConcertDetailView: View {
     let concert: Concert
-    
+
     @StateObject private var airtableService = AirtableService()
     @StateObject private var favoritesService = FavoritesService.shared
+    @ObservedObject private var paywallService = PaywallService.shared
     @State private var concertVideos: [ConcertVideo] = []
     @State private var isLoadingVideos = true
     @State private var errorMessage: String?
     @State private var isDescriptionExpanded = false
-    
+    @State private var navigationDestination: SingleVideoView?
+
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -283,12 +286,9 @@ struct ConcertDetailView: View {
             ForEach(Array(concertVideos.enumerated()), id: \.offset) { index, video in
                 let videoId = extractYouTubeVideoID(from: video.fields.youtubeUrl)
                 if videoId != nil {
-                    NavigationLink(destination: SingleVideoView(
-                        videoId: videoId!,
-                        videoTitle: video.fields.videoTitle,
-                        artistName: concert.fields.artistName,
-                        year: "\(concert.fields.eventYear)"
-                    )) {
+                    Button(action: {
+                        handleVideoTap(video: video, videoId: videoId!)
+                    }) {
                         VideoThumbnailView(
                             videoId: videoId!,
                             title: video.fields.videoTitle,
@@ -303,6 +303,18 @@ struct ConcertDetailView: View {
             }
         }
         .padding(.horizontal, contentPadding)
+        .background(
+            NavigationLink(
+                destination: navigationDestination,
+                isActive: Binding(
+                    get: { navigationDestination != nil },
+                    set: { if !$0 { navigationDestination = nil } }
+                )
+            ) {
+                EmptyView()
+            }
+            .hidden()
+        )
     }
     
     private var loadingView: some View {
@@ -432,7 +444,34 @@ struct ConcertDetailView: View {
     }
     
     // MARK: - Helper Methods
-    
+
+    private func handleVideoTap(video: ConcertVideo, videoId: String) {
+        let videoDestination = SingleVideoView(
+            youtubeURL: video.fields.youtubeUrl,
+            videoTitle: video.fields.videoTitle,
+            artistName: concert.fields.artistName,
+            year: "\(concert.fields.eventYear)"
+        )
+
+        // Check if video is locked
+        if paywallService.isVideoLocked(videoId) {
+            print("🔒 Video \(videoId) is locked, presenting paywall")
+
+            // Use Superwall's register method with closure
+            // The closure ONLY executes if user has subscription
+            Task { @MainActor in
+                await Superwall.shared.register(placement: "MainPlacement") {
+                    print("✅ User has access, navigating to video")
+                    self.navigationDestination = videoDestination
+                }
+            }
+        } else {
+            // Video is unlocked, navigate directly
+            print("🔓 Video \(videoId) is unlocked, navigating")
+            navigationDestination = videoDestination
+        }
+    }
+
     private func loadConcertVideos() async {
         isLoadingVideos = true
         errorMessage = nil

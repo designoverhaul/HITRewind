@@ -8,6 +8,7 @@
 import SwiftUI
 import AVFoundation
 import AVKit
+import SuperwallKit
 
 // MARK: - Notification Extensions
 extension Notification.Name {
@@ -20,9 +21,11 @@ extension Notification.Name {
     static let playerStateChanged = Notification.Name("playerStateChanged")
     static let  searchArtist = Notification.Name("searchArtist")
     static let switchToSearch = Notification.Name("switchToSearch")
+    static let showSignInSheet = Notification.Name("showSignInSheet")
 }
 
 struct ContentView: View {
+    @Binding var shouldRestartOnboarding: Bool
     @State private var heartAnimationTrigger = false
     @State private var selectedTab = 0
     @State private var previousTab = 0
@@ -34,6 +37,12 @@ struct ContentView: View {
     @State private var isVideoPlaying = false
     @State private var navigateToSearch = false
     @State private var searchArtistName = ""
+    @State private var showingSignInSheet = false
+    @State private var isLandscape = false
+
+    // Size class detection for landscape mode
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.verticalSizeClass) var verticalSizeClass
     
     private func videoInfoSection(for videoInfo: (id: String, title: String, artist: String, year: String)) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -53,50 +62,21 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                Button(action: {
-                    // Switch to search tab (index 5) and set search text
-                    selectedTab = 5
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        NotificationCenter.default.post(
-                            name: .searchArtist,
-                            object: nil,
-                            userInfo: ["artistName": videoInfo.artist]
-                        )
-                    }
-                }) {
-                    HStack(spacing: 4) {
-                        Text(videoInfo.artist)
-                            .font(.subheadline)
-                            .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
-                            .lineLimit(1)
-                        
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
-                    }
-                }
+                Text(videoInfo.artist)
+                    .font(.subheadline)
+                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
+                    .lineLimit(1)
             }
         }
+        .padding(.horizontal, 16)
     }
     
     private func controlButtonsSection(for videoInfo: (id: String, title: String, artist: String, year: String)) -> some View {
         HStack(spacing: 16) {
             Spacer(minLength: 0)
-            Button(action: {
-                if authService.isAuthenticated {
-                    favoritesService.toggleFavorite(videoId: videoInfo.id, title: videoInfo.title, artist: videoInfo.artist, year: videoInfo.year)
-                } else {
-                    authService.signInWithApple()
-                }
-            }) {
-                Image(systemName: favoritesService.isFavorited(videoInfo.id) ? "heart.fill" : "heart")
-                    .font(.system(size: 20))
-                    .foregroundColor(favoritesService.isFavorited(videoInfo.id) ? .red : Color(red: 0.65, green: 0.53, blue: 0.99))
-                    .frame(width: 60, height: 60)
-                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-            }
+            FavoriteButton(videoInfo: videoInfo)
+                .environmentObject(authService)
+                .environmentObject(favoritesService)
 
             Button(action: {
                 NotificationCenter.default.post(name: .playerSkipBackward, object: nil)
@@ -152,20 +132,26 @@ struct ContentView: View {
     
     private var videoPlayerControlsOverlay: some View {
         Group {
-            if showingVideoPlayer, let videoInfo = currentVideoInfo {
+            let shouldShow = showingVideoPlayer && (currentVideoInfo != nil) && !isLandscape
+            if shouldShow {
                 VStack {
                     Spacer()
-                    
+
                     VStack(spacing: 14) {
-                        videoInfoSection(for: videoInfo)
-                        controlButtonsSection(for: videoInfo)
+                        if let videoInfo = currentVideoInfo {
+                            videoInfoSection(for: videoInfo)
+                            controlButtonsSection(for: videoInfo)
+                        }
                     }
                     .padding(.horizontal, 12)
-                    
+
                     Color.clear
                         .frame(height: 80)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onAppear {
+                    print("🎬 Showing video player controls overlay for: \(currentVideoInfo?.title ?? "unknown")")
+                }
             }
         }
     }
@@ -206,16 +192,22 @@ struct ContentView: View {
                     Text("Favorites")
                 }
                 .tag(4)
-            
-            SearchView()
+
+            SettingsView(shouldRestartOnboarding: $shouldRestartOnboarding)
                 .tabItem {
-                    Image(systemName: "magnifyingglass")
-                    Text("Search")
+                    Image(systemName: "gearshape.fill")
+                    Text("Settings")
                 }
                 .tag(5)
         }
         .overlay(videoPlayerControlsOverlay)
         .accentColor(Color.hitRewindPurple)
+        .onAppear {
+            detectOrientation()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+            detectOrientation()
+        }
         .onChange(of: selectedTab) { oldValue, newValue in
             if newValue == 2 {
                 // AirPlay tab tapped - reset to previous tab immediately and trigger AirPlay picker
@@ -241,6 +233,7 @@ struct ContentView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .videoPlayerDismissed)) { _ in
+            print("🎬 Video player dismissed, hiding overlay")
             showingVideoPlayer = false
             currentVideoInfo = nil
             isVideoPlaying = false
@@ -252,7 +245,13 @@ struct ContentView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToSearch)) { _ in
-            selectedTab = 5
+            // Search is now only accessible through header navigation
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showSignInSheet)) { _ in
+            showingSignInSheet = true
+        }
+        .sheet(isPresented: $showingSignInSheet) {
+            SignInSheetView()
         }
     }
     
@@ -266,12 +265,72 @@ struct ContentView: View {
             heartAnimationTrigger = false
         }
     }
+    
+    private func detectOrientation() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
+        let orientation = windowScene.interfaceOrientation
+        let newLandscapeState = orientation.isLandscape
+        
+        if newLandscapeState != isLandscape {
+            withAnimation {
+                isLandscape = newLandscapeState
+            }
+            print("🎬 Orientation changed to: \(isLandscape ? "landscape" : "portrait")")
+        }
+    }
+    
+}
+
+// MARK: - Favorite Button
+struct FavoriteButton: View {
+    let videoInfo: (id: String, title: String, artist: String, year: String)
+    @EnvironmentObject var authService: AuthenticationService
+    @EnvironmentObject var favoritesService: FavoritesService
+
+    @State private var isFavorited: Bool = false
+
+    var body: some View {
+        Button(action: {
+            print("🎬 Favorite button tapped for video: \(videoInfo.title)")
+            if authService.isAuthenticated {
+                print("🎬 User authenticated, toggling favorite...")
+                favoritesService.toggleFavorite(videoId: videoInfo.id, title: videoInfo.title, artist: videoInfo.artist, year: videoInfo.year)
+                // Update local state immediately for better UX
+                isFavorited.toggle()
+                print("🎬 Local state updated to: \(isFavorited)")
+            } else {
+                print("🎬 User not authenticated, showing sign-in sheet")
+                // Show sign-in sheet instead of direct sign-in
+                NotificationCenter.default.post(name: .showSignInSheet, object: nil)
+            }
+        }) {
+            Image(systemName: isFavorited ? "heart.fill" : "heart")
+                .font(.system(size: 20))
+                .foregroundColor(isFavorited ? .red : Color(red: 0.65, green: 0.53, blue: 0.99))
+                .frame(width: 60, height: 60)
+                .background(Color(red: 0.06, green: 0.02, blue: 0.18))
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+        }
+        .onAppear {
+            // Initialize the state when the view appears
+            let currentState = favoritesService.isFavorited(videoInfo.id)
+            isFavorited = currentState
+            print("🎬 FavoriteButton appeared for \(videoInfo.title), isFavorited: \(currentState)")
+        }
+        .onReceive(favoritesService.objectWillChange) { _ in
+            // Update state when favorites change
+            let newState = favoritesService.isFavorited(videoInfo.id)
+            print("🎬 Favorite state changed for \(videoInfo.title), new state: \(newState)")
+            isFavorited = newState
+        }
+    }
 }
 
 // MARK: - Animated Heart Tab Icon
 struct AnimatedHeartTabIcon: View {
     let animationTrigger: Bool
-    
+
     var body: some View {
         Image(systemName: "heart.fill")
             .scaleEffect(animationTrigger ? 1.3 : 1.0)
@@ -298,15 +357,17 @@ enum FavoritesSortOption: String, CaseIterable, Identifiable {
 struct FavoritesView: View {
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
+    @StateObject private var paywallService = PaywallService.shared
     @State private var sortOption: FavoritesSortOption = .dateAdded
     @State private var showingSortOptions = false
-    
+    @State private var videoToNavigate: SingleVideoView?
+
     // Simplified 2-column grid
     private let gridColumns = [
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
     ]
-    
+
     private let gridSpacing: CGFloat = 16
     
     private var sortedFavorites: [FavoriteVideo] {
@@ -517,12 +578,9 @@ struct FavoritesView: View {
         ScrollView {
             LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
                 ForEach(sortedFavorites) { favorite in
-                    NavigationLink(destination: SingleVideoView(
-                        videoId: favorite.videoId,
-                        videoTitle: favorite.title,
-                        artistName: favorite.artist,
-                        year: favorite.year
-                    )) {
+                    Button(action: {
+                        handleFavoriteVideoTap(favorite: favorite)
+                    }) {
                         VideoThumbnailView(
                             videoId: favorite.videoId,
                             title: favorite.title,
@@ -537,9 +595,50 @@ struct FavoritesView: View {
                 }
             }
             .padding(gridSpacing)
+            .background(
+                NavigationLink(
+                    destination: videoToNavigate,
+                    isActive: Binding(
+                        get: { videoToNavigate != nil },
+                        set: { if !$0 { videoToNavigate = nil } }
+                    )
+                ) {
+                    EmptyView()
+                }
+                .hidden()
+            )
         }
         .refreshable {
             favoritesService.syncWithCloud()
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    private func handleFavoriteVideoTap(favorite: FavoriteVideo) {
+        let videoDestination = SingleVideoView(
+            youtubeURL: "https://www.youtube.com/watch?v=\(favorite.videoId)",
+            videoTitle: favorite.title,
+            artistName: favorite.artist,
+            year: favorite.year
+        )
+
+        // Check if video is locked
+        if paywallService.isVideoLocked(favorite.videoId) {
+            print("🔒 Favorite video \(favorite.videoId) is locked, presenting paywall")
+
+            // Use Superwall's register method with closure
+            // The closure ONLY executes if user has subscription
+            Task { @MainActor in
+                await Superwall.shared.register(placement: "MainPlacement") {
+                    print("✅ User has access, navigating to favorite video")
+                    self.videoToNavigate = videoDestination
+                }
+            }
+        } else {
+            // Video is unlocked, navigate directly
+            print("🔓 Favorite video \(favorite.videoId) is unlocked, navigating")
+            videoToNavigate = videoDestination
         }
     }
 }
@@ -722,26 +821,22 @@ struct AirPlayTabButton: UIViewRepresentable {
 // MARK: - Custom AirPlay Tab Item
 struct AirPlayTabItem: View {
     @StateObject private var airPlayService = AirPlayService.shared
-    
+
     var body: some View {
         VStack(spacing: 2) {
             Image(systemName: "music.note.tv.fill")
                 .font(.system(size: 20))
                 .foregroundColor(airPlayService.isConnected ? Color(hex: "FFF61D") : .primary)
-            
-            if let deviceName = airPlayService.connectedDeviceName, airPlayService.isConnected {
-                Text(deviceName)
-                    .font(.caption2)
-                    .foregroundColor(Color(hex: "FFF61D"))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
+
+            Text("AirPlay")
+                .font(.caption2)
+                .foregroundColor(airPlayService.isConnected ? Color(hex: "FFF61D") : .primary)
         }
     }
 }
 
 
 #Preview {
-    ContentView()
+    ContentView(shouldRestartOnboarding: .constant(false))
         .preferredColorScheme(.dark)
 }
