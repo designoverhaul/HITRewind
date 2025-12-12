@@ -11,14 +11,13 @@ import SuperwallKit
 struct FanCamsView: View {
     @StateObject private var airtableService = AirtableService()
     @StateObject private var youtubeService = YouTubeService()
-    @ObservedObject private var paywallService = PaywallService.shared
 
     @State private var selectedCategory: FanCamCategory?
     @State private var selectedArtist: Playlist?
     @State private var visibleVideoIndices: [Int] = []
     @State private var showCategorySidebar = false
     @State private var currentMode: FanCamMode = .categories
-    @State private var navigationDestination: SingleVideoView?
+    @State private var selectedVideoId: String?
 
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -30,7 +29,7 @@ struct FanCamsView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             if UIDevice.current.userInterfaceIdiom == .pad {
                 // iPad layout with permanent sidebar
                 iPadLayout
@@ -39,7 +38,6 @@ struct FanCamsView: View {
                 iPhoneLayout
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
         .task {
             await airtableService.fetchCategories() // Lazy: no full artist fetch here
         }
@@ -309,12 +307,17 @@ struct FanCamsView: View {
     // MARK: - Fan Cam Videos Grid
     private var fanCamVideosGrid: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .center, spacing: 4) {
                 Text(selectedArtist?.fields.title ?? "Fan Cam Videos")
                     .font(.custom(AppFont.ticketingName(), size: 24))
                     .fontWeight(.bold)
                     .foregroundColor(.hitRewindPrimaryText)
-                    .padding(.horizontal, gridPadding)
+                
+                if let yearRange = videoYearRange {
+                    Text(yearRange)
+                        .font(.system(size: 16))
+                        .foregroundColor(.hitRewindSecondaryText)
+                }
             }
             .padding(.top, gridPadding)
             
@@ -337,18 +340,15 @@ struct FanCamsView: View {
             }
             .id(selectedArtist?.id)
             .padding(gridPadding)
-            .background(
-                NavigationLink(
-                    destination: navigationDestination,
-                    isActive: Binding(
-                        get: { navigationDestination != nil },
-                        set: { if !$0 { navigationDestination = nil } }
-                    )
-                ) {
-                    EmptyView()
+            .navigationDestination(isPresented: Binding(
+                get: { selectedVideoId != nil },
+                set: { if !$0 { selectedVideoId = nil } }
+            )) {
+                if let videoId = selectedVideoId,
+                   let video = visibleVideos.first(where: { $0.id == videoId }) {
+                    createVideoView(from: video)
                 }
-                .hidden()
-            )
+            }
         }
     }
 
@@ -442,33 +442,84 @@ struct FanCamsView: View {
         }
     }
     
+    private var videoYearRange: String? {
+        guard !visibleVideos.isEmpty else { return nil }
+        
+        let years = visibleVideos.compactMap { Int($0.year) }
+        guard !years.isEmpty else { return nil }
+        
+        let minYear = years.min() ?? 0
+        let maxYear = years.max() ?? 0
+        
+        if minYear == maxYear {
+            return "\(minYear)"
+        } else {
+            return "\(minYear)-\(maxYear)"
+        }
+    }
+
+    
     // MARK: - Helper Methods
 
     private func handleVideoTap(item: VisibleVideo) {
-        let videoDestination = SingleVideoView(
-            youtubeURL: item.originalURL,
-            videoTitle: item.title,
-            artistName: item.artist,
-            year: item.year
-        )
+        print("🎥 Fan Cam video \(item.id) tapped")
 
-        // Check if video is locked
-        if paywallService.isVideoLocked(item.id) {
-            print("🔒 Video \(item.id) is locked, presenting paywall")
+        Task { @MainActor in
+            // Check StoreKit directly for active subscription
+            let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
 
-            // Use Superwall's register method with closure
-            // The closure ONLY executes if user has subscription
-            Task { @MainActor in
-                await Superwall.shared.register(placement: "MainPlacement") {
-                    print("✅ User has access, navigating to video")
-                    self.navigationDestination = videoDestination
+            if isSubscribed {
+                // User is subscribed - play video immediately
+                print("✅ User subscribed - playing video")
+                self.selectedVideoId = item.id
+            } else {
+                // User not subscribed - show paywall
+                print("🔒 User not subscribed - showing paywall")
+                Superwall.shared.register(placement: "MainPlacement") {
+                    // After successful purchase, play video
+                    print("✅ Purchase complete - playing video")
+                    self.selectedVideoId = item.id
                 }
             }
-        } else {
-            // Video is unlocked, navigate directly
-            print("🔓 Video \(item.id) is unlocked, navigating")
-            navigationDestination = videoDestination
         }
+    }
+
+    private func createVideoView(from video: VisibleVideo) -> SingleVideoView {
+        // Build playlist context for autoplay
+        let playlistVideos = visibleVideos.map { video in
+            PlaylistVideo(
+                id: video.id,
+                youtubeURL: video.originalURL,
+                title: video.title,
+                artist: video.artist,
+                year: video.year
+            )
+        }
+
+        // Find current video index
+        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == video.id }) else {
+            print("⚠️ Could not find video index for autoplay")
+            return SingleVideoView(
+                youtubeURL: video.originalURL,
+                videoTitle: video.title,
+                artistName: video.artist,
+                year: video.year,
+                playlistContext: nil
+            )
+        }
+
+        let playlistContext = PlaylistContext(
+            videos: playlistVideos,
+            currentIndex: currentIndex
+        )
+
+        return SingleVideoView(
+            youtubeURL: video.originalURL,
+            videoTitle: video.title,
+            artistName: video.artist,
+            year: video.year,
+            playlistContext: playlistContext
+        )
     }
 
     private func handleCategorySelection(_ category: FanCamCategory) {
@@ -567,7 +618,7 @@ struct FanCamsView: View {
 }
 
 // MARK: - Visible Video Model
-private struct VisibleVideo: Identifiable {
+private struct VisibleVideo: Identifiable, Hashable {
     let id: String        // YouTube videoId (for VideoThumbnailView compatibility)
     let originalURL: String  // Full YouTube URL with timestamps
     let title: String

@@ -56,8 +56,8 @@ class PaywallService: ObservableObject {
             print("🎯 Paywall register completed successfully")
 
             // If we get here, paywall was dismissed/completed
-            // Check subscription status after paywall dismissal
-            checkSubscriptionStatus()
+            // Force refresh subscription status after paywall dismissal
+            await refreshSubscriptionStatus()
             return hasProAccess
         } catch {
             print("❌ Error presenting paywall: \(error)")
@@ -69,6 +69,28 @@ class PaywallService: ObservableObject {
             }
             return false
         }
+    }
+
+    /// Force refresh subscription status silently
+    @MainActor
+    func refreshSubscriptionStatus() async {
+        print("🔄 Refreshing subscription status silently...")
+
+        // Give Superwall a moment to update its internal state after purchase
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+
+        // Check the updated status (delegate should have been called if purchase completed)
+        checkSubscriptionStatus()
+        print("✅ Subscription status checked: hasProAccess = \(hasProAccess)")
+    }
+
+    /// Manually restore purchases (call this from settings only)
+    @MainActor
+    func restorePurchases() async throws {
+        print("🔄 Manually restoring purchases...")
+        _ = try await Superwall.shared.restorePurchases()
+        print("✅ Purchases restored successfully")
+        checkSubscriptionStatus()
     }
 
     func checkSubscriptionStatus() {
@@ -93,13 +115,41 @@ class PaywallService: ObservableObject {
 // MARK: - SuperwallDelegate
 extension PaywallService: SuperwallDelegate {
     func subscriptionStatusDidChange(to newValue: SuperwallKit.SubscriptionStatus) {
+        print("🔔 Superwall subscription status changed to: \(newValue)")
         Task { @MainActor in
             switch newValue {
-            case .active(_):
+            case .active(let productId):
+                print("✅ Subscription ACTIVE for product: \(productId)")
                 hasProAccess = true
-            default:
+            case .inactive:
+                print("⚠️ Subscription INACTIVE")
+                hasProAccess = false
+            case .unknown:
+                print("❓ Subscription status UNKNOWN")
                 hasProAccess = false
             }
+            print("📊 hasProAccess is now: \(hasProAccess)")
+        }
+    }
+
+    func paywallWillPresent(withInfo paywallInfo: SuperwallKit.PaywallInfo) {
+        print("🎯 Paywall WILL PRESENT")
+        print("🎯 Paywall name: \(paywallInfo.name)")
+        print("🎯 Current subscription status: \(Superwall.shared.subscriptionStatus)")
+    }
+
+    func paywallDidDismiss(withInfo paywallInfo: SuperwallKit.PaywallInfo) {
+        print("🎯 Paywall DID DISMISS")
+        print("🎯 Paywall name: \(paywallInfo.name)")
+
+        // Check subscription status after dismissal
+        Task { @MainActor in
+            // Small delay to let StoreKit finish processing
+            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+
+            print("🔍 Checking subscription status after paywall dismissal...")
+            checkSubscriptionStatus()
+            print("📊 Final status - hasProAccess: \(hasProAccess), Superwall status: \(Superwall.shared.subscriptionStatus)")
         }
     }
 }

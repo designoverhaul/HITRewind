@@ -825,10 +825,11 @@ class AirtableService: ObservableObject {
     
     /// Fetch Legendary categories from Videos table using multi-select field "LegendaryShows"
     func fetchLegendaryCategoriesFromVideos() async {
+        let timer = PerformanceTimer("Airtable - Fetch Legendary Categories")
         print("🔄 Starting fetchLegendaryCategoriesFromVideos from: \(AirtableConfig.videosUrl)")
         isLoading = true
         errorMessage = nil
-        
+
         do {
             let categories = try await performLegendaryCategoriesFromVideosRequest()
             print("✅ Built \(categories.count) legendary categories from Videos table")
@@ -837,76 +838,82 @@ class AirtableService: ObservableObject {
             errorMessage = error.localizedDescription
             print("❌ Error building legendary categories: \(error)")
         }
-        
+
         isLoading = false
+        timer.end()
     }
     
     /// Fetch Concerts for Epic Shows banners
     func fetchConcerts() async {
+        let timer = PerformanceTimer("Airtable - Fetch Concerts")
         print("🔄 Starting fetchConcerts from: \(AirtableConfig.concertsUrl)")
         isLoading = true
         errorMessage = nil
-        
+
         do {
             let result = try await performConcertsRequest()
             print("✅ Fetched \(result.count) concerts from Airtable")
             concerts = result
-            
+
         } catch {
             errorMessage = error.localizedDescription
             print("❌ Error fetching concerts: \(error)")
         }
-        
+
         isLoading = false
+        timer.end()
     }
     
     /// Fetch Concert Videos for a specific concert using the concert's video IDs
     func fetchConcertVideos(for concert: Concert) async throws -> [ConcertVideo] {
+        let timer = PerformanceTimer("Airtable - Fetch Concert Videos")
         print("🔄 Starting fetchConcertVideos for concert: \(concert.fields.artistName) - \(concert.fields.venueName ?? "Unknown Venue")")
-        
+
         // First check if concert has linked video IDs
         guard let videoIds = concert.fields.concertVideos, !videoIds.isEmpty else {
             print("⚠️ No concert video IDs found for this concert")
+            timer.end()
             return []
         }
-        
+
         print("📋 Found \(videoIds.count) video IDs: \(videoIds)")
-        
+
         // Create filter to get videos by their record IDs
         let videoIdFilters = videoIds.map { "RECORD_ID()='\($0)'" }.joined(separator: ",")
         let filterFormula = "OR(\(videoIdFilters))"
-        
+
         // Use the Concert Videos table instead of Videos table
         let concertVideosUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/Concert%20Videos"
         guard var components = URLComponents(string: concertVideosUrl) else {
             throw PlaylistError.invalidURL
         }
-        
+
         var items = components.queryItems ?? []
         items.append(URLQueryItem(name: "filterByFormula", value: filterFormula))
         items.append(URLQueryItem(name: "pageSize", value: "100"))
         components.queryItems = items
-        
+
         guard let url = components.url else {
             throw PlaylistError.invalidURL
         }
-        
+
         print("🔍 Concert Videos API URL: \(url.absoluteString)")
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(AirtableConfig.apiKey)", forHTTPHeaderField: "Authorization")
-        
+
         let (data, _) = try await session.data(for: request)
-        
+
         if let jsonString = String(data: data, encoding: .utf8) {
             print("📡 Raw Concert Videos Response: \(String(jsonString.prefix(500)))...")
         }
-        
+
         let decoder = JSONDecoder()
         let response = try decoder.decode(ConcertVideoResponse.self, from: data)
-        
+
         print("✅ Fetched \(response.records.count) concert videos")
+        timer.end()
         return response.records
     }
     

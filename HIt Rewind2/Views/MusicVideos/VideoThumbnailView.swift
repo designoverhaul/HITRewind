@@ -30,7 +30,6 @@ struct VideoThumbnailView: View {
     @StateObject private var youtubeService = YouTubeService()
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
-    @ObservedObject private var paywallService = PaywallService.shared
     @State private var thumbnailImage: Image?
     @State private var duration: String = ""
     @State private var viewCount: String = ""
@@ -39,7 +38,7 @@ struct VideoThumbnailView: View {
     @State private var heartBounceEffect = false
 
     private var displayTitle: String {
-        paywallService.isVideoLocked(videoId) ? "\(title) 🔒" : title
+        title
     }
     
     var body: some View {
@@ -96,11 +95,11 @@ struct VideoThumbnailView: View {
             // Play button overlay
             playOverlay
             
-            // Duration badge and heart button
+            // Heart button and duration badge
             VStack {
                 HStack {
                     Spacer()
-                    
+
                     // Heart button (top-right)
                     ThumbnailFavoriteButton(
                         videoId: videoId,
@@ -115,9 +114,9 @@ struct VideoThumbnailView: View {
                     .padding(.trailing, 8)
                     .padding(.top, 8)
                 }
-                
+
                 Spacer()
-                
+
                 // Duration badge (bottom-right)
                 if !duration.isEmpty {
                     HStack {
@@ -161,8 +160,8 @@ struct VideoThumbnailView: View {
     private var videoInfo: some View {
         VStack(alignment: .leading, spacing: 4) {
             if UIDevice.current.userInterfaceIdiom == .pad {
-                // iPad: Horizontal layout
-                HStack(alignment: .top) {
+                // iPad: Vertical layout
+                VStack(alignment: .leading, spacing: 4) {
                     Text(displayTitle)
                         .font(.subheadline)
                         .fontWeight(.medium)
@@ -170,19 +169,17 @@ struct VideoThumbnailView: View {
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
 
-                    Spacer()
-
                     // Show year when we're hiding artist name (artist-specific views), otherwise show artist name
                     if !hideArtistAndYear {
                         if hideArtistName {
-                            // Artist-specific view: show year on the right with ticketing font
+                            // Artist-specific view: show year below title with ticketing font
                             Text(year)
                                 .font(.custom(AppFont.ticketingName(), size: 15))
                                 .fontWeight(.medium)
                                 .foregroundColor(.hitRewindPurple)
                                 .lineLimit(1)
                         } else if shouldShowArtistName {
-                            // Normal view: show artist name on the right
+                            // Normal view: show artist name below title
                             Text(artist)
                                 .font(.subheadline)
                                 .fontWeight(.medium)

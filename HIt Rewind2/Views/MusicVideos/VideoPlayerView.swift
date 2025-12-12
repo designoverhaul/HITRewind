@@ -22,7 +22,9 @@ class YouTubePlayerCoordinator: NSObject, ObservableObject, YTPlayerViewDelegate
     @Published var isPlaying: Bool = false
     @Published var currentTime: Float = 0
     @Published var duration: Float = 0
+    @Published var videoDidEnd: Bool = false
     weak var playerView: YTPlayerView?
+    var onVideoEnd: (() -> Void)?
 
     func playerViewDidBecomeReady(_ playerView: YTPlayerView) {
         self.playerView = playerView
@@ -41,13 +43,20 @@ class YouTubePlayerCoordinator: NSObject, ObservableObject, YTPlayerViewDelegate
     func playerView(_ playerView: YTPlayerView, didChangeTo state: YTPlayerState) {
         DispatchQueue.main.async {
             self.isPlaying = state == .playing
-            
+
             // Notify ContentView of player state change
             NotificationCenter.default.post(
                 name: .playerStateChanged,
                 object: nil,
                 userInfo: ["isPlaying": state == .playing]
             )
+
+            // Detect video end for autoplay
+            if state == .ended {
+                print("🎬 Video ended, triggering autoplay callback")
+                self.videoDidEnd = true
+                self.onVideoEnd?()
+            }
         }
     }
     
@@ -136,7 +145,8 @@ struct SingleVideoView: View {
     let videoTitle: String
     let artistName: String
     let year: String
-    
+    let playlistContext: PlaylistContext? // Optional playlist context for autoplay
+
     // Backward compatibility - extract video ID for other features
     private var videoId: String {
         return extractYouTubeVideoID(from: youtubeURL) ?? ""
@@ -155,6 +165,9 @@ struct SingleVideoView: View {
 
     // YouTube player coordinator
     @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
+
+    // Navigation to next video
+    @State private var nextVideoToPlay: PlaylistVideo?
 
     private var videoHeight: CGFloat {
         let screenWidth = UIScreen.main.bounds.width
@@ -203,25 +216,21 @@ extension SingleVideoView {
                 HStack {
                     // Back button on left
                     Button(action: { dismiss() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Back")
-                                .font(.custom(AppFont.ticketingName(), size: 16))
-                        }
-                        .foregroundColor(.hitRewindPurple)
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.hitRewindPurple)
                     }
-                    
+
                     Spacer()
-                    
+
                     // Logo centered
                     Image("logo")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 28)
-                    
+
                     Spacer()
-                    
+
                     // Search and settings buttons
                     HStack(spacing: 16) {
                         NavigationLink(destination: SearchView()) {
@@ -235,14 +244,14 @@ extension SingleVideoView {
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
                 .background(Color.hitRewindBackground)
-                
+
                 Spacer()
             }
             .zIndex(1)
-            
+
             ZStack {
                 Color.black.ignoresSafeArea()
-                
+
                 VStack(spacing: 16) {
                     // Reduced top spacer to move video up on both devices
                     if UIDevice.current.userInterfaceIdiom == .phone {
@@ -253,23 +262,28 @@ extension SingleVideoView {
                         Spacer()
                             .frame(maxHeight: 80)
                     }
-                    
+
                     // Video player
                     VideoPlayerView(youtubeURL: youtubeURL, coordinator: playerCoordinator)
                         .frame(width: videoWidth, height: videoHeight)
                         .background(Color.black)
-                    
+
                     Spacer()
                 }
             }
+
+            // Hidden navigationDestination for autoplay to next video
+            Color.clear
+                .navigationDestination(item: $nextVideoToPlay) { video in
+                    createNextVideoView(from: video)
+                }
         }
         .onAppear {
             setupVideoPlayer()
         }
         .onDisappear {
-            // Stop video playback immediately
-            playerCoordinator.stopVideo()
-            
+            // Clean up timers and observers
+            // NOTE: We don't stop the video here to allow AirPlay to continue when switching tabs
             timeUpdateTimer?.invalidate()
             timeUpdateTimer = nil
             NotificationCenter.default.removeObserver(self, name: UIScene.didActivateNotification, object: nil)
@@ -277,7 +291,7 @@ extension SingleVideoView {
             NotificationCenter.default.removeObserver(self, name: .playerTogglePlayPause, object: nil)
             NotificationCenter.default.removeObserver(self, name: .playerSkipForward, object: nil)
             NotificationCenter.default.removeObserver(self, name: .playerSkip60Forward, object: nil)
-            
+
             // Notify ContentView that video player is dismissed
             NotificationCenter.default.post(name: .videoPlayerDismissed, object: nil)
         }
@@ -295,6 +309,9 @@ extension SingleVideoView {
     // MARK: - Helper Methods
 
     private func setupVideoPlayer() {
+        // Register this player with the manager, which will stop any previous video
+        VideoPlayerManager.shared.registerPlayer(playerCoordinator)
+
         detectAirPlayState()
         timeUpdateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             playerCoordinator.getCurrentTime()
@@ -329,6 +346,53 @@ extension SingleVideoView {
                 "year": year
             ]
         )
+
+        // Setup autoplay callback if playlist context exists
+        if let context = playlistContext, context.hasNextVideo {
+            playerCoordinator.onVideoEnd = {
+                print("🎬 Autoplay: Current video ended, loading next video")
+                self.playNextVideo()
+            }
+        }
+    }
+
+    private func playNextVideo() {
+        guard let context = playlistContext,
+              let nextVideo = context.nextVideo else {
+            print("🎬 Autoplay: No next video available")
+            return
+        }
+
+        print("🎬 Autoplay: Playing next video - \(nextVideo.title)")
+
+        // Trigger navigation to next video
+        nextVideoToPlay = nextVideo
+    }
+
+    private func createNextVideoView(from video: PlaylistVideo) -> SingleVideoView {
+        // Create playlist context for the next video
+        guard let context = playlistContext else {
+            return SingleVideoView(
+                youtubeURL: video.youtubeURL,
+                videoTitle: video.title,
+                artistName: video.artist,
+                year: video.year,
+                playlistContext: nil
+            )
+        }
+
+        let newContext = PlaylistContext(
+            videos: context.videos,
+            currentIndex: context.currentIndex + 1
+        )
+
+        return SingleVideoView(
+            youtubeURL: video.youtubeURL,
+            videoTitle: video.title,
+            artistName: video.artist,
+            year: video.year,
+            playlistContext: newContext
+        )
     }
 }
 
@@ -336,6 +400,12 @@ extension SingleVideoView {
 // MARK: - Preview
 #Preview {
     NavigationView {
-        SingleVideoView(youtubeURL: "https://www.youtube.com/watch?v=M7lc1UVf-VE", videoTitle: "Sample Video Title", artistName: "Sample Artist", year: "2023")
+        SingleVideoView(
+            youtubeURL: "https://www.youtube.com/watch?v=M7lc1UVf-VE",
+            videoTitle: "Sample Video Title",
+            artistName: "Sample Artist",
+            year: "2023",
+            playlistContext: nil
+        )
     }
 }

@@ -11,25 +11,25 @@ import SuperwallKit
 struct EpicShowsView: View {
     @StateObject private var airtableService = AirtableService()
     @StateObject private var youtubeService = YouTubeService()
-    @ObservedObject private var paywallService = PaywallService.shared
     @State private var lastDataLoadDate: Date?
 
     // Cached shuffled data for performance
     @State private var cachedRandomConcerts: [Concert] = []
     @State private var cachedSortedLegendaryCategories: [LegendaryCategory] = []
+    @State private var cachedShuffledShows: [String: [LegendaryShow]] = [:] // categoryId -> shuffled shows
 
     // Cached YouTube data for batch loading
     @State private var cachedVideoData: [String: YouTubeVideo] = [:]
 
     // Navigation state
-    @State private var navigationDestination: SingleVideoView?
+    @State private var selectedShowInfo: (show: LegendaryShow, videoId: String)?
 
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(alignment: .leading, spacing: 0) {
                 // iPad only: Custom header row (Row 2)
                 if UIDevice.current.userInterfaceIdiom == .pad {
@@ -103,6 +103,14 @@ struct EpicShowsView: View {
             .task {
                 await loadEpicShowsDataIfNeeded()
             }
+            .navigationDestination(isPresented: Binding(
+                get: { selectedShowInfo != nil },
+                set: { if !$0 { selectedShowInfo = nil } }
+            )) {
+                if let showInfo = selectedShowInfo {
+                    createVideoView(from: showInfo.show, videoId: showInfo.videoId)
+                }
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
@@ -140,7 +148,7 @@ struct EpicShowsView: View {
     
     // MARK: - Legendary Category Section (no title above banner, dynamic title shown inline above row)
     private func legendaryCategorySection(category: LegendaryCategory) -> some View {
-        let shows = Array(category.shows.shuffled().prefix(8))
+        let shows = getShuffledShows(for: category)
         return VStack(alignment: .leading, spacing: 12) {
             // Category title only above the row, no extra section title headers
             Text(category.name)
@@ -170,18 +178,6 @@ struct EpicShowsView: View {
                 }
                 .padding(.horizontal, contentPadding)
             }
-            .background(
-                NavigationLink(
-                    destination: navigationDestination,
-                    isActive: Binding(
-                        get: { navigationDestination != nil },
-                        set: { if !$0 { navigationDestination = nil } }
-                    )
-                ) {
-                    EmptyView()
-                }
-                .hidden()
-            )
         }
     }
     
@@ -323,33 +319,100 @@ struct EpicShowsView: View {
             return verticalSizeClass == .regular ? 175 : 162   // 25% larger: 140*1.25=175, 130*1.25=162.5≈162
         }
     }
-    
+
     // MARK: - Helper Methods
 
-    private func handleVideoTap(show: LegendaryShow, videoId: String) {
-        let videoDestination = SingleVideoView(
+    private func getShuffledShows(for category: LegendaryCategory) -> [LegendaryShow] {
+        // Check if we have cached shuffled shows for this category
+        if let cached = cachedShuffledShows[category.id] {
+            return cached
+        }
+
+        // Create and cache shuffled shows
+        let shuffled = Array(category.shows.shuffled().prefix(8))
+        cachedShuffledShows[category.id] = shuffled
+        return shuffled
+    }
+
+    private func createVideoView(from show: LegendaryShow, videoId: String) -> SingleVideoView {
+        // Build playlist context - only from the same category
+        // Find which category this show belongs to
+        guard let category = cachedSortedLegendaryCategories.first(where: { cat in
+            cat.shows.contains(where: { $0.id == show.id })
+        }) else {
+            print("⚠️ Could not find category for show")
+            return SingleVideoView(
+                youtubeURL: show.fields.youtubeUrl,
+                videoTitle: show.fields.title,
+                artistName: show.fields.artist,
+                year: "\(show.fields.year)",
+                playlistContext: nil
+            )
+        }
+
+        // Get the same shuffled shows used in the UI
+        let categoryShows = getShuffledShows(for: category)
+
+        // Build playlist videos
+        let playlistVideos = categoryShows.compactMap { legendaryShow -> PlaylistVideo? in
+            guard let id = extractYouTubeVideoID(from: legendaryShow.fields.youtubeUrl) else {
+                return nil
+            }
+            return PlaylistVideo(
+                id: id,
+                youtubeURL: legendaryShow.fields.youtubeUrl,
+                title: legendaryShow.fields.title,
+                artist: legendaryShow.fields.artist,
+                year: "\(legendaryShow.fields.year)"
+            )
+        }
+
+        // Find current video index
+        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else {
+            print("⚠️ Could not find video index for autoplay")
+            return SingleVideoView(
+                youtubeURL: show.fields.youtubeUrl,
+                videoTitle: show.fields.title,
+                artistName: show.fields.artist,
+                year: "\(show.fields.year)",
+                playlistContext: nil
+            )
+        }
+
+        let playlistContext = PlaylistContext(
+            videos: playlistVideos,
+            currentIndex: currentIndex
+        )
+
+        return SingleVideoView(
             youtubeURL: show.fields.youtubeUrl,
             videoTitle: show.fields.title,
             artistName: show.fields.artist,
-            year: "\(show.fields.year)"
+            year: "\(show.fields.year)",
+            playlistContext: playlistContext
         )
+    }
 
-        // Check if video is locked
-        if paywallService.isVideoLocked(videoId) {
-            print("🔒 Video \(videoId) is locked, presenting paywall")
+    private func handleVideoTap(show: LegendaryShow, videoId: String) {
+        print("🎥 Epic Shows video \(videoId) tapped")
 
-            // Use Superwall's register method with closure
-            // The closure ONLY executes if user has subscription
-            Task { @MainActor in
-                await Superwall.shared.register(placement: "MainPlacement") {
-                    print("✅ User has access, navigating to video")
-                    self.navigationDestination = videoDestination
+        Task { @MainActor in
+            // Check StoreKit directly for active subscription
+            let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
+
+            if isSubscribed {
+                // User is subscribed - play video immediately
+                print("✅ User subscribed - playing video")
+                self.selectedShowInfo = (show, videoId)
+            } else {
+                // User not subscribed - show paywall
+                print("🔒 User not subscribed - showing paywall")
+                Superwall.shared.register(placement: "MainPlacement") {
+                    // After successful purchase, play video
+                    print("✅ Purchase complete - playing video")
+                    self.selectedShowInfo = (show, videoId)
                 }
             }
-        } else {
-            // Video is unlocked, navigate directly
-            print("🔓 Video \(videoId) is unlocked, navigating")
-            navigationDestination = videoDestination
         }
     }
 
@@ -360,63 +423,83 @@ struct EpicShowsView: View {
             let daysSinceLastLoad = Calendar.current.dateComponents([.day], from: lastLoad, to: now).day ?? 0
             if daysSinceLastLoad < 1 {
                 print("🎬 Using cached Epic Shows data (loaded \(lastLoad.formatted(.dateTime)))")
+                print("⏱️ [Epic Shows] Cache hit - no network load needed")
                 return
             }
         }
-        
+
+        print("⏱️ [Epic Shows] Cache miss - starting fresh data load")
+        let totalTimer = PerformanceTimer("Epic Shows - Total Load")
         await loadEpicShowsData()
         lastDataLoadDate = now
+        totalTimer.end()
     }
     
     private func loadEpicShowsData() async {
         print("🎬 Loading fresh Epic Shows data...")
+        let airtableTimer = PerformanceTimer("Epic Shows - Airtable Parallel Fetch")
+
         await withTaskGroup(of: Void.self) { group in
             group.addTask {
+                let timer = PerformanceTimer("Epic Shows - Fetch Legendary Categories")
                 await self.airtableService.fetchLegendaryCategoriesFromVideos()
+                timer.end()
             }
             group.addTask {
+                let timer = PerformanceTimer("Epic Shows - Fetch Concerts")
                 await self.airtableService.fetchConcerts()
+                timer.end()
             }
         }
+
+        airtableTimer.end()
         print("🎬 Loaded \(airtableService.legendaryCategories.count) legendary categories and \(airtableService.concerts.count) concerts")
-        
+
         // Update cached shuffled data
         await updateCachedData()
     }
     
     private func updateCachedData() async {
+        let cacheTimer = PerformanceTimer("Epic Shows - Update Cached Data")
+
         await MainActor.run {
             cachedRandomConcerts = airtableService.concerts.shuffled()
-            
+            cachedShuffledShows = [:] // Clear cached shuffled shows when data is updated
+
             let categories = airtableService.legendaryCategories
             var otherCategories = categories.filter { $0.name != "Last Dance" }
             let lastDanceCategory = categories.first { $0.name == "Last Dance" }
-            
+
             // Sort other categories alphabetically
             otherCategories.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            
+
             // Add "Last Dance" at the end if it exists
             if let lastDance = lastDanceCategory {
                 otherCategories.append(lastDance)
             }
-            
+
             cachedSortedLegendaryCategories = otherCategories
+            print("⏱️ [Epic Shows] Shuffled \(cachedRandomConcerts.count) concerts, sorted \(cachedSortedLegendaryCategories.count) categories")
         }
-        
+
+        cacheTimer.end()
+
         // Batch load YouTube data for all videos
         await loadYouTubeBatchData()
     }
     
     private func loadYouTubeBatchData() async {
+        let youtubeTimer = PerformanceTimer("Epic Shows - YouTube Batch Load (with retries)")
+
         // Emergency disable: Skip YouTube API if persistent network issues
         // Uncomment this line if YouTube API keeps failing:
         // return
-        
+
         // Collect all video IDs from legendary shows (max 8 per category)
         // Epic Shows displays 6 categories × 8 videos = 48 videos max
         // This fits perfectly in YouTube's 50-video batch limit!
         var allVideoIds: [String] = []
-        
+
         for category in cachedSortedLegendaryCategories {
             // Take first 8 shuffled shows per category (matching UI display)
             let shows = Array(category.shows.shuffled().prefix(8))
@@ -426,34 +509,42 @@ struct EpicShowsView: View {
                 }
             }
         }
-        
+
         // Only load if we have video IDs and cache is empty
-        guard !allVideoIds.isEmpty else { return }
-        
+        guard !allVideoIds.isEmpty else {
+            print("⏱️ [Epic Shows] No video IDs to load")
+            return
+        }
+
+        print("⏱️ [Epic Shows] Collected \(allVideoIds.count) video IDs for batch loading")
+
         // Retry logic for network failures
         let maxRetries = 2
         var lastError: Error?
-        
+
         for attempt in 1...maxRetries {
             do {
                 print("🎬 Batch loading YouTube data for \(allVideoIds.count) videos (≤48, single API call) - attempt \(attempt)...")
+                let attemptTimer = PerformanceTimer("Epic Shows - YouTube API Call (attempt \(attempt))")
                 let videoData = try await youtubeService.getBatchVideoInfo(videoIds: allVideoIds)
-                
+                attemptTimer.end()
+
                 await MainActor.run {
                     cachedVideoData = videoData
                     print("🎬 Successfully cached YouTube data for \(videoData.count) videos in single batch")
                 }
+                youtubeTimer.end()
                 return // Success - exit retry loop
-                
+
             } catch {
                 lastError = error
                 let errorDesc = error.localizedDescription
-                
+
                 // Check if this is a retryable network error
-                if errorDesc.contains("network connection was lost") || 
+                if errorDesc.contains("network connection was lost") ||
                    errorDesc.contains("cannot parse response") ||
                    errorDesc.contains("timed out") {
-                    
+
                     if attempt < maxRetries {
                         print("🎬 Network error (attempt \(attempt)/\(maxRetries)): \(errorDesc)")
                         print("🎬 Retrying YouTube batch load in 2 seconds...")
@@ -461,31 +552,42 @@ struct EpicShowsView: View {
                         continue
                     }
                 }
-                
+
                 // Non-retryable error or max retries reached
                 break
             }
         }
-        
+
         // All retries failed
         if let error = lastError {
             print("🎬 Failed to batch load YouTube data after \(maxRetries) attempts: \(error.localizedDescription)")
         }
         print("🎬 Epic Shows will display without video durations")
+        youtubeTimer.end()
         // Continue without YouTube data - thumbnails will still work with Airtable data
     }
 }
 
-
 struct SettingsView: View {
-    var shouldRestartOnboarding: Binding<Bool>?
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
+    @Environment(\.onboardingRestart) private var onboardingRestart
     @StateObject private var authService = AuthenticationService.shared
     @StateObject private var favoritesService = FavoritesService.shared
+    @StateObject private var paywallService = PaywallService.shared // Only for testSubscriberMode
     @EnvironmentObject private var reviewService: ReviewRequestService
     @State private var showingCopyrightAlert = false
     @State private var showingContactSheet = false
     @State private var showingDeleteAccountAlert = false
+    @State private var isRestoringPurchases = false
+    @State private var showingRestoreSuccess = false
+    @State private var subscriptionStatus: SubscriptionStatus = .unknown
+
+    // Check Superwall directly instead of PaywallService
+    private var hasActiveSubscription: Bool {
+        if case .active = subscriptionStatus {
+            return true
+        }
+        return false
+    }
     
     var body: some View {
         NavigationStack {
@@ -497,15 +599,15 @@ struct SettingsView: View {
 
                 // Data & Sync Section
                 dataSection
-                
+
+                // Subscription Section
+                subscriptionSection
+
                 // Legal & Privacy Section
                 legalSection
                 
                 // Support Section
                 supportSection
-
-                // Testing Section (for development)
-                testingSection
 
                 // App Information Section
                 appInfoSection
@@ -528,6 +630,11 @@ struct SettingsView: View {
             }
         } message: {
             Text("This will permanently delete your account and all associated data from this device. Your favorites will be cleared and you will be signed out. This action cannot be undone.")
+        }
+        .alert("Purchases Restored", isPresented: $showingRestoreSuccess) {
+            Button("OK") { }
+        } message: {
+            Text(hasActiveSubscription ? "Your subscription has been restored successfully!" : "No active subscription found. If you previously purchased a subscription, please contact support.")
         }
     }
     
@@ -645,7 +752,48 @@ struct SettingsView: View {
             }
         }
     }
-    
+
+    // MARK: - Subscription Section
+    private var subscriptionSection: some View {
+        Section("Subscription") {
+            // Restore purchases button
+            Button(action: {
+                Task {
+                    isRestoringPurchases = true
+                    do {
+                        _ = try await Superwall.shared.restorePurchases()
+                        isRestoringPurchases = false
+                        // Update local state
+                        subscriptionStatus = Superwall.shared.subscriptionStatus
+                        showingRestoreSuccess = true
+                    } catch {
+                        isRestoringPurchases = false
+                        // The error alert is shown by the system
+                    }
+                }
+            }) {
+                HStack {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundColor(.hitRewindPurple)
+                    Text("Restore Purchases")
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    if isRestoringPurchases {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    }
+                }
+            }
+            .disabled(isRestoringPurchases)
+        }
+        .onAppear {
+            // Update subscription status from Superwall when view appears
+            subscriptionStatus = Superwall.shared.subscriptionStatus
+        }
+    }
+
     // MARK: - Legal Section
     private var legalSection: some View {
         Section("Legal & Privacy") {
@@ -709,30 +857,37 @@ struct SettingsView: View {
                         .font(.caption)
                 }
             }
-            
-            if let url = URL(string: "https://apps.apple.com/app/hit-rewind/id\(Bundle.main.infoDictionary?["CFBundleIdentifier"] ?? "")") {
-                Link(destination: url) {
-                    HStack {
-                        Image(systemName: "star")
-                            .foregroundColor(.hitRewindPurple)
-                        Text("Rate Hit Rewind")
-                            .foregroundColor(.white)
-                        Spacer()
-                        Image(systemName: "arrow.up.right.square")
-                            .foregroundColor(.hitRewindSecondaryText)
-                            .font(.caption)
-                    }
-                }
-            }
         }
     }
     
-    // MARK: - Testing Section
+    // MARK: - Testing Section (Hidden for Production)
+    /*
     private var testingSection: some View {
         Section("Testing & Development") {
+            // Test Subscriber Mode Toggle
+            Toggle(isOn: Binding(
+                get: { paywallService.testSubscriberMode },
+                set: { paywallService.setTestSubscriberMode($0) }
+            )) {
+                HStack {
+                    Image(systemName: paywallService.testSubscriberMode ? "checkmark.seal.fill" : "checkmark.seal")
+                        .foregroundColor(.hitRewindPurple)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Test Subscriber Mode")
+                            .foregroundColor(.white)
+                        Text("Unlock all videos for testing")
+                            .font(.caption)
+                            .foregroundColor(.hitRewindSecondaryText)
+                    }
+                }
+            }
+            .tint(.hitRewindPurple)
+
             Button(action: {
-                hasCompletedOnboarding = false
-                shouldRestartOnboarding?.wrappedValue = false
+                // Update UserDefaults
+                UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+                // Trigger onboarding by updating the environment binding
+                onboardingRestart.wrappedValue = false
             }) {
                 HStack {
                     Image(systemName: "arrow.clockwise")
@@ -747,6 +902,7 @@ struct SettingsView: View {
             }
         }
     }
+    */
 
     // MARK: - App Info Section
     private var appInfoSection: some View {
@@ -853,12 +1009,11 @@ struct LegendaryShowThumbnailView: View {
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
     @StateObject private var youtubeService = YouTubeService()
-    @ObservedObject private var paywallService = PaywallService.shared
     @State private var duration: String = ""
     @State private var showingRemoveFavoriteConfirmation = false
 
     private var displayTitle: String {
-        paywallService.isVideoLocked(videoId) ? "\(show.fields.title) 🔒" : show.fields.title
+        show.fields.title
     }
 
     var body: some View {

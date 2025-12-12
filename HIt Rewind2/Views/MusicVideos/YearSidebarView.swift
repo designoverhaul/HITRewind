@@ -38,21 +38,24 @@ struct YearRowView: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack {
+            HStack(spacing: 4) {
                 Text(verbatim: String(year))
-                    .font(.custom(AppFont.ticketingName(), size: 24))
+                    .font(.custom(AppFont.ticketingName(), size: 22))
                     .fontWeight(isSelected ? .bold : .medium)
                     .foregroundColor(isSelected ? .black : .hitRewindPrimaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
-                Spacer()
+                Spacer(minLength: 4)
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.black)
-                        .font(.system(size: 20))
+                        .font(.system(size: 18))
+                        .frame(width: 18, height: 18)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
             .padding(.vertical, 12)
             .background(
                 Rectangle()

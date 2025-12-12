@@ -63,13 +63,9 @@ struct ArtistSongsView: View {
         if UIDevice.current.userInterfaceIdiom == .pad {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Back")
-                            .font(.custom(AppFont.ticketingName(), size: 16))
-                    }
-                    .foregroundColor(.hitRewindPurple)
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.hitRewindPurple)
                 }
             }
             
@@ -96,13 +92,9 @@ struct ArtistSongsView: View {
             
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Back")
-                            .font(.custom(AppFont.ticketingName(), size: 16))
-                    }
-                    .foregroundColor(.hitRewindPurple)
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.hitRewindPurple)
                 }
             }
             
@@ -170,12 +162,7 @@ struct ArtistSongsView: View {
         LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
             ForEach(videos) { item in
                 NavigationLink(
-                    destination: SingleVideoView(
-                        youtubeURL: "https://www.youtube.com/watch?v=\(item.videoId)",
-                        videoTitle: item.title,
-                        artistName: artistName,
-                        year: item.year
-                    )
+                    destination: createVideoView(for: item)
                 ) {
                     VideoThumbnailView(
                         videoId: item.videoId,
@@ -189,6 +176,36 @@ struct ArtistSongsView: View {
             }
         }
         .padding(gridPadding)
+    }
+
+    // Create video view with playlist context for autoplay
+    private func createVideoView(for video: ArtistVideo) -> SingleVideoView {
+        // Build playlist context from all videos
+        let playlistVideos = videos.map { v in
+            PlaylistVideo(
+                id: v.videoId,
+                youtubeURL: "https://www.youtube.com/watch?v=\(v.videoId)",
+                title: v.title,
+                artist: artistName,
+                year: v.year
+            )
+        }
+
+        // Find current video index
+        let currentIndex = videos.firstIndex(where: { $0.id == video.id }) ?? 0
+
+        let playlistContext = PlaylistContext(
+            videos: playlistVideos,
+            currentIndex: currentIndex
+        )
+
+        return SingleVideoView(
+            youtubeURL: "https://www.youtube.com/watch?v=\(video.videoId)",
+            videoTitle: video.title,
+            artistName: artistName,
+            year: video.year,
+            playlistContext: playlistContext
+        )
     }
     
     private func loadArtistVideos() async {

@@ -27,8 +27,8 @@ extension Notification.Name {
 struct ContentView: View {
     @Binding var shouldRestartOnboarding: Bool
     @State private var heartAnimationTrigger = false
-    @State private var selectedTab = 0
-    @State private var previousTab = 0
+    @State private var selectedTab = 1  // Start with MTV (Music Videos) page
+    @State private var previousTab = 1
     @State private var showingVideoPlayer = false
     @State private var currentVideoInfo: (id: String, title: String, artist: String, year: String)?
     @StateObject private var favoritesService = FavoritesService.shared
@@ -188,18 +188,12 @@ struct ContentView: View {
             
             FavoritesView()
                 .tabItem {
-                    AnimatedHeartTabIcon(animationTrigger: heartAnimationTrigger)
+                    AnimatedHeartTabIcon(animationTrigger: heartAnimationTrigger, isSelected: selectedTab == 4)
                     Text("Favorites")
                 }
                 .tag(4)
-
-            SettingsView(shouldRestartOnboarding: $shouldRestartOnboarding)
-                .tabItem {
-                    Image(systemName: "gearshape.fill")
-                    Text("Settings")
-                }
-                .tag(5)
         }
+        .environment(\.onboardingRestart, $shouldRestartOnboarding)
         .overlay(videoPlayerControlsOverlay)
         .accentColor(Color.hitRewindPurple)
         .onAppear {
@@ -330,11 +324,12 @@ struct FavoriteButton: View {
 // MARK: - Animated Heart Tab Icon
 struct AnimatedHeartTabIcon: View {
     let animationTrigger: Bool
+    let isSelected: Bool
 
     var body: some View {
         Image(systemName: "heart.fill")
             .scaleEffect(animationTrigger ? 1.3 : 1.0)
-            .foregroundColor(animationTrigger ? .red : .primary)
+            .foregroundColor((animationTrigger || isSelected) ? .red : .primary)
             .animation(.spring(response: 0.6, dampingFraction: 0.3, blendDuration: 0), value: animationTrigger)
     }
 }
@@ -357,10 +352,9 @@ enum FavoritesSortOption: String, CaseIterable, Identifiable {
 struct FavoritesView: View {
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
-    @StateObject private var paywallService = PaywallService.shared
     @State private var sortOption: FavoritesSortOption = .dateAdded
     @State private var showingSortOptions = false
-    @State private var videoToNavigate: SingleVideoView?
+    @State private var selectedFavoriteVideoId: String?
 
     // Simplified 2-column grid
     private let gridColumns = [
@@ -595,18 +589,15 @@ struct FavoritesView: View {
                 }
             }
             .padding(gridSpacing)
-            .background(
-                NavigationLink(
-                    destination: videoToNavigate,
-                    isActive: Binding(
-                        get: { videoToNavigate != nil },
-                        set: { if !$0 { videoToNavigate = nil } }
-                    )
-                ) {
-                    EmptyView()
+            .navigationDestination(isPresented: Binding(
+                get: { selectedFavoriteVideoId != nil },
+                set: { if !$0 { selectedFavoriteVideoId = nil } }
+            )) {
+                if let videoId = selectedFavoriteVideoId,
+                   let favorite = sortedFavorites.first(where: { $0.videoId == videoId }) {
+                    createVideoView(from: favorite)
                 }
-                .hidden()
-            )
+            }
         }
         .refreshable {
             favoritesService.syncWithCloud()
@@ -616,30 +607,64 @@ struct FavoritesView: View {
     // MARK: - Helper Methods
 
     private func handleFavoriteVideoTap(favorite: FavoriteVideo) {
-        let videoDestination = SingleVideoView(
+        print("🎥 Favorite video \(favorite.videoId) tapped")
+
+        Task { @MainActor in
+            // Check StoreKit directly for active subscription
+            let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
+
+            if isSubscribed {
+                // User is subscribed - play video immediately
+                print("✅ User subscribed - playing video")
+                self.selectedFavoriteVideoId = favorite.videoId
+            } else {
+                // User not subscribed - show paywall
+                print("🔒 User not subscribed - showing paywall")
+                Superwall.shared.register(placement: "MainPlacement") {
+                    // After successful purchase, play video
+                    print("✅ Purchase complete - playing video")
+                    self.selectedFavoriteVideoId = favorite.videoId
+                }
+            }
+        }
+    }
+
+    private func createVideoView(from favorite: FavoriteVideo) -> SingleVideoView {
+        // Build playlist context for autoplay (all favorites in current sort order)
+        let playlistVideos = sortedFavorites.map { fav in
+            PlaylistVideo(
+                id: fav.videoId,
+                youtubeURL: "https://www.youtube.com/watch?v=\(fav.videoId)",
+                title: fav.title,
+                artist: fav.artist,
+                year: fav.year
+            )
+        }
+
+        // Find current video index
+        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == favorite.videoId }) else {
+            print("⚠️ Could not find video index for autoplay")
+            return SingleVideoView(
+                youtubeURL: "https://www.youtube.com/watch?v=\(favorite.videoId)",
+                videoTitle: favorite.title,
+                artistName: favorite.artist,
+                year: favorite.year,
+                playlistContext: nil
+            )
+        }
+
+        let playlistContext = PlaylistContext(
+            videos: playlistVideos,
+            currentIndex: currentIndex
+        )
+
+        return SingleVideoView(
             youtubeURL: "https://www.youtube.com/watch?v=\(favorite.videoId)",
             videoTitle: favorite.title,
             artistName: favorite.artist,
-            year: favorite.year
+            year: favorite.year,
+            playlistContext: playlistContext
         )
-
-        // Check if video is locked
-        if paywallService.isVideoLocked(favorite.videoId) {
-            print("🔒 Favorite video \(favorite.videoId) is locked, presenting paywall")
-
-            // Use Superwall's register method with closure
-            // The closure ONLY executes if user has subscription
-            Task { @MainActor in
-                await Superwall.shared.register(placement: "MainPlacement") {
-                    print("✅ User has access, navigating to favorite video")
-                    self.videoToNavigate = videoDestination
-                }
-            }
-        } else {
-            // Video is unlocked, navigate directly
-            print("🔓 Favorite video \(favorite.videoId) is unlocked, navigating")
-            videoToNavigate = videoDestination
-        }
     }
 }
 
@@ -828,7 +853,7 @@ struct AirPlayTabItem: View {
                 .font(.system(size: 20))
                 .foregroundColor(airPlayService.isConnected ? Color(hex: "FFF61D") : .primary)
 
-            Text("AirPlay")
+            Text("Send To TV")
                 .font(.caption2)
                 .foregroundColor(airPlayService.isConnected ? Color(hex: "FFF61D") : .primary)
         }

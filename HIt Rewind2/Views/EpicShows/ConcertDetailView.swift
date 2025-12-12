@@ -13,12 +13,12 @@ struct ConcertDetailView: View {
 
     @StateObject private var airtableService = AirtableService()
     @StateObject private var favoritesService = FavoritesService.shared
-    @ObservedObject private var paywallService = PaywallService.shared
     @State private var concertVideos: [ConcertVideo] = []
     @State private var isLoadingVideos = true
     @State private var errorMessage: String?
     @State private var isDescriptionExpanded = false
-    @State private var navigationDestination: SingleVideoView?
+    @State private var selectedVideoId: String?
+    @State private var selectedVideoInfo: ConcertVideo?
 
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -67,13 +67,9 @@ struct ConcertDetailView: View {
             if UIDevice.current.userInterfaceIdiom == .pad {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: { dismiss() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Back")
-                                .font(.custom(AppFont.ticketingName(), size: 16))
-                        }
-                        .foregroundColor(.hitRewindPurple)
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.hitRewindPurple)
                     }
                 }
                 
@@ -100,13 +96,9 @@ struct ConcertDetailView: View {
                 
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: { dismiss() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Back")
-                                .font(.custom(AppFont.ticketingName(), size: 16))
-                        }
-                        .foregroundColor(.hitRewindPurple)
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.hitRewindPurple)
                     }
                 }
                 
@@ -303,18 +295,14 @@ struct ConcertDetailView: View {
             }
         }
         .padding(.horizontal, contentPadding)
-        .background(
-            NavigationLink(
-                destination: navigationDestination,
-                isActive: Binding(
-                    get: { navigationDestination != nil },
-                    set: { if !$0 { navigationDestination = nil } }
-                )
-            ) {
-                EmptyView()
+        .navigationDestination(isPresented: Binding(
+            get: { selectedVideoId != nil },
+            set: { if !$0 { selectedVideoId = nil; selectedVideoInfo = nil } }
+        )) {
+            if let video = selectedVideoInfo {
+                createVideoView(from: video)
             }
-            .hidden()
-        )
+        }
     }
     
     private var loadingView: some View {
@@ -445,30 +433,70 @@ struct ConcertDetailView: View {
     
     // MARK: - Helper Methods
 
-    private func handleVideoTap(video: ConcertVideo, videoId: String) {
-        let videoDestination = SingleVideoView(
+    private func createVideoView(from video: ConcertVideo) -> SingleVideoView {
+        // Build playlist context for autoplay (all videos in this concert)
+        let playlistVideos = concertVideos.compactMap { concertVideo -> PlaylistVideo? in
+            guard let id = extractYouTubeVideoID(from: concertVideo.fields.youtubeUrl) else {
+                return nil
+            }
+            return PlaylistVideo(
+                id: id,
+                youtubeURL: concertVideo.fields.youtubeUrl,
+                title: concertVideo.fields.videoTitle,
+                artist: concert.fields.artistName,
+                year: "\(concert.fields.eventYear)"
+            )
+        }
+
+        // Find current video index
+        guard let videoId = extractYouTubeVideoID(from: video.fields.youtubeUrl),
+              let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else {
+            print("⚠️ Could not find video index for autoplay")
+            return SingleVideoView(
+                youtubeURL: video.fields.youtubeUrl,
+                videoTitle: video.fields.videoTitle,
+                artistName: concert.fields.artistName,
+                year: "\(concert.fields.eventYear)",
+                playlistContext: nil
+            )
+        }
+
+        let playlistContext = PlaylistContext(
+            videos: playlistVideos,
+            currentIndex: currentIndex
+        )
+
+        return SingleVideoView(
             youtubeURL: video.fields.youtubeUrl,
             videoTitle: video.fields.videoTitle,
             artistName: concert.fields.artistName,
-            year: "\(concert.fields.eventYear)"
+            year: "\(concert.fields.eventYear)",
+            playlistContext: playlistContext
         )
+    }
 
-        // Check if video is locked
-        if paywallService.isVideoLocked(videoId) {
-            print("🔒 Video \(videoId) is locked, presenting paywall")
+    private func handleVideoTap(video: ConcertVideo, videoId: String) {
+        print("🎥 Concert video \(videoId) tapped")
 
-            // Use Superwall's register method with closure
-            // The closure ONLY executes if user has subscription
-            Task { @MainActor in
-                await Superwall.shared.register(placement: "MainPlacement") {
-                    print("✅ User has access, navigating to video")
-                    self.navigationDestination = videoDestination
+        Task { @MainActor in
+            // Check StoreKit directly for active subscription
+            let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
+
+            if isSubscribed {
+                // User is subscribed - play video immediately
+                print("✅ User subscribed - playing video")
+                self.selectedVideoId = videoId
+                self.selectedVideoInfo = video
+            } else {
+                // User not subscribed - show paywall
+                print("🔒 User not subscribed - showing paywall")
+                Superwall.shared.register(placement: "MainPlacement") {
+                    // After successful purchase, play video
+                    print("✅ Purchase complete - playing video")
+                    self.selectedVideoId = videoId
+                    self.selectedVideoInfo = video
                 }
             }
-        } else {
-            // Video is unlocked, navigate directly
-            print("🔓 Video \(videoId) is unlocked, navigating")
-            navigationDestination = videoDestination
         }
     }
 

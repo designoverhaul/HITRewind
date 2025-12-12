@@ -7,7 +7,16 @@ struct ReviewRequestView: View {
     let onDismiss: () -> Void
     let onNextMessage: () -> Void
     @State private var isVisible = false
-    
+
+    private func handleStarTap(_ starNumber: Int) {
+        if starNumber == 5 {
+            // Only open the review sheet for 5 stars
+            requestReview()
+        }
+        // Always dismiss regardless of rating
+        onDismiss()
+    }
+
     var body: some View {
         ZStack {
             // Semi-transparent background
@@ -31,55 +40,49 @@ struct ReviewRequestView: View {
                             .frame(width: 30, height: 30)
                     }
                 }
-                .padding(.top, 20)
-                .padding(.trailing, 20)
+                .padding(.trailing, 12)
 
                 // Guitar emoji - smaller
                 Text("🎸")
                     .font(.system(size: 40))
-                    .padding(.top, 30)
-                    .padding(.bottom, 20)
-                
-                // Song quote message - tappable area
-                Button(action: {
-                    requestReview()
-                    onDismiss()
-                }) {
-                    VStack(spacing: 20) {
-                        Text("\"\(message)\"")
-                            .font(.system(.title, design: .default, weight: .medium))
-                            .italic()
-                            .foregroundColor(Color(hex: "A789FD"))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(nil)
-                            .padding(.horizontal, 30)
-                        
-                        // Five outlined stars
-                        HStack(spacing: 8) {
-                            Image(systemName: "star")
-                                .font(.system(size: 20))
-                                .foregroundColor(Color(hex: "A789FD"))
-                            Image(systemName: "star")
-                                .font(.system(size: 20))
-                                .foregroundColor(Color(hex: "A789FD"))
-                            Image(systemName: "star")
-                                .font(.system(size: 20))
-                                .foregroundColor(Color(hex: "A789FD"))
-                            Image(systemName: "star")
-                                .font(.system(size: 20))
-                                .foregroundColor(Color(hex: "A789FD"))
-                            Image(systemName: "star")
-                                .font(.system(size: 20))
-                                .foregroundColor(Color(hex: "A789FD"))
+                    .padding(.top, 4)
+                    .padding(.bottom, 12)
+
+                // Song quote message
+                VStack(spacing: 16) {
+                    // Small "Leave a Review" text
+                    Text("Leave a Review")
+                        .font(.system(.caption, design: .default, weight: .regular))
+                        .foregroundColor(Color(hex: "A789FD").opacity(0.7))
+                        .multilineTextAlignment(.center)
+
+                    Text("\"\(message)\"")
+                        .font(.system(.callout, design: .default, weight: .medium))
+                        .italic()
+                        .foregroundColor(Color(hex: "A789FD"))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+                        .padding(.horizontal, 30)
+
+                    // Five individually tappable stars
+                    HStack(spacing: 8) {
+                        ForEach(1...5, id: \.self) { starNumber in
+                            Button(action: {
+                                handleStarTap(starNumber)
+                            }) {
+                                Image(systemName: "star")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(Color(hex: "A789FD"))
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
-                    .padding(.vertical, 20)
                 }
-                .buttonStyle(PlainButtonStyle())
-
-                Spacer()
+                .padding(.top, 12)
             }
-            .frame(width: 320, height: 400)
+            .padding(.top, 8)
+            .padding(.bottom, 32)
+            .frame(width: 320)
             .background(Color.black)
             .cornerRadius(20)
             .shadow(color: Color(hex: "A789FD").opacity(isVisible ? 0.4 : 0), radius: 30, x: 0, y: 0)

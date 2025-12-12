@@ -8,12 +8,12 @@
 import Foundation
 
 // MARK: - Concert Models
-struct Concert: Codable, Identifiable {
+struct Concert: Codable, Identifiable, Hashable {
     let id: String
     let fields: ConcertFields
 }
 
-struct ConcertFields: Codable {
+struct ConcertFields: Codable, Hashable {
     let venueName: String?
     let artistName: String
     let eventYear: Int
@@ -67,7 +67,7 @@ struct ConcertFields: Codable {
 }
 
 // MARK: - Airtable Image Attachment
-struct BannerImageAttachment: Codable {
+struct BannerImageAttachment: Codable, Hashable {
     let id: String
     let width: Int
     let height: Int
@@ -75,7 +75,7 @@ struct BannerImageAttachment: Codable {
     let filename: String
     let size: Int
     let type: String
-    
+
     enum CodingKeys: String, CodingKey {
         case id, width, height, url, filename, size, type
     }

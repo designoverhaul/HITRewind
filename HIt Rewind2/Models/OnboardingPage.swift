@@ -14,6 +14,7 @@ struct OnboardingPage: Identifiable {
     let title: String
     let subtitle: String
     let useCarousel: Bool
+    let useGIFCarousel: Bool
 }
 
 extension OnboardingPage {
@@ -21,37 +22,42 @@ extension OnboardingPage {
         OnboardingPage(
             imageName: "onboarding1",
             gifName: nil,
-            title: "Remember Music\non your TV?",
+            title: "Remember music\non your TV?",
             subtitle: "I want that to\nhappen again.",
-            useCarousel: true
+            useCarousel: true,
+            useGIFCarousel: false
         ),
         OnboardingPage(
             imageName: "onboarding2",
             gifName: nil,
             title: "Music is still here",
-            subtitle: "But Netflix took\nour TV",
-            useCarousel: false
+            subtitle: "But Netflix stole the screen\n😢",
+            useCarousel: false,
+            useGIFCarousel: false
         ),
         OnboardingPage(
             imageName: "onboarding3",
-            gifName: "post",
+            gifName: nil,
             title: "Let's take it back 🔥",
             subtitle: "",
-            useCarousel: false
+            useCarousel: false,
+            useGIFCarousel: true
         ),
         OnboardingPage(
             imageName: "onboarding4",
             gifName: nil,
-            title: "Press AirPlay",
+            title: "Press \"Send to TV\"",
             subtitle: "Rock your room",
-            useCarousel: false
+            useCarousel: false,
+            useGIFCarousel: false
         ),
         OnboardingPage(
             imageName: "onboarding5",
             gifName: nil,
             title: "Pick a Year",
             subtitle: "You're the VJ",
-            useCarousel: false
+            useCarousel: false,
+            useGIFCarousel: false
         )
     ]
 }

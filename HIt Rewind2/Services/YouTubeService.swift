@@ -103,17 +103,28 @@ class YouTubeService: ObservableObject {
     
     // MARK: - Batch Video Information (Much more efficient!)
     func getBatchVideoInfo(videoIds: [String]) async throws -> [String: YouTubeVideo] {
+        let totalTimer = PerformanceTimer("YouTube - Batch Video Info (Total)")
+        print("⏱️ [YouTube] Starting batch load for \(videoIds.count) video IDs")
+
         let apiKey = YouTubeConfig.apiKey
         guard !apiKey.isEmpty && apiKey != "YOUR_YOUTUBE_API_KEY_HERE" else {
             throw YouTubeError.missingAPIKey
         }
-        
+
         // YouTube API supports up to 50 video IDs in a single request
         let batchSize = 50
         var allVideos: [String: YouTubeVideo] = [:]
-        
+
+        // Calculate number of batches
+        let batches = Array(videoIds.chunked(into: batchSize))
+        let batchCount = batches.count
+        print("⏱️ [YouTube] Will process \(batchCount) batch(es) of up to \(batchSize) videos each")
+
         // Process videos in batches of 50
-        for batch in videoIds.chunked(into: batchSize) {
+        var currentBatch = 0
+        for batch in batches {
+            currentBatch += 1
+            let batchTimer = PerformanceTimer("YouTube - API Request (batch \(currentBatch)/\(batchCount), \(batch.count) videos)")
             let videoIdsString = batch.joined(separator: ",")
             let urlString = "\(YouTubeConfig.baseURL)/videos?part=snippet,contentDetails,statistics,status&id=\(videoIdsString)&key=\(apiKey)"
             
@@ -150,16 +161,23 @@ class YouTubeService: ObservableObject {
                 for video in youTubeResponse.items {
                     allVideos[video.id] = video
                 }
-                
+
+                print("⏱️ [YouTube] Batch \(currentBatch)/\(batchCount) returned \(youTubeResponse.items.count) videos")
+                batchTimer.end()
+
             } catch let decodingError as DecodingError {
                 print("🎬 YouTube API JSON decode error: \(decodingError)")
+                batchTimer.end()
                 throw YouTubeError.networkError(decodingError)
             } catch {
                 print("🎬 YouTube API network error: \(error.localizedDescription)")
+                batchTimer.end()
                 throw YouTubeError.networkError(error)
             }
         }
-        
+
+        print("⏱️ [YouTube] Successfully loaded \(allVideos.count) videos across \(batchCount) batch(es)")
+        totalTimer.end()
         return allVideos
     }
 

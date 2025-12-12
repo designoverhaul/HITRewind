@@ -42,13 +42,9 @@ struct SearchView: View {
                 HStack {
                     // Back button on left
                     Button(action: { dismiss() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Back")
-                                .font(.custom(AppFont.ticketingName(), size: 16))
-                        }
-                        .foregroundColor(.hitRewindPurple)
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.hitRewindPurple)
                     }
                     
                     Spacer()
@@ -128,7 +124,9 @@ struct SearchView: View {
                    let artistName = userInfo["artistName"] as? String {
                     print("🔍 Received artist search notification for: '\(artistName)'")
                     searchText = artistName
-                    searchService.searchContent(query: artistName)
+                    Task { @MainActor in
+                        searchService.searchContent(query: artistName)
+                    }
                 }
             }
         }

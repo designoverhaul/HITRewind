@@ -7,40 +7,52 @@
 
 import SwiftUI
 import SuperwallKit
+import StoreKit
 
 @main
 struct HIt_Rewind2App: App {
     @StateObject private var reviewService = ReviewRequestService()
     @State private var hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
-        // Configure Superwall
-        print("🎯 Configuring Superwall with API key: \(SuperwallConfig.apiKey.prefix(10))...")
+        // Configure Superwall - simple, basic setup
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🚀 App launching - Configuring Superwall...")
+
         Superwall.configure(apiKey: SuperwallConfig.apiKey)
-        print("🎯 Superwall configured successfully")
-        print("🎯 Setting up Superwall delegate...")
-        PaywallService.shared.setupDelegate()
-        print("🎯 Superwall delegate configured")
+        print("✅ Superwall configured")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+
+    // Simple helper: Check if user has active subscription in StoreKit
+    @MainActor
+    static func hasActiveSubscription() async -> Bool {
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result else {
+                continue
+            }
+            print("✅ Active subscription found: \(transaction.productID)")
+            return true
+        }
+        print("❌ No active subscription")
+        return false
     }
 
     var body: some Scene {
         WindowGroup {
             Group {
-                if hasCompletedOnboarding {
-                    ContentView(shouldRestartOnboarding: $hasCompletedOnboarding)
+                if !hasCompletedOnboarding {
+                    // Show onboarding
+                    OnboardingView(isOnboardingComplete: $hasCompletedOnboarding)
                         .transition(.opacity)
                 } else {
-                    OnboardingView(isOnboardingComplete: $hasCompletedOnboarding)
+                    // Show main app after onboarding
+                    ContentView(shouldRestartOnboarding: $hasCompletedOnboarding)
                         .transition(.opacity)
                 }
             }
             .animation(.easeInOut(duration: 0.3), value: hasCompletedOnboarding)
-            .onChange(of: hasCompletedOnboarding) { oldValue, newValue in
-                // When onboarding is restarted from settings, restart immediately
-                if !newValue {
-                    print("🎬 Restarting onboarding...")
-                }
-            }
             .preferredColorScheme(.dark)
             .onAppear {
                 // Attempt to register the Ticketing font if bundled

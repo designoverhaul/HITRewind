@@ -10,6 +10,9 @@ import SwiftUI
 struct OnboardingView: View {
     @State private var currentPage = 0
     @Binding var isOnboardingComplete: Bool
+    @StateObject private var audioService = OnboardingAudioService.shared
+    @StateObject private var imagePreloader = ImagePreloader.shared
+    @State private var isLoading = true
 
     let pages = OnboardingPage.pages
 
@@ -18,11 +21,28 @@ struct OnboardingView: View {
             Color.black
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
+            if isLoading {
+                // Simple loading indicator
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.white)
+            } else {
+                contentView
+            }
+        }
+        .task {
+            // Preload all images before showing content
+            await preloadAssets()
+        }
+    }
+
+    private var contentView: some View {
+        VStack(spacing: 0) {
                 // Paged content
                 TabView(selection: $currentPage) {
                     ForEach(0..<pages.count, id: \.self) { index in
                         OnboardingPageView(page: pages[index])
+                            .environment(\.isPageActive, currentPage == index)
                             .tag(index)
                     }
                 }
@@ -37,7 +57,7 @@ struct OnboardingView: View {
                             .frame(width: 8, height: 8)
                     }
                 }
-                .padding(.bottom, 20)
+                .padding(.bottom, 16)
 
                 // Next button
                 Button(action: {
@@ -58,12 +78,36 @@ struct OnboardingView: View {
                         .padding(.vertical, 16)
                 }
                 .padding(.horizontal, 40)
-                .padding(.bottom, 40)
-            }
+                .padding(.bottom, 60)
         }
     }
 
+    private func preloadAssets() async {
+        // Preload all carousel images and onboarding images
+        let allImages = [
+            "tv1", "tv2", "tv3", "tv4", "tv5", "tv6", // TV carousel
+            "onboarding2", "onboarding4", "onboarding5" // Static onboarding images
+        ]
+
+        await imagePreloader.preloadImages(allImages)
+
+        // Small delay to ensure everything is settled
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+
+        await MainActor.run {
+            isLoading = false
+        }
+
+        // Start music after all images are loaded
+        // Audio service handles its own threading for smooth playback
+        // audioService.startMusic() // COMMENTED OUT - Music disabled
+    }
+
     private func completeOnboarding() {
+        // Start fade-out immediately
+        // audioService.fadeOut(duration: 8.0) // COMMENTED OUT - Music disabled
+
+        // Complete onboarding right away (music continues fading in background)
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
         withAnimation {
             isOnboardingComplete = true
