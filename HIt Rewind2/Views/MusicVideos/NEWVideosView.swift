@@ -198,14 +198,14 @@ struct NEWVideosView: View {
                         if let videoId = video.fields.youtubeVideoId {
                             VideoThumbnailView(
                                 videoId: videoId,
-                                title: video.fields.title,
-                                artist: video.fields.artistName,
-                                year: video.fields.year,
+                                title: video.fields.title ?? "Unknown",
+                                artist: video.fields.artistName ?? "Unknown Artist",
+                                year: video.fields.year ?? "",
                                 onTap: {}
                             )
                         } else {
                             // Fallback if video ID can't be extracted
-                            Text(video.fields.title)
+                            Text(video.fields.title ?? "Unknown Video")
                                 .foregroundColor(.hitRewindPrimaryText)
                                 .frame(height: 200)
                                 .background(Color.hitRewindBackground)
@@ -292,25 +292,27 @@ struct NEWVideosView: View {
     private func createVideoView(from video: DirectVideoRecord) -> SingleVideoView {
         // Build playlist context for autoplay
         let playlistVideos = currentYearVideos.compactMap { record -> PlaylistVideo? in
-            guard let videoId = record.fields.youtubeVideoId else { return nil }
+            guard let videoId = record.fields.youtubeVideoId,
+                  let url = record.fields.url else { return nil }
             return PlaylistVideo(
                 id: videoId,
-                youtubeURL: record.fields.url,
-                title: record.fields.title,
-                artist: record.fields.artistName,
-                year: record.fields.year
+                youtubeURL: url,
+                title: record.fields.title ?? "Unknown",
+                artist: record.fields.artistName ?? "Unknown Artist",
+                year: record.fields.year ?? ""
             )
         }
 
         // Find current video index
         guard let videoId = video.fields.youtubeVideoId,
+              let url = video.fields.url,
               let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else {
             print("⚠️ Could not find video index for autoplay")
             return SingleVideoView(
-                youtubeURL: video.fields.url,
-                videoTitle: video.fields.title,
-                artistName: video.fields.artistName,
-                year: video.fields.year,
+                youtubeURL: video.fields.url ?? "https://www.youtube.com",
+                videoTitle: video.fields.title ?? "Unknown",
+                artistName: video.fields.artistName ?? "Unknown Artist",
+                year: video.fields.year ?? "",
                 playlistContext: nil
             )
         }
@@ -321,10 +323,10 @@ struct NEWVideosView: View {
         )
 
         return SingleVideoView(
-            youtubeURL: video.fields.url,
-            videoTitle: video.fields.title,
-            artistName: video.fields.artistName,
-            year: video.fields.year,
+            youtubeURL: video.fields.url ?? "",
+            videoTitle: video.fields.title ?? "Unknown",
+            artistName: video.fields.artistName ?? "Unknown Artist",
+            year: video.fields.year ?? "",
             playlistContext: playlistContext
         )
     }

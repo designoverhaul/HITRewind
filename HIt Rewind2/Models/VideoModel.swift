@@ -15,11 +15,11 @@ struct DirectVideoRecord: Codable, Identifiable {
 }
 
 struct DirectVideoFields: Codable {
-    let title: String
-    let artistName: String
-    let url: String
-    let rank: Int
-    let year: String  // Note: Year is stored as text in Airtable
+    let title: String?
+    let artistName: String?
+    let url: String?  // Optional because 4 videos don't have URLs
+    let rank: Int?
+    let year: String?  // Note: Year is stored as text in Airtable
 
     enum CodingKeys: String, CodingKey {
         case title
@@ -31,13 +31,14 @@ struct DirectVideoFields: Codable {
 
     // Helper to get year as Int
     var yearInt: Int? {
-        Int(year)
+        guard let year = year else { return nil }
+        return Int(year)
     }
 
     // Helper to get YouTube video ID from URL
     var youtubeVideoId: String? {
         // Extract video ID from YouTube URL
-        guard let videoURL = URL(string: url) else { return nil }
+        guard let urlString = url, let videoURL = URL(string: urlString) else { return nil }
         let host = (videoURL.host ?? "").replacingOccurrences(of: "www.", with: "").lowercased()
         let path = videoURL.path
 

@@ -111,8 +111,12 @@ class DirectVideoService: ObservableObject {
         return Array(Set(years)).sorted(by: >)
     }
 
-    // Filter videos by year
+    // Filter videos by year (only return videos with URLs for playback)
     func videos(forYear year: Int) -> [DirectVideoRecord] {
-        videos.filter { $0.fields.yearInt == year }
+        videos.filter {
+            $0.fields.yearInt == year &&
+            $0.fields.url != nil &&
+            $0.fields.youtubeVideoId != nil
+        }
     }
 }
