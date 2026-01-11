@@ -176,3 +176,106 @@ HitRewind2/
 - **Integrated Controls** - favorites and share functionality built into player interface
 
 The app now includes a complete favorites system with Sign in with Apple authentication and CloudKit cloud sync!
+
+## Airtable MCP Integration
+
+This project uses the [Airtable MCP Server](https://github.com/rashidazarang/airtable-mcp) for AI-powered Airtable operations. The MCP server provides comprehensive access to Airtable bases, tables, records, and schema management.
+
+### Available Operations
+
+#### Data Operations
+- **list_records** - Query records with filtering and pagination
+- **get_record** - Retrieve a single record by ID
+- **create_record** - Add new records to any table
+- **update_records** - Modify existing record fields (up to 10 at once)
+- **delete_records** - Remove records from a table (up to 10 at once)
+- **search_records** - Advanced search with Airtable formulas
+
+#### Schema Discovery
+- **list_bases** - List all accessible bases with permissions
+- **list_tables** - Get all tables in a base with schema information
+- **describe_table** - Get detailed table and field specifications
+- **get_base_schema** - Get complete schema for any base
+
+#### Schema Management (Requires Token Permissions)
+- **create_table** - Create tables with custom field definitions
+- **update_table** - Modify table names and descriptions
+- **create_field** - Add fields to existing tables
+- **update_field** - Modify field properties and options
+- **delete_field** - Remove fields (requires confirmation)
+
+#### Batch Operations
+- **batch_create_records** - Create up to 10 records at once
+- **batch_update_records** - Update up to 10 records simultaneously
+- **batch_delete_records** - Delete up to 10 records in one operation
+- **batch_upsert_records** - Update or create records based on key fields
+
+### Current Airtable Setup
+
+**Base ID**: `appxCBIOkiJEZiph7` (Front Row Live Music App)
+
+**Tables**:
+- `MTvVideos` (original) - `tbl3waFYL7jfER18L`
+- `MTvVideosNEW` (new version) - `tblNwqwVyflL8hNDy`
+- `MTvPlaylists` - `tblByi6o9LzE3bkc4`
+- `Artists` - `tblu9a6MnrdzECJFJ`
+- `Category` - `tblhHeWHex8DXdq3R`
+- `Concerts` - `tbl9umYOUTEVUZKnh`
+- `Concert Videos` - `tbloVr52R37ZRNLFS`
+
+### MTvVideosNEW Table Structure
+
+**Required Fields** (matching MTvVideos, excluding channelName, thumbnail, Find Replace):
+- `title` (Single line text)
+- `url` (Single line text) - YouTube video URL
+- `Rank` (Number, precision 1)
+- `artistName` (Single line text)
+- `year` (Number, precision 0)
+- `playlist` (Multiple record links → MTvPlaylists)
+- `artistID` (Single line text)
+- `videoImage` (Formula) - Generates YouTube thumbnail URL (mqdefault.jpg)
+- `videoImage0` (Formula) - Generates YouTube thumbnail URL (0.jpg)
+
+**Excluded Fields** (not in NEW table):
+- `channelName`
+- `thumbnail`
+- `Find Replace` (formula)
+- `80sFeatured` (checkbox)
+- `isVisible` (checkbox)
+
+### Token Permissions
+
+To enable schema management operations (create_field, update_field, etc.), the Airtable Personal Access Token needs these scopes:
+- `schema.bases:read` - Read table structure
+- `schema.bases:write` - Modify table structure
+- `data.records:read` - Read records
+- `data.records:write` - Write records
+
+### Usage Notes
+
+- **Record Updates**: Can update up to 10 records at once using `update_records`
+- **Field Types**: Formula fields cannot be created via MCP (Airtable API limitation)
+- **URL Fields**: The `url` field in MTvVideosNEW should be Single line text (not URL type) to match MTvVideos structure
+- **Video Thumbnails**: The `videoImage` and `videoImage0` formula fields generate YouTube thumbnail URLs dynamically - they don't store images, just generate URLs
+
+### Common Operations
+
+**List records from MTvVideosNEW**:
+```
+list_records with baseId: appxCBIOkiJEZiph7, tableId: tblNwqwVyflL8hNDy
+```
+
+**Create new video record**:
+```
+create_record with fields: {title, url, Rank, artistName, year, artistID}
+```
+
+**Update multiple records**:
+```
+update_records with array of record objects (max 10)
+```
+
+**Check table structure**:
+```
+describe_table with baseId and tableId
+```

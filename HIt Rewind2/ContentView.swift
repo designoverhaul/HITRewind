@@ -171,27 +171,34 @@ struct ContentView: View {
                     Text("MTV")
                 }
                 .tag(1)
-            
+
+            NEWVideosView()
+                .tabItem {
+                    Image(systemName: "sparkles")
+                    Text("NEW")
+                }
+                .tag(2)
+
             // AirPlay tab - empty view, picker is handled by custom tab item
             Color.clear
                 .tabItem {
                     AirPlayTabItem()
                 }
-                .tag(2)
+                .tag(3)
             
             FanCamsView()
                 .tabItem {
                     Image(systemName: "ticket")
                     Text("Live")
                 }
-                .tag(3)
-            
+                .tag(4)
+
             FavoritesView()
                 .tabItem {
-                    AnimatedHeartTabIcon(animationTrigger: heartAnimationTrigger, isSelected: selectedTab == 4)
+                    AnimatedHeartTabIcon(animationTrigger: heartAnimationTrigger, isSelected: selectedTab == 5)
                     Text("Favorites")
                 }
-                .tag(4)
+                .tag(5)
         }
         .environment(\.onboardingRestart, $shouldRestartOnboarding)
         .overlay(videoPlayerControlsOverlay)
@@ -203,7 +210,7 @@ struct ContentView: View {
             detectOrientation()
         }
         .onChange(of: selectedTab) { oldValue, newValue in
-            if newValue == 2 {
+            if newValue == 3 {
                 // AirPlay tab tapped - reset to previous tab immediately and trigger AirPlay picker
                 selectedTab = previousTab
                 // Trigger AirPlay picker
