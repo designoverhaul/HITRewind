@@ -232,7 +232,7 @@ struct NEWVideosView: View {
         videoService.availableYears
     }
 
-    private var currentYearVideos: [VideoRecord] {
+    private var currentYearVideos: [DirectVideoRecord] {
         guard let year = selectedYear else { return [] }
         return videoService.videos(forYear: year)
     }
@@ -265,7 +265,7 @@ struct NEWVideosView: View {
         handleYearSelection(firstYear)
     }
 
-    private func handleVideoTap(video: VideoRecord) {
+    private func handleVideoTap(video: DirectVideoRecord) {
         guard let videoId = video.fields.youtubeVideoId else { return }
         print("🎥 NEW Video \(videoId) tapped - \(video.fields.title)")
 
@@ -289,7 +289,7 @@ struct NEWVideosView: View {
         }
     }
 
-    private func createVideoView(from video: VideoRecord) -> SingleVideoView {
+    private func createVideoView(from video: DirectVideoRecord) -> SingleVideoView {
         // Build playlist context for autoplay
         let playlistVideos = currentYearVideos.compactMap { record -> PlaylistVideo? in
             guard let videoId = record.fields.youtubeVideoId else { return nil }

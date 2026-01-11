@@ -10,7 +10,7 @@ import Foundation
 
 @MainActor
 class DirectVideoService: ObservableObject {
-    @Published var videos: [VideoRecord] = []
+    @Published var videos: [DirectVideoRecord] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -39,7 +39,7 @@ class DirectVideoService: ObservableObject {
             urlComponents?.queryItems = queryItems
 
             guard let url = urlComponents?.url else {
-                throw VideoError.invalidURL
+                throw DirectVideoError.invalidURL
             }
 
             var request = URLRequest(url: url)
@@ -50,21 +50,21 @@ class DirectVideoService: ObservableObject {
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                throw VideoError.networkError(NSError(domain: "Invalid response", code: -1))
+                throw DirectVideoError.networkError(NSError(domain: "Invalid response", code: -1))
             }
 
             guard (200...299).contains(httpResponse.statusCode) else {
-                throw VideoError.networkError(NSError(domain: "HTTP \(httpResponse.statusCode)", code: httpResponse.statusCode))
+                throw DirectVideoError.networkError(NSError(domain: "HTTP \(httpResponse.statusCode)", code: httpResponse.statusCode))
             }
 
             let decoder = JSONDecoder()
-            var allVideos: [VideoRecord] = []
+            var allVideos: [DirectVideoRecord] = []
             var currentData = data
             var hasMorePages = true
 
             // Handle pagination
             while hasMorePages {
-                let videoResponse = try decoder.decode(VideoRecordsResponse.self, from: currentData)
+                let videoResponse = try decoder.decode(DirectVideoRecordsResponse.self, from: currentData)
                 allVideos.append(contentsOf: videoResponse.records)
 
                 // Check if there are more pages
@@ -94,7 +94,7 @@ class DirectVideoService: ObservableObject {
             self.videos = allVideos
             print("✅ Fetched \(allVideos.count) videos from MTvVideosNEW" + (year != nil ? " for year \(year!)" : ""))
 
-        } catch let error as VideoError {
+        } catch let error as DirectVideoError {
             self.errorMessage = error.localizedDescription
             print("❌ Video fetch error: \(error.localizedDescription)")
         } catch {
@@ -112,7 +112,7 @@ class DirectVideoService: ObservableObject {
     }
 
     // Filter videos by year
-    func videos(forYear year: Int) -> [VideoRecord] {
+    func videos(forYear year: Int) -> [DirectVideoRecord] {
         videos.filter { $0.fields.yearInt == year }
     }
 }

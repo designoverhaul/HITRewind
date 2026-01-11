@@ -9,12 +9,12 @@
 import Foundation
 
 // MARK: - Video Models for MTvVideosNEW Direct Records
-struct VideoRecord: Codable, Identifiable {
+struct DirectVideoRecord: Codable, Identifiable {
     let id: String
-    var fields: VideoFields
+    var fields: DirectVideoFields
 }
 
-struct VideoFields: Codable {
+struct DirectVideoFields: Codable {
     let title: String
     let artistName: String
     let url: String
@@ -61,13 +61,13 @@ struct VideoFields: Codable {
 }
 
 // MARK: - Airtable Response
-struct VideoRecordsResponse: Codable {
-    let records: [VideoRecord]
+struct DirectVideoRecordsResponse: Codable {
+    let records: [DirectVideoRecord]
     let offset: String?
 }
 
 // MARK: - Error Types
-enum VideoError: Error, LocalizedError {
+enum DirectVideoError: Error, LocalizedError {
     case invalidURL
     case noData
     case decodingError(String)
