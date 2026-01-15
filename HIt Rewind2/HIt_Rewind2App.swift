@@ -11,9 +11,9 @@ import StoreKit
 
 @main
 struct HIt_Rewind2App: App {
-    @StateObject private var reviewService = ReviewRequestService()
     @State private var hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
 
     init() {
         // Configure Superwall - simple, basic setup
@@ -39,6 +39,43 @@ struct HIt_Rewind2App: App {
         return false
     }
 
+    // Standard iOS review request - shows after 3 launches initially, then periodically
+    private func checkIfShouldRequestReview() {
+        let userDefaults = UserDefaults.standard
+        let launchCountKey = "app_launch_count"
+        let lastReviewRequestKey = "last_review_request_date"
+        let hasRequestedReviewKey = "has_requested_review"
+
+        // Increment launch count
+        let currentCount = userDefaults.integer(forKey: launchCountKey)
+        userDefaults.set(currentCount + 1, forKey: launchCountKey)
+        let launchCount = currentCount + 1
+
+        let hasRequestedBefore = userDefaults.bool(forKey: hasRequestedReviewKey)
+
+        // Show after 3 launches initially, then every 30 launches
+        let shouldShow: Bool
+        if !hasRequestedBefore {
+            shouldShow = launchCount >= 3
+        } else {
+            if let lastRequestDate = userDefaults.object(forKey: lastReviewRequestKey) as? Date {
+                let daysSinceLastRequest = Calendar.current.dateComponents([.day], from: lastRequestDate, to: Date()).day ?? 0
+                shouldShow = launchCount % 30 == 0 && daysSinceLastRequest >= 30
+            } else {
+                shouldShow = launchCount % 30 == 0
+            }
+        }
+
+        if shouldShow {
+            // Delay to let UI settle
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                userDefaults.set(true, forKey: hasRequestedReviewKey)
+                userDefaults.set(Date(), forKey: lastReviewRequestKey)
+                requestReview()
+            }
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {
@@ -58,30 +95,11 @@ struct HIt_Rewind2App: App {
                 // Attempt to register the Ticketing font if bundled
                 FontLoader.registerFonts(containing: ["ticketing"]) // matches filenames like Ticketing-Regular.ttf
 
-                // Check if we should request a review (only after onboarding)
+                // Request review using standard iOS prompt (only after onboarding)
                 if hasCompletedOnboarding {
-                    reviewService.checkIfShouldRequestReview()
+                    checkIfShouldRequestReview()
                 }
             }
-            .environmentObject(reviewService)
-            .overlay(
-                // Modal review popup (only show after onboarding)
-                Group {
-                    if hasCompletedOnboarding && reviewService.shouldShowReviewRequest {
-                        ReviewRequestView(
-                            message: reviewService.currentQuote,
-                            onDismiss: {
-                                reviewService.dismissReviewRequest()
-                            },
-                            onNextMessage: {
-                                reviewService.nextMessage()
-                            }
-                        )
-                        .transition(.opacity.combined(with: .scale))
-                        .animation(.easeInOut(duration: 0.3), value: reviewService.shouldShowReviewRequest)
-                    }
-                }
-            )
         }
     }
 }

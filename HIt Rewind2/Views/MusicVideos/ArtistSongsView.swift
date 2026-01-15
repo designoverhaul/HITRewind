@@ -170,7 +170,8 @@ struct ArtistSongsView: View {
                         artist: artistName,
                         year: item.year,
                         onTap: {},
-                        hideArtistName: true
+                        hideArtistName: true,
+                        hideDuration: true
                     )
                 }
             }

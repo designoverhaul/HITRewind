@@ -15,9 +15,11 @@ struct VideoThumbnailView: View {
     let onTap: () -> Void
     let hideArtistAndYear: Bool // New parameter to hide artist/year for concert videos
     let hideArtistName: Bool // New parameter to hide only artist name (for artist-specific views)
-    
-    // Convenience initializer with default hideArtistAndYear = false, hideArtistName = false
-    init(videoId: String, title: String, artist: String, year: String, onTap: @escaping () -> Void, hideArtistAndYear: Bool = false, hideArtistName: Bool = false) {
+    let rank: Int? // Optional Billboard rank to display
+    let hideDuration: Bool // Flag to hide duration badge (for music videos)
+
+    // Convenience initializer with default parameters
+    init(videoId: String, title: String, artist: String, year: String, onTap: @escaping () -> Void, hideArtistAndYear: Bool = false, hideArtistName: Bool = false, rank: Int? = nil, hideDuration: Bool = false) {
         self.videoId = videoId
         self.title = title
         self.artist = artist
@@ -25,6 +27,8 @@ struct VideoThumbnailView: View {
         self.onTap = onTap
         self.hideArtistAndYear = hideArtistAndYear
         self.hideArtistName = hideArtistName
+        self.rank = rank
+        self.hideDuration = hideDuration
     }
     
     @StateObject private var youtubeService = YouTubeService()
@@ -95,9 +99,23 @@ struct VideoThumbnailView: View {
             // Play button overlay
             playOverlay
             
-            // Heart button and duration badge
+            // Rank badge, Heart button, and duration badge
             VStack {
                 HStack {
+                    // Rank badge (top-left)
+                    if let rank = rank {
+                        Text("#\(rank)")
+                            .font(.system(size: 14))
+                            .fontWeight(.bold)
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.hitRewindPurple)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .padding(.leading, 8)
+                            .padding(.top, 5)
+                    }
+
                     Spacer()
 
                     // Heart button (top-right)
@@ -117,8 +135,8 @@ struct VideoThumbnailView: View {
 
                 Spacer()
 
-                // Duration badge (bottom-right)
-                if !duration.isEmpty {
+                // Duration badge (bottom-right) - only show if not hidden
+                if !hideDuration && !duration.isEmpty {
                     HStack {
                         Spacer()
                         Text(duration)
@@ -159,72 +177,41 @@ struct VideoThumbnailView: View {
     // MARK: - Video Information
     private var videoInfo: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                // iPad: Vertical layout
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(displayTitle)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.hitRewindPrimaryText)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+            // Title and view count on same line
+            HStack(alignment: .top, spacing: 8) {
+                Text(displayTitle)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.hitRewindPrimaryText)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
 
-                    // Show year when we're hiding artist name (artist-specific views), otherwise show artist name
-                    if !hideArtistAndYear {
-                        if hideArtistName {
-                            // Artist-specific view: show year below title with ticketing font
-                            Text(year)
-                                .font(.custom(AppFont.ticketingName(), size: 15))
-                                .fontWeight(.medium)
-                                .foregroundColor(.hitRewindPurple)
-                                .lineLimit(1)
-                        } else if shouldShowArtistName {
-                            // Normal view: show artist name below title
-                            Text(artist)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.hitRewindPurple)
-                                .lineLimit(1)
-                        }
-                    }
-                }
-            } else {
-                // iPhone: Horizontal layout (same as iPad for consistency)
-                HStack(alignment: .top) {
-                    Text(displayTitle)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.hitRewindPrimaryText)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+                Spacer(minLength: 4)
 
-                    Spacer()
-
-                    // Show year when we're hiding artist name (artist-specific views), otherwise show artist name
-                    if !hideArtistAndYear {
-                        if hideArtistName {
-                            // Artist-specific view: show year on the right with ticketing font
-                            Text(year)
-                                .font(.custom(AppFont.ticketingName(), size: 15))
-                                .fontWeight(.medium)
-                                .foregroundColor(.hitRewindPurple)
-                                .lineLimit(1)
-                        } else if shouldShowArtistName {
-                            // Normal view: show artist name on the right
-                            Text(artist)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.hitRewindPurple)
-                                .lineLimit(1)
-                        }
-                    }
-                }
-                
-                // View count (below artist/year)
+                // View count (right-aligned)
                 if !viewCount.isEmpty {
                     Text(viewCount)
                         .font(.caption2)
                         .foregroundColor(.hitRewindSecondaryText)
+                        .lineLimit(1)
+                }
+            }
+
+            // Artist name or year below
+            if !hideArtistAndYear {
+                if hideArtistName {
+                    // Artist-specific view: show year below title with ticketing font
+                    Text(year)
+                        .font(.custom(AppFont.ticketingName(), size: 15))
+                        .fontWeight(.medium)
+                        .foregroundColor(.hitRewindPurple)
+                        .lineLimit(1)
+                } else if shouldShowArtistName {
+                    // Normal view: show artist name below title
+                    Text(artist)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.hitRewindPurple)
                         .lineLimit(1)
                 }
             }
@@ -327,7 +314,7 @@ struct VideoThumbnailView: View {
     
     private func formatViewCount(_ count: Int) -> String {
         let formatter = NumberFormatter()
-        
+
         switch count {
         case 1_000_000...:
             let millions = Double(count) / 1_000_000.0
@@ -336,8 +323,8 @@ struct VideoThumbnailView: View {
             } else {
                 formatter.maximumFractionDigits = 1
             }
-            return "\(formatter.string(from: NSNumber(value: millions)) ?? "0")M views"
-            
+            return "\(formatter.string(from: NSNumber(value: millions)) ?? "0")M"
+
         case 1_000...:
             let thousands = Double(count) / 1_000.0
             if thousands >= 10 {
@@ -345,11 +332,11 @@ struct VideoThumbnailView: View {
             } else {
                 formatter.maximumFractionDigits = 1
             }
-            return "\(formatter.string(from: NSNumber(value: thousands)) ?? "0")K views"
-            
+            return "\(formatter.string(from: NSNumber(value: thousands)) ?? "0")K"
+
         default:
             formatter.numberStyle = .decimal
-            return "\(formatter.string(from: NSNumber(value: count)) ?? "0") views"
+            return formatter.string(from: NSNumber(value: count)) ?? "0"
         }
     }
 }

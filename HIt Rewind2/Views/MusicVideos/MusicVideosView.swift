@@ -177,7 +177,8 @@ struct MusicVideosView: View {
                             title: item.title,
                             artist: item.artist,
                             year: item.year,
-                            onTap: {}
+                            onTap: {},
+                            hideDuration: true
                         )
                     }
                     .buttonStyle(.plain)

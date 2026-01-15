@@ -109,15 +109,6 @@ struct NEWVideosView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(height: 28)
-                    Text("NEW")
-                        .font(.caption)
-                        .foregroundColor(.hitRewindPurple)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.hitRewindPurple.opacity(0.2))
-                        )
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -155,7 +146,7 @@ struct NEWVideosView: View {
                 ContentUnavailableView(
                     "No Videos Available",
                     systemImage: "music.note.list",
-                    description: Text("Select a year to view music videos\n(Testing NEW MTvVideosNEW table)")
+                    description: Text("Select a year to view music videos")
                 )
             }
         }
@@ -164,29 +155,13 @@ struct NEWVideosView: View {
     private var videoGrid: some View {
         ScrollView {
             VStack(alignment: .center, spacing: 16) {
-                HStack {
-                    Text("NEW Music Videos \(String(selectedYear ?? 2025))")
-                        .font(.custom(AppFont.ticketingName(), size: 28))
-                        .fontWeight(.bold)
-                        .foregroundColor(.hitRewindPrimaryText)
-
-                    Text("Beta")
-                        .font(.caption)
-                        .foregroundColor(.hitRewindPurple)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.hitRewindPurple.opacity(0.2))
-                        )
-                }
-                .frame(maxWidth: .infinity)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, gridPadding)
-
-                Text("\(currentYearVideos.count) videos from MTvVideosNEW")
-                    .font(.caption)
-                    .foregroundColor(.hitRewindSecondaryText)
+                Text("Top Hits \(String(selectedYear ?? 2025))")
+                    .font(.custom(AppFont.ticketingName(), size: 28))
+                    .fontWeight(.bold)
+                    .foregroundColor(.hitRewindPrimaryText)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, gridPadding)
             }
             .padding(.top, gridPadding)
 
@@ -201,7 +176,9 @@ struct NEWVideosView: View {
                                 title: video.fields.title ?? "Unknown",
                                 artist: video.fields.artistName ?? "Unknown Artist",
                                 year: video.fields.year ?? "",
-                                onTap: {}
+                                onTap: {},
+                                rank: video.fields.rank,
+                                hideDuration: true
                             )
                         } else {
                             // Fallback if video ID can't be extracted

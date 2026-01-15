@@ -164,41 +164,34 @@ struct ContentView: View {
                     Text("Epic Shows")
                 }
                 .tag(0)
-            
-            MusicVideosView()
+
+            NEWVideosView()
                 .tabItem {
                     Image(systemName: "movieclapper")
                     Text("MTV")
                 }
                 .tag(1)
 
-            NEWVideosView()
-                .tabItem {
-                    Image(systemName: "sparkles")
-                    Text("NEW")
-                }
-                .tag(2)
-
             // AirPlay tab - empty view, picker is handled by custom tab item
             Color.clear
                 .tabItem {
                     AirPlayTabItem()
                 }
-                .tag(3)
-            
+                .tag(2)
+
             FanCamsView()
                 .tabItem {
                     Image(systemName: "ticket")
                     Text("Live")
                 }
-                .tag(4)
+                .tag(3)
 
             FavoritesView()
                 .tabItem {
-                    AnimatedHeartTabIcon(animationTrigger: heartAnimationTrigger, isSelected: selectedTab == 5)
+                    AnimatedHeartTabIcon(animationTrigger: heartAnimationTrigger, isSelected: selectedTab == 4)
                     Text("Favorites")
                 }
-                .tag(5)
+                .tag(4)
         }
         .environment(\.onboardingRestart, $shouldRestartOnboarding)
         .overlay(videoPlayerControlsOverlay)
@@ -210,7 +203,7 @@ struct ContentView: View {
             detectOrientation()
         }
         .onChange(of: selectedTab) { oldValue, newValue in
-            if newValue == 3 {
+            if newValue == 2 {
                 // AirPlay tab tapped - reset to previous tab immediately and trigger AirPlay picker
                 selectedTab = previousTab
                 // Trigger AirPlay picker
@@ -589,7 +582,8 @@ struct FavoritesView: View {
                             year: favorite.year,
                             onTap: {
                                 print("🎥 Favorite video tapped: \(favorite.title) by \(favorite.artist)")
-                            }
+                            },
+                            hideDuration: true
                         )
                     }
                     .buttonStyle(PlainButtonStyle())

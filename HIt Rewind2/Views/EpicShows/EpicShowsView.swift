@@ -573,7 +573,6 @@ struct SettingsView: View {
     @StateObject private var authService = AuthenticationService.shared
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var paywallService = PaywallService.shared // Only for testSubscriberMode
-    @EnvironmentObject private var reviewService: ReviewRequestService
     @State private var showingCopyrightAlert = false
     @State private var showingContactSheet = false
     @State private var showingDeleteAccountAlert = false
