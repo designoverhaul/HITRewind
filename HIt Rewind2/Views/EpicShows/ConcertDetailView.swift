@@ -6,248 +6,256 @@
 //
 
 import SwiftUI
-import SuperwallKit
 
 struct ConcertDetailView: View {
     let concert: Concert
 
     @StateObject private var airtableService = AirtableService()
     @StateObject private var favoritesService = FavoritesService.shared
+    @ObservedObject private var directVideoService = DirectVideoService.shared
+
+    // YouTube player coordinator for VJModeView (landscape video player)
+    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
     @State private var concertVideos: [ConcertVideo] = []
     @State private var isLoadingVideos = true
     @State private var errorMessage: String?
-    @State private var isDescriptionExpanded = false
     @State private var selectedVideoId: String?
     @State private var selectedVideoInfo: ConcertVideo?
+
+    // Header hide/show offset and scroll tracking
+    @State private var headerOffset: CGFloat = 0
+    @State private var lastScrollOffset: CGFloat = 0
 
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @Environment(\.dismiss) private var dismiss
+
+    // Check if this is a "Top Today" concert that should fetch from TopToday table
+    private var isTopTodayConcert: Bool {
+        let artistLower = concert.fields.artistName.lowercased()
+        let venueLower = (concert.fields.venueName ?? "").lowercased()
+        return artistLower.contains("spotify") ||
+               artistLower.contains("top today") ||
+               venueLower.contains("top today") ||
+               venueLower.contains("top 50")
+    }
     
+    private var headerHeight: CGFloat { 56 }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // iPad only: Custom header row (Row 2)
+        Group {
             if UIDevice.current.userInterfaceIdiom == .pad {
-                HStack {
-                    // No sidebar icon for Concert Detail page
-                    Spacer()
-                    
-                    // Logo centered
-                    Image("logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 28)
-                    
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
-                .background(Color.hitRewindBackground)
-            }
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    // Hero section with large concert image
-                    heroSection
-                    
-                    // Concert details and videos
-                    contentSection
-                }
+                iPadLayout
+            } else {
+                iPhoneLayout
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(true)
         .task {
             print("🎪 ConcertDetailView loaded for: \(concert.fields.artistName) - \(concert.fields.venueName ?? "Unknown Venue")")
             await loadConcertVideos()
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            // iPad: Row 1 (System Navigation Bar) - back button left, search/settings right
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.hitRewindPurple)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
-                        NavigationLink(destination: SearchView()) {
-                            Text("🔍")
-                        }
-                        NavigationLink(destination: SettingsView()) {
-                            Text("⚙️")
-                        }
-                    }
-                }
-            } else {
-                // iPhone: Keep existing toolbar structure
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 8) {
-                        Image("logo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 28)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.hitRewindPurple)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
-                        NavigationLink(destination: SearchView()) {
-                            Text("🔍")
-                        }
-                        NavigationLink(destination: SettingsView()) {
-                            Text("⚙️")
-                        }
-                    }
-                }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedVideoId != nil },
+            set: { if !$0 { selectedVideoId = nil; selectedVideoInfo = nil } }
+        )) {
+            if let video = selectedVideoInfo {
+                createVideoView(from: video)
             }
         }
     }
-    
-    // MARK: - Hero Section (Apple TV Style)
-    private var heroSection: some View {
-        ZStack(alignment: .topLeading) {
-            // Background image with minimum height
+
+    // MARK: - iPad Layout (static header with back button)
+    private var iPadLayout: some View {
+        ZStack(alignment: .top) {
+            // Background image that extends edge-to-edge
             backgroundImageView
-                .frame(minHeight: heroImageHeight)
-            
-            // Content container - properly constrained to screen width
-            VStack(alignment: .leading, spacing: 8) {
-                // Artist name and year in system font
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(concert.fields.artistName)
-                        .font(.system(size: heroArtistFontSize, weight: .semibold))
-                        .foregroundColor(.hitRewindPurple)
-                        .shadow(color: .black, radius: 2, x: 0, y: 1)
-                    
-                    Text(String(concert.fields.eventYear))
-                        .font(.system(size: heroArtistFontSize, weight: .semibold))
-                        .foregroundColor(.hitRewindPurple)
-                        .shadow(color: .black, radius: 2, x: 0, y: 1)
-                }
-                
-                // Concert title (venue only) in large white text with ticketing font
-                Text(concert.fields.venueName ?? "Unknown Venue")
-                    .font(.custom(AppFont.ticketingName(), size: heroTitleFontSize))
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .shadow(color: .black, radius: 2, x: 0, y: 1)
-                
-                // Description preview - expandable on tap with natural height
-                if let description = concert.fields.eventDescription, !description.isEmpty {
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            isDescriptionExpanded.toggle()
-                        }
-                    }) {
-                        Text(description)
-                            .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.9))
-                            .lineLimit(isDescriptionExpanded ? nil : 3)
-                            .shadow(color: .black, radius: 2, x: 0, y: 1)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 4)
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                // Star rating with video counter (Apple TV style)
+                .ignoresSafeArea()
+
+            // Main content layered on top
+            VStack(alignment: .leading, spacing: 0) {
+                // Static iPad header with back button
                 HStack {
-                    HStack(spacing: 4) {
-                        ForEach(0..<5) { _ in
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(.hitRewindPurple)
-                                .shadow(color: .black, radius: 1, x: 0, y: 1)
-                        }
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.hitRewindPurple)
+                            .frame(width: 44, height: 44)
                     }
-                    
+
                     Spacer()
-                    
-                    // Video counter - right aligned with stars
-                    if !concertVideos.isEmpty {
-                        Text("\(concertVideos.count) videos")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
+
+                    Image("logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
+
+                    Spacer()
+
+                    // Balance the layout
+                    Spacer()
+                        .frame(width: 44)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.clear)
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        heroContentOverlay
+                        contentSection
+                    }
+                }
+            }
+        }
+        .background(Color.hitRewindBackground)
+    }
+
+    // MARK: - iPhone Layout (headroom header that hides on scroll)
+    private var iPhoneLayout: some View {
+        ZStack(alignment: .top) {
+            // Background image that extends edge-to-edge
+            backgroundImageView
+                .ignoresSafeArea()
+
+            // Main content layered on top
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    heroContentOverlay
+                    contentSection
+                }
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                HeadroomHeader(height: headerHeight, showBackButton: true, onBackTap: { dismiss() })
+                    .offset(y: headerOffset)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.9), value: headerOffset)
+            }
+            .headroomScrollTracking(
+                headerOffset: $headerOffset,
+                lastScrollOffset: $lastScrollOffset,
+                headerHeight: headerHeight
+            )
+        }
+        .background(Color.hitRewindBackground)
+    }
+    
+    // MARK: - Hero Content Overlay (Text only, background is in ZStack)
+    private var heroContentOverlay: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Artist name and year in system font
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(concert.fields.artistName)
+                    .font(.system(size: heroArtistFontSize, weight: .semibold))
+                    .foregroundColor(.hitRewindPurple)
+                    .shadow(color: .black, radius: 2, x: 0, y: 1)
+
+                Text(String(concert.fields.eventYear))
+                    .font(.system(size: heroArtistFontSize, weight: .semibold))
+                    .foregroundColor(.hitRewindPurple)
+                    .shadow(color: .black, radius: 2, x: 0, y: 1)
+            }
+
+            // Concert title (venue only) in large white text with ticketing font
+            Text(concert.fields.venueName ?? "Unknown Venue")
+                .font(.custom(AppFont.ticketingName(), size: heroTitleFontSize))
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+                .shadow(color: .black, radius: 2, x: 0, y: 1)
+
+            // Description - full text, responsive height
+            if let description = concert.fields.eventDescription, !description.isEmpty {
+                Text(description)
+                    .font(.system(size: 16))
+                    .foregroundColor(.white.opacity(0.9))
+                    .shadow(color: .black, radius: 2, x: 0, y: 1)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
+            }
+
+            // Star rating with video counter (Apple TV style)
+            HStack {
+                HStack(spacing: 4) {
+                    ForEach(0..<5) { _ in
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.hitRewindPurple)
                             .shadow(color: .black, radius: 1, x: 0, y: 1)
                     }
                 }
-                .padding(.top, 6)
-                .padding(.bottom, 20) // Add bottom padding for spacing from videos
+
+                Spacer()
+
+                // Video counter - right aligned with stars
+                if !concertVideos.isEmpty {
+                    Text("\(concertVideos.count) videos")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                        .shadow(color: .black, radius: 1, x: 0, y: 1)
+                }
             }
-            .frame(maxWidth: UIScreen.main.bounds.width, alignment: .leading)
-            .padding(.horizontal, contentPadding)
-            .padding(.top, 60)  // Position 60px from top as requested
+            .padding(.top, 6)
+            .padding(.bottom, 20) // Add bottom padding for spacing from videos
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, contentPadding)
+        .padding(.top, heroContentTopPadding)
     }
     
     // MARK: - Background Image View (Independent)
     private var backgroundImageView: some View {
-        GeometryReader { geometry in
-            Group {
-                if let largeImageUrl = concert.fields.largeImage?.first?.url {
-                    AsyncImage(url: URL(string: largeImageUrl)) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Rectangle()
-                            .fill(Color.hitRewindDarkGray)
-                            .overlay {
-                                ProgressView()
-                                    .tint(.hitRewindPurple)
-                            }
-                    }
-                } else {
-                    // Fallback gradient background
+        Group {
+            if let largeImageUrl = concert.fields.largeImage?.first?.url {
+                AsyncImage(url: URL(string: largeImageUrl)) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                } placeholder: {
                     Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [.hitRewindPurple.opacity(0.6), .hitRewindBackground],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(Color.hitRewindDarkGray)
+                        .frame(height: 200)
                         .overlay {
-                            VStack {
-                                Image(systemName: "music.note")
-                                    .font(.system(size: 48))
-                                    .foregroundColor(.hitRewindSecondaryText)
-                                Text("Concert")
-                                    .font(.title3)
-                                    .foregroundColor(.hitRewindSecondaryText)
-                            }
+                            ProgressView()
+                                .tint(.hitRewindPurple)
                         }
                 }
+            } else {
+                // Fallback gradient background
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.hitRewindPurple.opacity(0.6), .hitRewindBackground],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(height: 200)
+                    .overlay {
+                        VStack {
+                            Image(systemName: "music.note")
+                                .font(.system(size: 48))
+                                .foregroundColor(.hitRewindSecondaryText)
+                            Text("Concert")
+                                .font(.title3)
+                                .foregroundColor(.hitRewindSecondaryText)
+                        }
+                    }
             }
-            .frame(width: backgroundImageWidth, height: geometry.size.height)
-            .clipped()
-            .position(x: backgroundImageXPosition(in: geometry), y: geometry.size.height / 2)
-            .overlay {
-                // Gradient overlay for better contrast at top
-                LinearGradient(
-                    colors: [
-                        Color.black.opacity(0.8),
-                        Color.black.opacity(0.4),
-                        Color.clear
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
+        }
+        .frame(maxWidth: .infinity)
+        .overlay(alignment: .bottom) {
+            // Gradient overlay for better text contrast at bottom
+            LinearGradient(
+                colors: [
+                    Color.clear,
+                    Color.black.opacity(0.5),
+                    Color.black.opacity(0.8)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 150)
         }
     }
     
@@ -284,10 +292,12 @@ struct ConcertDetailView: View {
                         VideoThumbnailView(
                             videoId: videoId!,
                             title: video.fields.videoTitle,
-                            artist: concert.fields.artistName,
+                            artist: video.fields.artistName ?? "",  // Use video's artist if available
                             year: "\(concert.fields.eventYear)",
                             onTap: {},
-                            hideArtistAndYear: true  // Hide redundant info for concert videos
+                            hideArtistAndYear: video.fields.artistName == nil,  // Only hide if no artist
+                            hideArtistName: false,
+                            showDurationInline: false  // Duration is already on thumbnail badge
                         )
                     }
                     .buttonStyle(.plain)
@@ -295,14 +305,6 @@ struct ConcertDetailView: View {
             }
         }
         .padding(.horizontal, contentPadding)
-        .navigationDestination(isPresented: Binding(
-            get: { selectedVideoId != nil },
-            set: { if !$0 { selectedVideoId = nil; selectedVideoInfo = nil } }
-        )) {
-            if let video = selectedVideoInfo {
-                createVideoView(from: video)
-            }
-        }
     }
     
     private var loadingView: some View {
@@ -377,7 +379,8 @@ struct ConcertDetailView: View {
         if UIDevice.current.userInterfaceIdiom == .pad {
             return horizontalSizeClass == .regular ? 4 : 3
         } else {
-            return verticalSizeClass == .regular ? 1 : 2
+            // iPhone: always 3 columns (app is landscape only)
+            return 3
         }
     }
     
@@ -388,33 +391,16 @@ struct ConcertDetailView: View {
     private var contentPadding: CGFloat {
         UIDevice.current.userInterfaceIdiom == .pad ? 24 : 16
     }
-    
-    private var heroImageHeight: CGFloat {
-        // Set to 1/3 of screen height as requested
-        return UIScreen.main.bounds.height / 3
-    }
-    
-    private var backgroundImageWidth: CGFloat {
+
+    private var heroContentTopPadding: CGFloat {
+        // Position content below navigation bar area
         if UIDevice.current.userInterfaceIdiom == .pad {
-            // Tablets: edge-to-edge (100% width)
-            return UIScreen.main.bounds.width
+            return 20  // iPad has header row, less padding needed
         } else {
-            // Phones: wider than screen to allow right-alignment cropping
-            return UIScreen.main.bounds.width * 1.5
+            return 60  // iPhone needs more padding for nav bar
         }
     }
-    
-    // Calculate X position for background image based on device type
-    private func backgroundImageXPosition(in geometry: GeometryProxy) -> CGFloat {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            // Tablets: center the image
-            return geometry.size.width / 2
-        } else {
-            // Phones: position to show right side of image
-            return geometry.size.width - (backgroundImageWidth / 2) + (UIScreen.main.bounds.width * 0.25)
-        }
-    }
-    
+
     private var heroArtistFontSize: CGFloat {
         if UIDevice.current.userInterfaceIdiom == .pad {
             return 24
@@ -433,17 +419,19 @@ struct ConcertDetailView: View {
     
     // MARK: - Helper Methods
 
-    private func createVideoView(from video: ConcertVideo) -> SingleVideoView {
+    private func createVideoView(from video: ConcertVideo) -> VJModeView {
         // Build playlist context for autoplay (all videos in this concert)
         let playlistVideos = concertVideos.compactMap { concertVideo -> PlaylistVideo? in
             guard let id = extractYouTubeVideoID(from: concertVideo.fields.youtubeUrl) else {
                 return nil
             }
+            // Use video's artist if available, otherwise fall back to concert artist
+            let videoArtist = concertVideo.fields.artistName ?? concert.fields.artistName
             return PlaylistVideo(
                 id: id,
                 youtubeURL: concertVideo.fields.youtubeUrl,
                 title: concertVideo.fields.videoTitle,
-                artist: concert.fields.artistName,
+                artist: videoArtist,
                 year: "\(concert.fields.eventYear)"
             )
         }
@@ -452,25 +440,34 @@ struct ConcertDetailView: View {
         guard let videoId = extractYouTubeVideoID(from: video.fields.youtubeUrl),
               let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else {
             print("⚠️ Could not find video index for autoplay")
-            return SingleVideoView(
+            let videoArtist = video.fields.artistName ?? concert.fields.artistName
+            let fallbackVideo = PlaylistVideo(
+                id: extractYouTubeVideoID(from: video.fields.youtubeUrl) ?? "",
                 youtubeURL: video.fields.youtubeUrl,
-                videoTitle: video.fields.videoTitle,
-                artistName: concert.fields.artistName,
-                year: "\(concert.fields.eventYear)",
+                title: video.fields.videoTitle,
+                artist: videoArtist,
+                year: "\(concert.fields.eventYear)"
+            )
+            return VJModeView(
+                playerCoordinator: playerCoordinator,
+                initialVideo: fallbackVideo,
+                videos: playlistVideos,
                 playlistContext: nil
             )
         }
 
+        let currentVideo = playlistVideos[currentIndex]
+
         let playlistContext = PlaylistContext(
             videos: playlistVideos,
-            currentIndex: currentIndex
+            currentIndex: currentIndex,
+            sourceType: .concert  // Concert mode: shows concert videos in sidebar, hides year picker
         )
 
-        return SingleVideoView(
-            youtubeURL: video.fields.youtubeUrl,
-            videoTitle: video.fields.videoTitle,
-            artistName: concert.fields.artistName,
-            year: "\(concert.fields.eventYear)",
+        return VJModeView(
+            playerCoordinator: playerCoordinator,
+            initialVideo: currentVideo,
+            videos: playlistVideos,
             playlistContext: playlistContext
         )
     }
@@ -488,9 +485,9 @@ struct ConcertDetailView: View {
                 self.selectedVideoId = videoId
                 self.selectedVideoInfo = video
             } else {
-                // User not subscribed - show paywall
+                // User not subscribed - show paywall with orientation handling
                 print("🔒 User not subscribed - showing paywall")
-                Superwall.shared.register(placement: "MainPlacement") {
+                PaywallService.shared.presentPaywallWithOrientation {
                     // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
                     self.selectedVideoId = videoId
@@ -503,22 +500,52 @@ struct ConcertDetailView: View {
     private func loadConcertVideos() async {
         isLoadingVideos = true
         errorMessage = nil
-        
+
         print("🎪 Loading videos for concert: \(concert.fields.artistName) - \(concert.fields.venueName ?? "Unknown Venue")")
         print("🎪 Concert ID: \(concert.id)")
-        
-        do {
-            let videos = try await airtableService.fetchConcertVideos(for: concert)
+        print("🎪 Is Top Today concert: \(isTopTodayConcert)")
+
+        if isTopTodayConcert {
+            // Fetch from TopToday table instead
+            print("🎪 Fetching from TopToday table...")
+            await directVideoService.fetchTopTodayVideos()
+
+            // Convert DirectVideoRecords to ConcertVideos
+            let topTodayVideos = directVideoService.topTodayVideos
+            let convertedVideos = topTodayVideos.compactMap { record -> ConcertVideo? in
+                guard let url = record.fields.url else { return nil }
+                return ConcertVideo(
+                    id: record.id,
+                    fields: ConcertVideoFields(
+                        videoTitle: record.fields.title ?? "Unknown",
+                        youtubeUrl: url,
+                        concert: nil,
+                        cleaner: nil,
+                        artistName: record.fields.artistName
+                    )
+                )
+            }
+
             await MainActor.run {
-                print("🎪 Successfully loaded \(videos.count) videos for concert")
-                self.concertVideos = videos
+                print("🎪 Successfully loaded \(convertedVideos.count) TopToday videos")
+                self.concertVideos = convertedVideos
                 self.isLoadingVideos = false
             }
-        } catch {
-            print("🎪 Error loading concert videos: \(error)")
-            await MainActor.run {
-                self.errorMessage = "Unable to load concert videos. Please try again."
-                self.isLoadingVideos = false
+        } else {
+            // Regular concert - fetch from Concert Videos table
+            do {
+                let videos = try await airtableService.fetchConcertVideos(for: concert)
+                await MainActor.run {
+                    print("🎪 Successfully loaded \(videos.count) videos for concert")
+                    self.concertVideos = videos
+                    self.isLoadingVideos = false
+                }
+            } catch {
+                print("🎪 Error loading concert videos: \(error)")
+                await MainActor.run {
+                    self.errorMessage = "Unable to load concert videos. Please try again."
+                    self.isLoadingVideos = false
+                }
             }
         }
     }

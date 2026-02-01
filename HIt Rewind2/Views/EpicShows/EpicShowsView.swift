@@ -11,6 +11,7 @@ import SuperwallKit
 struct EpicShowsView: View {
     @StateObject private var airtableService = AirtableService()
     @StateObject private var youtubeService = YouTubeService()
+    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
     @State private var lastDataLoadDate: Date?
 
     // Cached shuffled data for performance
@@ -24,126 +25,167 @@ struct EpicShowsView: View {
     // Navigation state
     @State private var selectedShowInfo: (show: LegendaryShow, videoId: String)?
 
+    // Header hide/show offset and scroll tracking
+    @State private var headerOffset: CGFloat = 0
+    @State private var lastScrollOffset: CGFloat = 0
+
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     
+    private var headerHeight: CGFloat { 56 }
+    private var iPadHeaderHeight: CGFloat { 52 } // 8 top padding + 28 logo + 16 bottom padding
+
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 0) {
-                // iPad only: Custom header row (Row 2)
-                if UIDevice.current.userInterfaceIdiom == .pad {
-                    HStack {
-                        Spacer()
-                        
-                        // Logo centered
-                        Image("logo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 28)
-                        
-                        Spacer()
-                        
-                        // Search and settings on right
-                        HStack(spacing: 16) {
-                            NavigationLink(destination: SearchView()) {
-                                Text("🔍")
-                            }
-                            NavigationLink(destination: SettingsView()) {
-                                Text("⚙️")
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
-                    .background(Color.hitRewindBackground)
-                }
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: contentSpacing) {
-                        if airtableService.isLoading {
-                            loadingView
-                        } else if let errorMessage = airtableService.errorMessage {
-                            errorView(message: errorMessage)
-                        } else {
-                            epicShowsContent
-                        }
-                    }
-                    .padding(.top, contentPadding)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                }
-            }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarHidden(UIDevice.current.userInterfaceIdiom == .pad)
-            .toolbar {
-                // iPhone only: Keep existing toolbar structure
-                if UIDevice.current.userInterfaceIdiom != .pad {
-                    ToolbarItem(placement: .principal) {
-                        HStack(spacing: 8) {
-                            Image("logo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 28)
-                        }
-                    }
-                    
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        HStack(spacing: 16) {
-                            NavigationLink(destination: SearchView()) {
-                                Text("🔍")
-                            }
-                            NavigationLink(destination: SettingsView()) {
-                                Text("⚙️")
-                            }
-                        }
-                    }
-                }
-            }
-            .task {
-                await loadEpicShowsDataIfNeeded()
-            }
-            .navigationDestination(isPresented: Binding(
-                get: { selectedShowInfo != nil },
-                set: { if !$0 { selectedShowInfo = nil } }
-            )) {
-                if let showInfo = selectedShowInfo {
-                    createVideoView(from: showInfo.show, videoId: showInfo.videoId)
-                }
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                // iPad: Simple layout with static header
+                iPadLayout
+            } else {
+                // iPhone: Headroom-style header that hides on scroll
+                iPhoneLayout
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
-    
+
+    // MARK: - iPad Layout (no headroom effect)
+    private var iPadLayout: some View {
+        ZStack(alignment: .top) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: contentSpacing) {
+                    if airtableService.isLoading {
+                        loadingView
+                    } else if let errorMessage = airtableService.errorMessage {
+                        errorView(message: errorMessage)
+                    } else {
+                        epicShowsContent
+                    }
+                }
+                .padding(.top, iPadHeaderHeight + contentPadding)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+
+            // Static iPad header
+            HStack {
+                Spacer()
+                Image("logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 28)
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+            .background(Color.hitRewindBackground)
+        }
+        .navigationTitle("")
+        .navigationBarHidden(true)
+        .task {
+            await loadEpicShowsDataIfNeeded()
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedShowInfo != nil },
+            set: { if !$0 { selectedShowInfo = nil } }
+        )) {
+            if let showInfo = selectedShowInfo {
+                createVideoView(from: showInfo.show, videoId: showInfo.videoId)
+            }
+        }
+    }
+
+    // MARK: - iPhone Layout (with headroom effect)
+    private var iPhoneLayout: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: contentSpacing) {
+                if airtableService.isLoading {
+                    loadingView
+                } else if let errorMessage = airtableService.errorMessage {
+                    errorView(message: errorMessage)
+                } else {
+                    epicShowsContent
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            HeadroomHeader(height: headerHeight)
+                .offset(y: headerOffset)
+                .animation(.spring(response: 0.35, dampingFraction: 0.9), value: headerOffset)
+        }
+        .headroomScrollTracking(
+            headerOffset: $headerOffset,
+            lastScrollOffset: $lastScrollOffset,
+            headerHeight: headerHeight
+        )
+        .navigationTitle("")
+        .navigationBarHidden(true)
+        .task {
+            await loadEpicShowsDataIfNeeded()
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedShowInfo != nil },
+            set: { if !$0 { selectedShowInfo = nil } }
+        )) {
+            if let showInfo = selectedShowInfo {
+                createVideoView(from: showInfo.show, videoId: showInfo.videoId)
+            }
+        }
+    }
+
     // MARK: - Epic Shows Content
     private var epicShowsContent: some View {
         LazyVStack(alignment: .leading, spacing: sectionSpacing) {
-            let uniqueRandomConcerts = Array(cachedRandomConcerts.prefix(cachedSortedLegendaryCategories.count))
-            
-            // Full-width, single banner (no scrolling row)
-            if let bannerConcert = uniqueRandomConcerts.first {
-                singleConcertBanner(concert: bannerConcert)
+            // Calculate how many banner pairs we need
+            let bannerPairCount = cachedSortedLegendaryCategories.count + 1
+            let concertsNeeded = bannerPairCount * 2
+            let uniqueRandomConcerts = Array(cachedRandomConcerts.prefix(concertsNeeded))
+
+            // First banner pair (before first category)
+            if uniqueRandomConcerts.count >= 2 {
+                doubleConcertBannerRow(concerts: Array(uniqueRandomConcerts.prefix(2)))
             }
-            
+
             // Dynamic Legendary categories from Videos table (Last Dance always last)
             ForEach(Array(cachedSortedLegendaryCategories.enumerated()), id: \.element.id) { index, category in
                 legendaryCategorySection(category: category)
-                // Insert another unique banner between sections (but not after the last section)
-                if index < cachedSortedLegendaryCategories.count - 1,
-                   index + 1 < uniqueRandomConcerts.count {
-                    singleConcertBanner(concert: uniqueRandomConcerts[index + 1])
+                // Insert another banner pair between sections (but not after the last section)
+                if index < cachedSortedLegendaryCategories.count - 1 {
+                    let startIndex = (index + 1) * 2
+                    let endIndex = min(startIndex + 2, uniqueRandomConcerts.count)
+                    if startIndex < uniqueRandomConcerts.count {
+                        doubleConcertBannerRow(concerts: Array(uniqueRandomConcerts[startIndex..<endIndex]))
+                    }
                 }
             }
         }
     }
-    
-    // MARK: - Single Concert Banner (full-width)
-    private func singleConcertBanner(concert: Concert) -> some View {
-        NavigationLink(destination: ConcertDetailView(concert: concert)) {
-            ConcertBannerView(concert: concert)
-                .frame(width: UIScreen.main.bounds.width)
+
+    // MARK: - Double Concert Banner Row (two side by side, full width)
+    private func doubleConcertBannerRow(concerts: [Concert]) -> some View {
+        HStack(spacing: 10) {
+            if concerts.count >= 1 {
+                NavigationLink(destination: ConcertDetailView(concert: concerts[0])) {
+                    ConcertBannerView(concert: concerts[0])
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+            }
+
+            if concerts.count >= 2 {
+                NavigationLink(destination: ConcertDetailView(concert: concerts[1])) {
+                    ConcertBannerView(concert: concerts[1])
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+            } else {
+                // If only one concert, add empty spacer for balance
+                Spacer()
+                    .frame(maxWidth: .infinity)
+            }
         }
-        .buttonStyle(.plain)
+        .ignoresSafeArea(edges: .horizontal)
     }
     
     // MARK: - Legendary Category Section (no title above banner, dynamic title shown inline above row)
@@ -157,7 +199,7 @@ struct EpicShowsView: View {
                 .foregroundColor(.hitRewindPrimaryText)
                 .padding(.horizontal, contentPadding)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: videoSpacing) {
+                HStack(alignment: .top, spacing: videoSpacing) {
                     ForEach(shows, id: \.id) { show in
                         if let videoId = extractYouTubeVideoID(from: show.fields.youtubeUrl) {
                             Button(action: {
@@ -334,18 +376,24 @@ struct EpicShowsView: View {
         return shuffled
     }
 
-    private func createVideoView(from show: LegendaryShow, videoId: String) -> SingleVideoView {
+    private func createVideoView(from show: LegendaryShow, videoId: String) -> VJModeView {
         // Build playlist context - only from the same category
         // Find which category this show belongs to
         guard let category = cachedSortedLegendaryCategories.first(where: { cat in
             cat.shows.contains(where: { $0.id == show.id })
         }) else {
             print("⚠️ Could not find category for show")
-            return SingleVideoView(
+            let fallbackVideo = PlaylistVideo(
+                id: videoId,
                 youtubeURL: show.fields.youtubeUrl,
-                videoTitle: show.fields.title,
-                artistName: show.fields.artist,
-                year: "\(show.fields.year)",
+                title: show.fields.title,
+                artist: show.fields.artist,
+                year: "\(show.fields.year)"
+            )
+            return VJModeView(
+                playerCoordinator: playerCoordinator,
+                initialVideo: fallbackVideo,
+                videos: [fallbackVideo],
                 playlistContext: nil
             )
         }
@@ -370,25 +418,47 @@ struct EpicShowsView: View {
         // Find current video index
         guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else {
             print("⚠️ Could not find video index for autoplay")
-            return SingleVideoView(
+            let fallbackVideo = PlaylistVideo(
+                id: videoId,
                 youtubeURL: show.fields.youtubeUrl,
-                videoTitle: show.fields.title,
-                artistName: show.fields.artist,
-                year: "\(show.fields.year)",
+                title: show.fields.title,
+                artist: show.fields.artist,
+                year: "\(show.fields.year)"
+            )
+            return VJModeView(
+                playerCoordinator: playerCoordinator,
+                initialVideo: fallbackVideo,
+                videos: playlistVideos,
                 playlistContext: nil
+            )
+        }
+
+        let currentVideo = playlistVideos[currentIndex]
+
+        // Build all category videos for epic shows mode (not just the displayed 8)
+        let allCategoryVideos = category.shows.compactMap { legendaryShow -> PlaylistVideo? in
+            guard let id = extractYouTubeVideoID(from: legendaryShow.fields.youtubeUrl) else {
+                return nil
+            }
+            return PlaylistVideo(
+                id: id,
+                youtubeURL: legendaryShow.fields.youtubeUrl,
+                title: legendaryShow.fields.title,
+                artist: legendaryShow.fields.artist,
+                year: "\(legendaryShow.fields.year)"
             )
         }
 
         let playlistContext = PlaylistContext(
             videos: playlistVideos,
-            currentIndex: currentIndex
+            currentIndex: currentIndex,
+            sourceType: .epicShows(categoryName: category.name, allCategoryVideos: allCategoryVideos)
         )
 
-        return SingleVideoView(
-            youtubeURL: show.fields.youtubeUrl,
-            videoTitle: show.fields.title,
-            artistName: show.fields.artist,
-            year: "\(show.fields.year)",
+        return VJModeView(
+            playerCoordinator: playerCoordinator,
+            initialVideo: currentVideo,
+            videos: playlistVideos,
             playlistContext: playlistContext
         )
     }
@@ -405,9 +475,9 @@ struct EpicShowsView: View {
                 print("✅ User subscribed - playing video")
                 self.selectedShowInfo = (show, videoId)
             } else {
-                // User not subscribed - show paywall
+                // User not subscribed - show paywall with orientation handling
                 print("🔒 User not subscribed - showing paywall")
-                Superwall.shared.register(placement: "MainPlacement") {
+                PaywallService.shared.presentPaywallWithOrientation {
                     // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
                     self.selectedShowInfo = (show, videoId)
@@ -610,6 +680,11 @@ struct SettingsView: View {
 
                 // App Information Section
                 appInfoSection
+
+                // Developer Section (DEBUG only)
+                #if DEBUG
+                developerSection
+                #endif
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Settings")
@@ -745,6 +820,9 @@ struct SettingsView: View {
             case .error:
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundColor(.orange)
+            case .offline:
+                Image(systemName: "wifi.slash")
+                    .foregroundColor(.hitRewindSecondaryText)
             case .unknown:
                 Image(systemName: "cloud")
                     .foregroundColor(.hitRewindSecondaryText)
@@ -927,7 +1005,69 @@ struct SettingsView: View {
             }
         }
     }
-    
+
+    // MARK: - Developer Section (DEBUG only)
+    #if DEBUG
+    private var developerSection: some View {
+        Section("Developer") {
+            // Force Subscribed Mode
+            Toggle(isOn: Binding(
+                get: { paywallService.testSubscriberMode },
+                set: { paywallService.setTestSubscriberMode($0) }
+            )) {
+                HStack {
+                    Image(systemName: paywallService.testSubscriberMode ? "checkmark.seal.fill" : "checkmark.seal")
+                        .foregroundColor(.green)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Force Subscribed")
+                            .foregroundColor(.white)
+                        Text("Bypass paywall, unlock all videos")
+                            .font(.caption)
+                            .foregroundColor(.hitRewindSecondaryText)
+                    }
+                }
+            }
+            .tint(.green)
+
+            // Force Unsubscribed Mode
+            Toggle(isOn: Binding(
+                get: { paywallService.testUnsubscriberMode },
+                set: { paywallService.setTestUnsubscriberMode($0) }
+            )) {
+                HStack {
+                    Image(systemName: paywallService.testUnsubscriberMode ? "xmark.seal.fill" : "xmark.seal")
+                        .foregroundColor(.red)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Force Unsubscribed")
+                            .foregroundColor(.white)
+                        Text("Always show paywall")
+                            .font(.caption)
+                            .foregroundColor(.hitRewindSecondaryText)
+                    }
+                }
+            }
+            .tint(.red)
+
+            // Restart Onboarding
+            Button(action: {
+                UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+                onboardingRestart.wrappedValue = true
+            }) {
+                HStack {
+                    Image(systemName: "arrow.counterclockwise")
+                        .foregroundColor(.hitRewindPurple)
+                    Text("Restart Onboarding")
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.hitRewindSecondaryText)
+                        .font(.caption)
+                }
+            }
+        }
+    }
+    #endif
+
     // MARK: - Contact Support View
     private var contactSupportView: some View {
         NavigationView {
@@ -1125,11 +1265,14 @@ struct LegendaryShowThumbnailView: View {
                     .multilineTextAlignment(.leading)
                 
                 Spacer()
-                
-                Text(String(show.fields.year))
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.hitRewindPurple)
+
+                // Only show year if it's valid (non-zero)
+                if show.fields.year > 0 {
+                    Text(String(show.fields.year))
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.hitRewindPurple)
+                }
             }
             
             // Title smaller underneath
@@ -1220,11 +1363,8 @@ struct LegendaryFavoriteButton: View {
         }) {
             Image(systemName: isFavorited ? "heart.fill" : "heart")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(isFavorited ? .red : .white)
-                .frame(width: 28, height: 28)
-                .background(Color.black.opacity(0.7))
-                .clipShape(Circle())
-                .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                .foregroundColor(isFavorited ? .red : .hitRewindPurple)
+                .shadow(color: Color.black.opacity(0.5), radius: 2, x: 0, y: 1)
         }
         .buttonStyle(.plain)
         .onAppear {
