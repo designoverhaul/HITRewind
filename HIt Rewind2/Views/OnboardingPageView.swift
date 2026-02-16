@@ -25,6 +25,54 @@ struct OnboardingPageView: View {
         UIDevice.current.userInterfaceIdiom == .pad
     }
 
+    // Helper to build text with inline SF Symbols using Text concatenation for proper flow
+    private func textWithIcons(_ text: String, fontSize: CGFloat, color: Color) -> Text {
+        let iconMappings: [String: String] = [
+            "{{screenShare}}": "rectangle.on.rectangle",
+            "{{airplay}}": "airplayvideo"
+        ]
+
+        var result = Text("")
+        var remaining = text
+
+        while !remaining.isEmpty {
+            var foundIcon = false
+
+            for (placeholder, sfSymbol) in iconMappings {
+                if let range = remaining.range(of: placeholder) {
+                    // Add text before the icon
+                    let before = String(remaining[..<range.lowerBound])
+                    if !before.isEmpty {
+                        result = result + Text(before)
+                            .font(.custom(AppFont.ticketingName(), size: fontSize))
+                            .foregroundColor(color)
+                    }
+                    // Add the icon inline
+                    result = result + Text(Image(systemName: sfSymbol))
+                        .font(.system(size: fontSize * 0.9))
+                        .foregroundColor(color)
+                    // Continue with remaining text
+                    remaining = String(remaining[range.upperBound...])
+                    foundIcon = true
+                    break
+                }
+            }
+
+            if !foundIcon {
+                result = result + Text(remaining)
+                    .font(.custom(AppFont.ticketingName(), size: fontSize))
+                    .foregroundColor(color)
+                remaining = ""
+            }
+        }
+
+        return result
+    }
+
+    private func hasIcons(_ text: String) -> Bool {
+        text.contains("{{")
+    }
+
     var body: some View {
         GeometryReader { geometry in
             if page.useGIFCarousel {
@@ -93,12 +141,12 @@ struct OnboardingPageView: View {
                             .clipped()
                     } else if isIPad {
                     // iPad: padded image
-                    if page.imageName == "onboarding4" || page.imageName == "onboarding5" {
+                    if page.imageName == "Onboarding4" || page.imageName == "Onboarding4.5" || page.imageName == "onboarding5" {
                         Image(page.imageName)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(maxWidth: 600)
-                            .ignoresSafeArea(.all, edges: .top)
+                            .padding(.top, 60)
                     } else {
                         Image(page.imageName)
                             .resizable()
@@ -109,12 +157,12 @@ struct OnboardingPageView: View {
                     }
                 } else {
                     // iPhone: full width edge-to-edge
-                    if page.imageName == "onboarding4" || page.imageName == "onboarding5" {
+                    if page.imageName == "Onboarding4" || page.imageName == "Onboarding4.5" || page.imageName == "onboarding5" {
                         Image(page.imageName)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: geometry.size.width)
-                            .ignoresSafeArea(.all, edges: .top)
+                            .padding(.top, 60)
                     } else {
                         Image(page.imageName)
                             .resizable()
@@ -126,8 +174,8 @@ struct OnboardingPageView: View {
                 }
 
                 // Conditional spacing based on page
-                if page.imageName == "onboarding4" || page.imageName == "onboarding5" {
-                    // No spacing for onboarding4/5 - title touches image
+                if page.imageName == "Onboarding4" || page.imageName == "Onboarding4.5" || page.imageName == "onboarding5" {
+                    // No spacing for Onboarding4/4.5/5 - title touches image
                     EmptyView()
                 } else {
                     Spacer()
@@ -135,11 +183,16 @@ struct OnboardingPageView: View {
                 }
 
                 // Title
-                Text(page.title)
-                    .font(.custom(AppFont.ticketingName(), size: 24))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
+                if hasIcons(page.title) {
+                    textWithIcons(page.title, fontSize: 24, color: .white)
+                        .multilineTextAlignment(.center)
+                } else {
+                    Text(page.title)
+                        .font(.custom(AppFont.ticketingName(), size: 24))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                }
 
                 // Subtitle (if present)
                 if !page.subtitle.isEmpty {
@@ -154,6 +207,11 @@ struct OnboardingPageView: View {
                                 .font(.system(size: 42))
                         }
                         .padding(.top, 8)
+                    } else if hasIcons(page.subtitle) {
+                        textWithIcons(page.subtitle, fontSize: 24, color: Color.hitRewindPurple)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
                     } else {
                         Text(page.subtitle)
                             .font(.custom(AppFont.ticketingName(), size: 24))

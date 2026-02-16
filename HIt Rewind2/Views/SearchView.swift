@@ -6,66 +6,54 @@
 //
 
 import SwiftUI
+import SuperwallKit
 
 struct SearchView: View {
     let initialSearchText: String?
     let autoSearch: Bool
-    
+
     @StateObject private var searchService = SearchService.shared
+    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
     @State private var searchText = ""
     @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
+    @State private var selectedSearchResult: SearchResult?
     @Environment(\.dismiss) private var dismiss
-    
+    @FocusState private var isSearchFieldFocused: Bool
+
     init(initialSearchText: String? = nil, autoSearch: Bool = false) {
         self.initialSearchText = initialSearchText
         self.autoSearch = autoSearch
     }
-    
-    // Responsive grid columns
-    private var gridColumns: [GridItem] {
-        let screenWidth = UIScreen.main.bounds.width
-        let minItemWidth: CGFloat = 150
-        let spacing: CGFloat = 12
-        let padding: CGFloat = 32 // Total horizontal padding
-        
-        let availableWidth = screenWidth - padding
-        let columnsCount = max(1, Int(availableWidth / (minItemWidth + spacing)))
-        
-        return Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnsCount)
-    }
+
+    // Fixed 3-column grid to match other pages (app is landscape-only)
+    private let gridColumns = [
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16)
+    ]
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Custom header row for all devices
                 HStack {
-                    // Back button on left
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.hitRewindPurple)
-                    }
-                    
                     Spacer()
-                    
+
                     // Logo centered
                     Image("logo")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 28)
-                    
+
                     Spacer()
-                    
-                    // Empty space for settings (not implemented yet)
-                    Text("")
-                        .frame(width: 24)
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
                 .background(Color.hitRewindBackground)
-                
-                
+
+
                 // Search Bar
                 searchBar
                 
@@ -81,8 +69,6 @@ struct SearchView: View {
                 } else {
                     searchResultsView
                 }
-                
-                Spacer()
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
@@ -116,8 +102,12 @@ struct SearchView: View {
                 }
             } else {
                 print("🔍 SearchView appeared with no initial search text")
+                // Auto-focus search field when view appears (with slight delay for smooth animation)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isSearchFieldFocused = true
+                }
             }
-            
+
             // Listen for artist search notifications
             NotificationCenter.default.addObserver(forName: .searchArtist, object: nil, queue: .main) { notification in
                 if let userInfo = notification.userInfo,
@@ -148,8 +138,18 @@ struct SearchView: View {
                 .font(.body)
                 .foregroundColor(.hitRewindPrimaryText)
                 .submitLabel(.search)
+                .focused($isSearchFieldFocused)
                 .onSubmit {
                     searchService.searchContent(query: searchText)
+                }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            isSearchFieldFocused = false
+                        }
+                        .foregroundColor(.hitRewindPurple)
+                    }
                 }
             
             if !searchText.isEmpty {
@@ -174,94 +174,207 @@ struct SearchView: View {
     // MARK: - Content Views
     
     private var emptySearchView: some View {
-        VStack(spacing: 24) {
-            // Empty state - no message
-        }
-        .padding(.top, 80)
+        Spacer()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     private var loadingView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             ProgressView()
                 .scaleEffect(1.2)
                 .tint(.hitRewindPurple)
-            
+
             Text("Searching...")
-                .font(.body)
+                .font(.subheadline)
                 .foregroundColor(.hitRewindSecondaryText)
         }
-        .padding(.top, 80)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private func errorView(message: String) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 48))
+                .font(.system(size: 36))
                 .foregroundColor(.orange)
-            
+
             Text("Search Error")
-                .font(.headline)
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .foregroundColor(.hitRewindPrimaryText)
-            
+
             Text(message)
-                .font(.body)
+                .font(.caption)
                 .foregroundColor(.hitRewindSecondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
-            
+
             Button("Try Again") {
                 searchService.searchContent(query: searchText)
             }
+            .font(.subheadline)
             .foregroundColor(.hitRewindPurple)
         }
-        .padding(.top, 80)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     private var noResultsView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 64))
+                .font(.system(size: 40))
                 .foregroundColor(.hitRewindSecondaryText)
-            
+
             Text("No Results Found")
-                .font(.title2)
+                .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(.hitRewindPrimaryText)
-            
-            Text("No videos found for \"\(searchText)\". Try searching for different keywords or check your spelling.")
-                .font(.body)
+
+            Text("No videos found for \"\(searchText)\"")
+                .font(.caption)
                 .foregroundColor(.hitRewindSecondaryText)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
         }
-        .padding(.top, 80)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var searchResultsView: some View {
         ScrollView {
             LazyVGrid(columns: gridColumns, spacing: 16) {
                 ForEach(searchService.searchResults) { result in
-                    SearchResultCard(result: result)
-                        .onTapGesture {
-                            print("🔍 Video card tapped: \(result.title) by \(result.artistName)")
-                            // Use the same notification system as other video cards
-                            NotificationCenter.default.post(
-                                name: .videoPlayerPresented,
-                                object: nil,
-                                userInfo: [
-                                    "videoId": result.videoId,
-                                    "title": result.title,
-                                    "artist": result.artistName,
-                                    "year": result.year
-                                ]
-                            )
-                        }
+                    Button(action: {
+                        handleSearchResultTap(result: result)
+                    }) {
+                        SearchResultCard(result: result)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .padding(.top, 12)
             .padding(.bottom, 32)
+            .navigationDestination(isPresented: Binding(
+                get: { selectedSearchResult != nil },
+                set: { if !$0 { selectedSearchResult = nil } }
+            )) {
+                if let result = selectedSearchResult {
+                    createVideoView(from: result)
+                }
+            }
         }
+        .scrollDismissesKeyboard(.immediately)
+    }
+
+    // MARK: - Helper Methods
+
+    private func handleSearchResultTap(result: SearchResult) {
+        print("🔍 Search result tapped: \(result.title) by \(result.artistName)")
+
+        // Check test subscriber mode first (for development testing)
+        if PaywallService.shared.testSubscriberMode {
+            print("🧪 Test subscriber mode enabled - playing video")
+            self.selectedSearchResult = result
+            return
+        }
+
+        Task { @MainActor in
+            // Check StoreKit directly for active subscription
+            let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
+
+            if isSubscribed {
+                // User is subscribed - play video immediately
+                print("✅ User subscribed - playing video")
+                self.selectedSearchResult = result
+            } else {
+                // User not subscribed - show paywall
+                print("🔒 User not subscribed - showing paywall")
+                PaywallService.shared.presentPaywallWithOrientation {
+                    // After successful purchase, play video
+                    print("✅ Purchase complete - playing video")
+                    self.selectedSearchResult = result
+                }
+            }
+        }
+    }
+
+    private func createVideoView(from result: SearchResult) -> VJModeView {
+        // Build playlist context from all search results
+        let playlistVideos = searchService.searchResults.map { searchResult in
+            PlaylistVideo(
+                id: searchResult.videoId,
+                youtubeURL: searchResult.url,
+                title: searchResult.title,
+                artist: searchResult.artistName,
+                year: searchResult.year,
+                rank: searchResult.rank
+            )
+        }
+
+        // Find current video index
+        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == result.videoId }) else {
+            print("⚠️ Could not find video index for autoplay")
+            let fallbackVideo = PlaylistVideo(
+                id: result.videoId,
+                youtubeURL: result.url,
+                title: result.title,
+                artist: result.artistName,
+                year: result.year
+            )
+            return VJModeView(
+                playerCoordinator: playerCoordinator,
+                initialVideo: fallbackVideo,
+                videos: [],
+                playlistContext: nil
+            )
+        }
+
+        let initialVideo = playlistVideos[currentIndex]
+
+        // Determine sourceType based on result type
+        let sourceType: VideoSourceType
+        if result.type == .top100Video {
+            // Top 100 video - show year picker
+            sourceType = .musicVideos
+        } else {
+            // LIVE/Videos table - show artist picker
+            // Build artist data for the picker
+            let liveResults = searchService.searchResults.filter { $0.type == .video }
+            let artistNames = Array(Set(liveResults.map { $0.artistName })).sorted()
+
+            // Build dictionary of artist -> videos
+            var allArtistVideos: [String: [PlaylistVideo]] = [:]
+            for liveResult in liveResults {
+                let video = PlaylistVideo(
+                    id: liveResult.videoId,
+                    youtubeURL: liveResult.url,
+                    title: liveResult.title,
+                    artist: liveResult.artistName,
+                    year: liveResult.year
+                )
+                if allArtistVideos[liveResult.artistName] != nil {
+                    allArtistVideos[liveResult.artistName]?.append(video)
+                } else {
+                    allArtistVideos[liveResult.artistName] = [video]
+                }
+            }
+
+            sourceType = .live(
+                artistName: result.artistName,
+                categoryArtists: artistNames,
+                allArtistVideos: allArtistVideos
+            )
+        }
+
+        let playlistContext = PlaylistContext(
+            videos: playlistVideos,
+            currentIndex: currentIndex,
+            sourceType: sourceType
+        )
+
+        return VJModeView(
+            playerCoordinator: playerCoordinator,
+            initialVideo: initialVideo,
+            videos: playlistVideos,
+            playlistContext: playlistContext
+        )
     }
 }
 
@@ -280,18 +393,28 @@ struct SearchResultCard: View {
                 AsyncImage(url: youtubeImageURL) { image in
                     image
                         .resizable()
-                        .aspectRatio(16/9, contentMode: .fill)
-                        .clipped()
+                        .scaledToFill()
                 } placeholder: {
                     Rectangle()
                         .fill(Color.hitRewindCardBackground.opacity(0.5))
-                        .aspectRatio(16/9, contentMode: .fit)
-                        .overlay {
-                            ProgressView()
-                                .tint(.hitRewindPurple)
-                        }
                 }
+                .frame(maxWidth: .infinity)
+                .aspectRatio(16/9, contentMode: .fit)
+                .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(alignment: .topLeading) {
+                    // Rank overlay for Billboard Top 100 videos
+                    if let rank = result.rank {
+                        Text("#\(rank)")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.hitRewindPurple)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .padding(6)
+                    }
+                }
                 .overlay(alignment: .bottomTrailing) {
                     // Duration overlay
                     if let duration = duration {
@@ -306,7 +429,7 @@ struct SearchResultCard: View {
                             .padding(6)
                     }
                 }
-                
+
                 // Favorite heart icon
                 Button(action: toggleFavorite) {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
@@ -326,37 +449,17 @@ struct SearchResultCard: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(result.title)
-                    .font(.caption)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 13))
+                    .fontWeight(.medium)
                     .foregroundColor(.hitRewindPrimaryText)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                
+
                 Text(result.artistName)
-                    .font(.caption2)
-                    .foregroundColor(.hitRewindSecondaryText)
+                    .font(.system(size: 13))
+                    .fontWeight(.medium)
+                    .foregroundColor(.hitRewindPurple)
                     .lineLimit(1)
-                
-                HStack {
-                    Text(result.year)
-                        .font(.caption2)
-                        .foregroundColor(.hitRewindSecondaryText)
-                    
-                    Spacer()
-                    
-                    // Content type indicator
-                    if result.type == .mtvVideo {
-                        // Music Videos (MTV Videos table)
-                        Image(systemName: "movieclapper")
-                            .font(.caption2)
-                            .foregroundColor(.hitRewindSecondaryText)
-                    } else {
-                        // Live Shows (Videos table)
-                        Image(systemName: "ticket")
-                            .font(.caption2)
-                            .foregroundColor(.hitRewindSecondaryText)
-                    }
-                }
             }
         }
         .task {

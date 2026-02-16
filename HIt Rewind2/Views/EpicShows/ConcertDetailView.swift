@@ -69,11 +69,9 @@ struct ConcertDetailView: View {
     // MARK: - iPad Layout (static header with back button)
     private var iPadLayout: some View {
         ZStack(alignment: .top) {
-            // Background image that extends edge-to-edge
-            backgroundImageView
+            Color.hitRewindBackground
                 .ignoresSafeArea()
 
-            // Main content layered on top
             VStack(alignment: .leading, spacing: 0) {
                 // Static iPad header with back button
                 HStack {
@@ -93,37 +91,32 @@ struct ConcertDetailView: View {
 
                     Spacer()
 
-                    // Balance the layout
                     Spacer()
                         .frame(width: 44)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color.clear)
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        heroContentOverlay
-                        contentSection
+                        bannerImageSection
+                        bodyContent
                     }
                 }
             }
         }
-        .background(Color.hitRewindBackground)
     }
 
     // MARK: - iPhone Layout (headroom header that hides on scroll)
     private var iPhoneLayout: some View {
         ZStack(alignment: .top) {
-            // Background image that extends edge-to-edge
-            backgroundImageView
+            Color.hitRewindBackground
                 .ignoresSafeArea()
 
-            // Main content layered on top
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    heroContentOverlay
-                    contentSection
+                    bannerImageSection
+                    bodyContent
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) {
@@ -137,126 +130,101 @@ struct ConcertDetailView: View {
                 headerHeight: headerHeight
             )
         }
+    }
+
+    // MARK: - Banner Image Section (fixed height, full width, scrolls with content)
+    private var bannerImageSection: some View {
+        Group {
+            if let bannerUrl = concert.fields.bannerImage?.first?.url,
+               let url = URL(string: bannerUrl) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    case .failure:
+                        fallbackBannerImage
+                    default:
+                        Rectangle()
+                            .fill(Color.hitRewindDarkGray)
+                    }
+                }
+            } else {
+                fallbackBannerImage
+            }
+        }
+        .frame(height: bannerHeight)
+        .frame(maxWidth: .infinity)
+        .clipped()
+    }
+
+    private var fallbackBannerImage: some View {
+        Image("HeaderBackground")
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+    }
+
+    // MARK: - Body Content (below banner, solid background)
+    private var bodyContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            heroInfoSection
+            contentSection
+        }
         .background(Color.hitRewindBackground)
     }
-    
-    // MARK: - Hero Content Overlay (Text only, background is in ZStack)
-    private var heroContentOverlay: some View {
+
+    // MARK: - Hero Info Section (artist, venue, description, stars)
+    private var heroInfoSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Artist name and year in system font
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(concert.fields.artistName)
-                    .font(.system(size: heroArtistFontSize, weight: .semibold))
-                    .foregroundColor(.hitRewindPurple)
-                    .shadow(color: .black, radius: 2, x: 0, y: 1)
-
-                Text(String(concert.fields.eventYear))
-                    .font(.system(size: heroArtistFontSize, weight: .semibold))
-                    .foregroundColor(.hitRewindPurple)
-                    .shadow(color: .black, radius: 2, x: 0, y: 1)
-            }
-
-            // Concert title (venue only) in large white text with ticketing font
-            Text(concert.fields.venueName ?? "Unknown Venue")
-                .font(.custom(AppFont.ticketingName(), size: heroTitleFontSize))
+            // Artist name
+            Text(concert.fields.artistName)
+                .font(.custom(AppFont.ticketingName(), size: heroSubtitleFontSize))
                 .fontWeight(.bold)
-                .foregroundColor(.white)
-                .shadow(color: .black, radius: 2, x: 0, y: 1)
+                .foregroundColor(.hitRewindPurple)
 
-            // Description - full text, responsive height
+            // Concert title (venue)
+            Text(concert.fields.venueName ?? "Unknown Venue")
+                .font(.system(size: heroTitleFontSize, weight: .bold))
+                .foregroundColor(.white)
+
+            // Description
             if let description = concert.fields.eventDescription, !description.isEmpty {
                 Text(description)
                     .font(.system(size: 16))
                     .foregroundColor(.white.opacity(0.9))
-                    .shadow(color: .black, radius: 2, x: 0, y: 1)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
             }
 
-            // Star rating with video counter (Apple TV style)
+            // Star rating with video counter
             HStack {
                 HStack(spacing: 4) {
                     ForEach(0..<5) { _ in
                         Image(systemName: "star.fill")
                             .font(.system(size: 14))
                             .foregroundColor(.hitRewindPurple)
-                            .shadow(color: .black, radius: 1, x: 0, y: 1)
                     }
                 }
 
                 Spacer()
 
-                // Video counter - right aligned with stars
                 if !concertVideos.isEmpty {
                     Text("\(concertVideos.count) videos")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.white)
-                        .shadow(color: .black, radius: 1, x: 0, y: 1)
                 }
             }
             .padding(.top, 6)
-            .padding(.bottom, 20) // Add bottom padding for spacing from videos
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, contentPadding)
-        .padding(.top, heroContentTopPadding)
+        .padding(.vertical, 16)
     }
-    
-    // MARK: - Background Image View (Independent)
-    private var backgroundImageView: some View {
-        Group {
-            if let largeImageUrl = concert.fields.largeImage?.first?.url {
-                AsyncImage(url: URL(string: largeImageUrl)) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                } placeholder: {
-                    Rectangle()
-                        .fill(Color.hitRewindDarkGray)
-                        .frame(height: 200)
-                        .overlay {
-                            ProgressView()
-                                .tint(.hitRewindPurple)
-                        }
-                }
-            } else {
-                // Fallback gradient background
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [.hitRewindPurple.opacity(0.6), .hitRewindBackground],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(height: 200)
-                    .overlay {
-                        VStack {
-                            Image(systemName: "music.note")
-                                .font(.system(size: 48))
-                                .foregroundColor(.hitRewindSecondaryText)
-                            Text("Concert")
-                                .font(.title3)
-                                .foregroundColor(.hitRewindSecondaryText)
-                        }
-                    }
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .bottom) {
-            // Gradient overlay for better text contrast at bottom
-            LinearGradient(
-                colors: [
-                    Color.clear,
-                    Color.black.opacity(0.5),
-                    Color.black.opacity(0.8)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 150)
-        }
+
+    private var bannerHeight: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 280 : 200
     }
     
     // MARK: - Content Section (Apple TV Style)
@@ -293,7 +261,7 @@ struct ConcertDetailView: View {
                             videoId: videoId!,
                             title: video.fields.videoTitle,
                             artist: video.fields.artistName ?? "",  // Use video's artist if available
-                            year: "\(concert.fields.eventYear)",
+                            year: concert.fields.eventYear.map { "\($0)" } ?? "",
                             onTap: {},
                             hideArtistAndYear: video.fields.artistName == nil,  // Only hide if no artist
                             hideArtistName: false,
@@ -392,28 +360,19 @@ struct ConcertDetailView: View {
         UIDevice.current.userInterfaceIdiom == .pad ? 24 : 16
     }
 
-    private var heroContentTopPadding: CGFloat {
-        // Position content below navigation bar area
+    private var heroSubtitleFontSize: CGFloat {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            return 20  // iPad has header row, less padding needed
+            return 16
         } else {
-            return 60  // iPhone needs more padding for nav bar
+            return verticalSizeClass == .regular ? 14 : 13
         }
     }
 
-    private var heroArtistFontSize: CGFloat {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return 24
-        } else {
-            return verticalSizeClass == .regular ? 20 : 18
-        }
-    }
-    
     private var heroTitleFontSize: CGFloat {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            return 42  // Larger for main title
+            return 48
         } else {
-            return verticalSizeClass == .regular ? 32 : 28
+            return verticalSizeClass == .regular ? 38 : 34
         }
     }
     
@@ -432,7 +391,7 @@ struct ConcertDetailView: View {
                 youtubeURL: concertVideo.fields.youtubeUrl,
                 title: concertVideo.fields.videoTitle,
                 artist: videoArtist,
-                year: "\(concert.fields.eventYear)"
+                year: concert.fields.eventYear.map { "\($0)" } ?? ""
             )
         }
 
@@ -446,7 +405,7 @@ struct ConcertDetailView: View {
                 youtubeURL: video.fields.youtubeUrl,
                 title: video.fields.videoTitle,
                 artist: videoArtist,
-                year: "\(concert.fields.eventYear)"
+                year: concert.fields.eventYear.map { "\($0)" } ?? ""
             )
             return VJModeView(
                 playerCoordinator: playerCoordinator,
@@ -559,7 +518,6 @@ struct ConcertDetailView: View {
             artistName: "Taylor Swift",
             eventYear: 2024,
             bannerImage: nil,
-            largeImage: nil,
             eventDescription: "The Eras Tour brings Taylor's entire discography to life in an unforgettable concert experience spanning over three hours.",
             concertVideos: nil
         )

@@ -198,6 +198,7 @@ struct EpicShowsView: View {
                 .fontWeight(.bold)
                 .foregroundColor(.hitRewindPrimaryText)
                 .padding(.horizontal, contentPadding)
+                .padding(.top, 4)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: videoSpacing) {
                     ForEach(shows, id: \.id) { show in
@@ -332,9 +333,9 @@ struct EpicShowsView: View {
     
     private var sectionTitleFontSize: CGFloat {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            return 28
+            return 31
         } else {
-            return verticalSizeClass == .regular ? 24 : 20
+            return verticalSizeClass == .regular ? 27 : 23
         }
     }
     
@@ -371,7 +372,7 @@ struct EpicShowsView: View {
         }
 
         // Create and cache shuffled shows
-        let shuffled = Array(category.shows.shuffled().prefix(8))
+        let shuffled = Array(category.shows.shuffled().prefix(20))
         cachedShuffledShows[category.id] = shuffled
         return shuffled
     }
@@ -540,8 +541,10 @@ struct EpicShowsView: View {
             var otherCategories = categories.filter { $0.name != "Last Dance" }
             let lastDanceCategory = categories.first { $0.name == "Last Dance" }
 
-            // Sort other categories alphabetically
-            otherCategories.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            // Randomly pick up to 4 from other categories, then add Last Dance as the 5th
+            otherCategories.shuffle()
+            let maxOther = lastDanceCategory != nil ? 4 : 5
+            otherCategories = Array(otherCategories.prefix(maxOther))
 
             // Add "Last Dance" at the end if it exists
             if let lastDance = lastDanceCategory {
@@ -657,38 +660,36 @@ struct SettingsView: View {
         }
         return false
     }
-    
+
     var body: some View {
-        NavigationStack {
-            List {
-                // Account Section
-                if authService.isAuthenticated {
-                    accountSection
-                }
-
-                // Data & Sync Section
-                dataSection
-
-                // Subscription Section
-                subscriptionSection
-
-                // Legal & Privacy Section
-                legalSection
-                
-                // Support Section
-                supportSection
-
-                // App Information Section
-                appInfoSection
-
-                // Developer Section (DEBUG only)
-                #if DEBUG
-                developerSection
-                #endif
+        List {
+            // Account Section
+            if authService.isAuthenticated {
+                accountSection
             }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Settings")
+
+            // Data & Sync Section
+            dataSection
+
+            // Subscription Section
+            subscriptionSection
+
+            // Legal & Privacy Section
+            legalSection
+
+            // Support Section
+            supportSection
+
+            // App Information Section
+            appInfoSection
+
+            // Developer Section (DEBUG only)
+            #if DEBUG
+            developerSection
+            #endif
         }
+        .listStyle(.insetGrouped)
+        .navigationTitle("Settings")
         .sheet(isPresented: $showingContactSheet) {
             contactSupportView
         }
@@ -1051,7 +1052,7 @@ struct SettingsView: View {
             // Restart Onboarding
             Button(action: {
                 UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-                onboardingRestart.wrappedValue = true
+                onboardingRestart.wrappedValue = false
             }) {
                 HStack {
                     Image(systemName: "arrow.counterclockwise")

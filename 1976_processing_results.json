@@ -1,0 +1,707 @@
+{
+  "successful": [
+    {
+      "rank": 1,
+      "title": "Silly Love Songs",
+      "artist": "Wings",
+      "video_url": "https://www.youtube.com/watch?v=ap87QgZKTNw",
+      "airtable_id": "recs9rHPVjscNdToQ"
+    },
+    {
+      "rank": 2,
+      "title": "Don't Go Breaking My Heart",
+      "artist": "Elton John & Kiki Dee",
+      "video_url": "https://www.youtube.com/watch?v=z0qW9P-uYfM",
+      "airtable_id": "recfCwdCeo6AQAJ0t"
+    },
+    {
+      "rank": 3,
+      "title": "Disco Lady",
+      "artist": "Johnnie Taylor",
+      "video_url": "https://www.youtube.com/watch?v=U4aiBO8RPzk",
+      "airtable_id": "recFpwFzipe8rQj9O"
+    },
+    {
+      "rank": 4,
+      "title": "December, 1963 (Oh, What a Night)",
+      "artist": "The Four Seasons",
+      "video_url": "https://www.youtube.com/watch?v=q6iD0Wo5J9Y",
+      "airtable_id": "reckXT1cke41NJSTp"
+    },
+    {
+      "rank": 5,
+      "title": "Play That Funky Music",
+      "artist": "Wild Cherry",
+      "video_url": "https://www.youtube.com/watch?v=BHcYFxU4fMo",
+      "airtable_id": "recW12Rz0KWEqYJQQ"
+    },
+    {
+      "rank": 6,
+      "title": "Kiss and Say Goodbye",
+      "artist": "The Manhattans",
+      "video_url": "https://www.youtube.com/watch?v=wtjro7_R3-4",
+      "airtable_id": "recvVDkbyH873PGoD"
+    },
+    {
+      "rank": 7,
+      "title": "Love Machine",
+      "artist": "The Miracles",
+      "video_url": "https://www.youtube.com/watch?v=fGXSRISBu3Y",
+      "airtable_id": "recj0iqyabHg6RUl6"
+    },
+    {
+      "rank": 8,
+      "title": "50 Ways to Leave Your Lover",
+      "artist": "Paul Simon",
+      "video_url": "https://www.youtube.com/watch?v=E8JXiroAi6Y",
+      "airtable_id": "recdyj3nXeYiTo3MF"
+    },
+    {
+      "rank": 9,
+      "title": "Love Is Alive",
+      "artist": "Gary Wright",
+      "video_url": "https://www.youtube.com/watch?v=wM6y_KBwAps",
+      "airtable_id": "reclZcWXYiH3bd8nR"
+    },
+    {
+      "rank": 10,
+      "title": "A Fifth of Beethoven",
+      "artist": "Walter Murphy & The Big Apple Band",
+      "video_url": "https://www.youtube.com/watch?v=U6FXOrY2BOo",
+      "airtable_id": "recxbFW5RhuJqAMU9"
+    },
+    {
+      "rank": 11,
+      "title": "Sara Smile",
+      "artist": "Hall & Oates",
+      "video_url": "https://www.youtube.com/watch?v=dYEpFJhuu1E",
+      "airtable_id": "recTjOp58jGWOWMai"
+    },
+    {
+      "rank": 12,
+      "title": "Afternoon Delight",
+      "artist": "Starland Vocal Band",
+      "video_url": "https://www.youtube.com/watch?v=7JtCA0esyOU",
+      "airtable_id": "recxFwet1GzRv6qP1"
+    },
+    {
+      "rank": 13,
+      "title": "I Write the Songs",
+      "artist": "Barry Manilow",
+      "video_url": "https://www.youtube.com/watch?v=6U6JlAsYv0Y",
+      "airtable_id": "recJ5vXpngKQLHaDL"
+    },
+    {
+      "rank": 14,
+      "title": "Fly, Robin, Fly",
+      "artist": "Silver Convention",
+      "video_url": "https://www.youtube.com/watch?v=U_XJAuscpTg",
+      "airtable_id": "rec3qNQVKKTYei6bb"
+    },
+    {
+      "rank": 15,
+      "title": "Love Hangover",
+      "artist": "Diana Ross",
+      "video_url": "https://www.youtube.com/watch?v=Y9-7rcKxIc8",
+      "airtable_id": "recSrHMO79iKfSx2G"
+    },
+    {
+      "rank": 16,
+      "title": "Get Closer",
+      "artist": "Seals and Crofts",
+      "video_url": "https://www.youtube.com/watch?v=rBUHdy8g8S4",
+      "airtable_id": "recyrxyl89OgJpctU"
+    },
+    {
+      "rank": 17,
+      "title": "More, More, More",
+      "artist": "Andrea True Connection",
+      "video_url": "https://www.youtube.com/watch?v=73RYirgeLV4",
+      "airtable_id": "recnnSb9VrV75Rweh"
+    },
+    {
+      "rank": 18,
+      "title": "Bohemian Rhapsody",
+      "artist": "Queen",
+      "video_url": "https://www.youtube.com/watch?v=fJ9rUzIMcZQ",
+      "airtable_id": "recKiRhVDkPnW4M8C"
+    },
+    {
+      "rank": 19,
+      "title": "Misty Blue",
+      "artist": "Dorothy Moore",
+      "video_url": "https://www.youtube.com/watch?v=dFUDub7m3cU",
+      "airtable_id": "recjVGLscGeKrq8S1"
+    },
+    {
+      "rank": 20,
+      "title": "Boogie Fever",
+      "artist": "The Sylvers",
+      "video_url": "https://www.youtube.com/watch?v=YHKCHvpYq_8",
+      "airtable_id": "recwJKCIaTY7pv5W0"
+    },
+    {
+      "rank": 21,
+      "title": "I'd Really Love to See You Tonight",
+      "artist": "England Dan & John Ford Coley",
+      "video_url": "https://www.youtube.com/watch?v=UuUVgKT4roQ",
+      "airtable_id": "rec3eBapE65SZowik"
+    },
+    {
+      "rank": 22,
+      "title": "You Sexy Thing",
+      "artist": "Hot Chocolate",
+      "video_url": "https://www.youtube.com/watch?v=4DwEni2N_-A",
+      "airtable_id": "rec6WCp4juFNWc9B5"
+    },
+    {
+      "rank": 23,
+      "title": "Love Hurts",
+      "artist": "Nazareth",
+      "video_url": "https://www.youtube.com/watch?v=fsnEhf-ONME",
+      "airtable_id": "recV0KKVe7dwqc7gs"
+    },
+    {
+      "rank": 24,
+      "title": "Get Up and Boogie",
+      "artist": "Silver Convention",
+      "video_url": "https://www.youtube.com/watch?v=hKGrfC1860o",
+      "airtable_id": "recFRmRKdGzvMJLgl"
+    },
+    {
+      "rank": 25,
+      "title": "Take It to the Limit",
+      "artist": "Eagles",
+      "video_url": "https://www.youtube.com/watch?v=tJkW0Clsvrk",
+      "airtable_id": "recl5R0PAkNkQeR7W"
+    },
+    {
+      "rank": 26,
+      "title": "(Shake, Shake, Shake) Shake Your Booty",
+      "artist": "KC and the Sunshine Band",
+      "video_url": "https://www.youtube.com/watch?v=_ieFhF4Lj4k",
+      "airtable_id": "recGsDISWwIXWzL7g"
+    },
+    {
+      "rank": 27,
+      "title": "Sweet Love",
+      "artist": "Commodores",
+      "video_url": "https://www.youtube.com/watch?v=LKVA9YkUOC0",
+      "airtable_id": "recP8vvdj4JJR2EDc"
+    },
+    {
+      "rank": 28,
+      "title": "Right Back Where We Started From",
+      "artist": "Maxine Nightingale",
+      "video_url": "https://www.youtube.com/watch?v=UJwWDwmEPq0",
+      "airtable_id": "recFASJaJmPtu2zty"
+    },
+    {
+      "rank": 29,
+      "title": "Theme from S.W.A.T.",
+      "artist": "Rhythm Heritage",
+      "video_url": "https://www.youtube.com/watch?v=LHDg96-ZN_U",
+      "airtable_id": "recaI3XY6hHeZzyCk"
+    },
+    {
+      "rank": 30,
+      "title": "Love Rollercoaster",
+      "artist": "Ohio Players",
+      "video_url": "https://www.youtube.com/watch?v=JLzblwij078",
+      "airtable_id": "recnMGLjeER8X0Rml"
+    },
+    {
+      "rank": 31,
+      "title": "You Should Be Dancing",
+      "artist": "Bee Gees",
+      "video_url": "https://www.youtube.com/watch?v=1sqE6P3XyiQ",
+      "airtable_id": "recHZcV7iINQZjein"
+    },
+    {
+      "rank": 32,
+      "title": "You'll Never Find Another Love Like Mine",
+      "artist": "Lou Rawls",
+      "video_url": "https://www.youtube.com/watch?v=7RPjCUhHzsU",
+      "airtable_id": "rectBMi4e3mZWk3rj"
+    },
+    {
+      "rank": 33,
+      "title": "Golden Years",
+      "artist": "David Bowie",
+      "video_url": "https://www.youtube.com/watch?v=ApHM1ct4tdM",
+      "airtable_id": "recRvzr4DgcJ90dJY"
+    },
+    {
+      "rank": 34,
+      "title": "Moonlight Feels Right",
+      "artist": "Starbuck",
+      "video_url": "https://www.youtube.com/watch?v=D4ZrKfrshP4",
+      "airtable_id": "recOqcHPGuOzrzQO5"
+    },
+    {
+      "rank": 35,
+      "title": "Only Sixteen",
+      "artist": "Dr. Hook",
+      "video_url": "https://www.youtube.com/watch?v=nF0-OKKOJl4",
+      "airtable_id": "recwTctd6KFS6ovPh"
+    },
+    {
+      "rank": 36,
+      "title": "Let Your Love Flow",
+      "artist": "The Bellamy Brothers",
+      "video_url": "https://www.youtube.com/watch?v=LzXz6-RXXgc",
+      "airtable_id": "recjMeRJCh1sT1r2h"
+    },
+    {
+      "rank": 37,
+      "title": "Dream Weaver",
+      "artist": "Gary Wright",
+      "video_url": "https://www.youtube.com/watch?v=n-DmAh0dObI",
+      "airtable_id": "recjlR0jJ0PEPc89H"
+    },
+    {
+      "rank": 38,
+      "title": "Turn the Beat Around",
+      "artist": "Vicki Sue Robinson",
+      "video_url": "https://www.youtube.com/watch?v=vz9pZW5OvM4",
+      "airtable_id": "recGkyyHKuiJNWcQS"
+    },
+    {
+      "rank": 39,
+      "title": "Lonely Night (Angel Face)",
+      "artist": "Captain & Tennille",
+      "video_url": "https://www.youtube.com/watch?v=gKSiKlGVEsc",
+      "airtable_id": "rec7OVzjXSyRB6yaS"
+    },
+    {
+      "rank": 40,
+      "title": "All by Myself",
+      "artist": "Eric Carmen",
+      "video_url": "https://www.youtube.com/watch?v=iN9CjAfo5n0",
+      "airtable_id": "recipFfRgD0KfT4X4"
+    },
+    {
+      "rank": 41,
+      "title": "Love to Love You Baby",
+      "artist": "Donna Summer",
+      "video_url": "https://www.youtube.com/watch?v=kyxKSEOg2iQ",
+      "airtable_id": "recMlZ7IzAwoHAzu2"
+    },
+    {
+      "rank": 42,
+      "title": "Deep Purple",
+      "artist": "Donny & Marie Osmond",
+      "video_url": "https://www.youtube.com/watch?v=c6KJWiZ2XoY",
+      "airtable_id": "recitHk3QY1lwnaOa"
+    },
+    {
+      "rank": 43,
+      "title": "Theme from Mahogany (Do You Know Where You're Going To)",
+      "artist": "Diana Ross",
+      "video_url": "https://www.youtube.com/watch?v=dSrzfCKMCHE",
+      "airtable_id": "recXgxBoil3KerYPC"
+    },
+    {
+      "rank": 44,
+      "title": "Sweet Thing",
+      "artist": "Rufus",
+      "video_url": "https://www.youtube.com/watch?v=N_qasjqcpjw",
+      "airtable_id": "recWtJXFG65osPp1K"
+    },
+    {
+      "rank": 45,
+      "title": "That's the Way (I Like It)",
+      "artist": "KC and the Sunshine Band",
+      "video_url": "https://www.youtube.com/watch?v=yupPvZF6oBw",
+      "airtable_id": "recNMbx33Uf2MUInx"
+    },
+    {
+      "rank": 46,
+      "title": "A Little Bit More",
+      "artist": "Dr. Hook",
+      "video_url": "https://www.youtube.com/watch?v=T79U2wnfMf8",
+      "airtable_id": "rec50sNLZUTXWWofp"
+    },
+    {
+      "rank": 47,
+      "title": "Shannon",
+      "artist": "Henry Gross",
+      "video_url": "https://www.youtube.com/watch?v=PvtnMFpxA9c",
+      "airtable_id": "rec4Fu5q0bDKckPxt"
+    },
+    {
+      "rank": 48,
+      "title": "If You Leave Me Now",
+      "artist": "Chicago",
+      "video_url": "https://www.youtube.com/watch?v=-9_d-sFhmRM",
+      "airtable_id": "reckiuBXIHC0jJZMe"
+    },
+    {
+      "rank": 49,
+      "title": "Lowdown",
+      "artist": "Boz Scaggs",
+      "video_url": "https://www.youtube.com/watch?v=HCBVwdS1Mt0",
+      "airtable_id": "recJDGFtyZNhQ74Vl"
+    },
+    {
+      "rank": 50,
+      "title": "Show Me the Way",
+      "artist": "Peter Frampton",
+      "video_url": "https://www.youtube.com/watch?v=Nheo-VFtUKI",
+      "airtable_id": "recLE3jjJb8GmXAoK"
+    },
+    {
+      "rank": 51,
+      "title": "Dream On",
+      "artist": "Aerosmith",
+      "video_url": "https://www.youtube.com/watch?v=NeSpx7vZifc",
+      "airtable_id": "rec6ERbcorWoKGWGa"
+    },
+    {
+      "rank": 52,
+      "title": "I Love Music",
+      "artist": "The O'Jays",
+      "video_url": "https://www.youtube.com/watch?v=rfRKzouM9lo",
+      "airtable_id": "rec694pI7hR12e4qd"
+    },
+    {
+      "rank": 53,
+      "title": "Say You Love Me",
+      "artist": "Fleetwood Mac",
+      "video_url": "https://www.youtube.com/watch?v=MgAVX1KKWnw",
+      "airtable_id": "rec2fMkwEevuCKHD5"
+    },
+    {
+      "rank": 54,
+      "title": "Times of Your Life",
+      "artist": "Paul Anka",
+      "video_url": "https://www.youtube.com/watch?v=r5fUw4jJlkM",
+      "airtable_id": "recBO7h8V599el705"
+    },
+    {
+      "rank": 55,
+      "title": "Devil Woman",
+      "artist": "Cliff Richard",
+      "video_url": "https://www.youtube.com/watch?v=IgomTOOgl8M",
+      "airtable_id": "recx1bFJU6EvNzyjJ"
+    },
+    {
+      "rank": 56,
+      "title": "Fooled Around and Fell in Love",
+      "artist": "Elvin Bishop",
+      "video_url": "https://www.youtube.com/watch?v=JmKfP6DzzuU",
+      "airtable_id": "recP2gV4diV6EoKx2"
+    },
+    {
+      "rank": 57,
+      "title": "Convoy",
+      "artist": "C. W. McCall",
+      "video_url": "https://www.youtube.com/watch?v=d9BWlGP_DJw",
+      "airtable_id": "recvbsEQ7CXIza1zR"
+    },
+    {
+      "rank": 58,
+      "title": "Welcome Back",
+      "artist": "John Sebastian",
+      "video_url": "https://www.youtube.com/watch?v=OK4_fDHv-SQ",
+      "airtable_id": "recENnGUtqNI37lFj"
+    },
+    {
+      "rank": 59,
+      "title": "Sing a Song",
+      "artist": "Earth, Wind & Fire",
+      "video_url": "https://www.youtube.com/watch?v=X4dsPZmeTys",
+      "airtable_id": "recyblesgO0g98Xaj"
+    },
+    {
+      "rank": 60,
+      "title": "Heaven Must Be Missing an Angel",
+      "artist": "Tavares",
+      "video_url": "https://www.youtube.com/watch?v=vTE2sbLxo7U",
+      "airtable_id": "recBnJO8FGcDzks9T"
+    },
+    {
+      "rank": 61,
+      "title": "I'll Be Good to You",
+      "artist": "The Brothers Johnson",
+      "video_url": "https://www.youtube.com/watch?v=tPBDMihPRJA",
+      "airtable_id": "rec51pzAY2QhDcajb"
+    },
+    {
+      "rank": 62,
+      "title": "Rock and Roll Music",
+      "artist": "The Beach Boys",
+      "video_url": "https://www.youtube.com/watch?v=apBWI6xrbLY",
+      "airtable_id": "rechfADMFh8WyY2xs"
+    },
+    {
+      "rank": 63,
+      "title": "Shop Around",
+      "artist": "Captain & Tennille",
+      "video_url": "https://www.youtube.com/watch?v=4hN9MXPCvNg",
+      "airtable_id": "recZNPtKTkCsggvPB"
+    },
+    {
+      "rank": 64,
+      "title": "Saturday Night",
+      "artist": "Bay City Rollers",
+      "video_url": "https://www.youtube.com/watch?v=csXFpFoRkEk",
+      "airtable_id": "recVipziAWBCVMIQ3"
+    },
+    {
+      "rank": 65,
+      "title": "Island Girl",
+      "artist": "Elton John",
+      "video_url": "https://www.youtube.com/watch?v=xpRZZmB9zB0",
+      "airtable_id": "recwifRquGtE5S52R"
+    },
+    {
+      "rank": 66,
+      "title": "Let's Do It Again",
+      "artist": "The Staple Singers",
+      "video_url": "https://www.youtube.com/watch?v=OOHTaknPTek",
+      "airtable_id": "recz95QwViIWkbtOu"
+    },
+    {
+      "rank": 67,
+      "title": "Let 'Em In",
+      "artist": "Wings",
+      "video_url": "https://www.youtube.com/watch?v=dTqImPe2OBQ",
+      "airtable_id": "rec1egw2rEo36fTQy"
+    },
+    {
+      "rank": 68,
+      "title": "Baby Face",
+      "artist": "Wing and a Prayer Fife and Drum Corps",
+      "video_url": "https://www.youtube.com/watch?v=ge-n7VXYBV0",
+      "airtable_id": "recJ2dbOt4MkZbjCe"
+    },
+    {
+      "rank": 69,
+      "title": "This Masquerade",
+      "artist": "George Benson",
+      "video_url": "https://www.youtube.com/watch?v=j9W0g3NGSj4",
+      "airtable_id": "recwpJOlyrbxhQzwS"
+    },
+    {
+      "rank": 70,
+      "title": "Evil Woman",
+      "artist": "Electric Light Orchestra",
+      "video_url": "https://www.youtube.com/watch?v=j7cyiWpX_HU",
+      "airtable_id": "recxThWudcfxmr05Y"
+    },
+    {
+      "rank": 71,
+      "title": "Wham Bam",
+      "artist": "Silver",
+      "video_url": "https://www.youtube.com/watch?v=M5iSEdo5VNI",
+      "airtable_id": "recFpE4HKU0YLmiyT"
+    },
+    {
+      "rank": 72,
+      "title": "I'm Easy",
+      "artist": "Keith Carradine",
+      "video_url": "https://www.youtube.com/watch?v=ORvoQs7u-kk",
+      "airtable_id": "recHTNA25Gr0wI5gm"
+    },
+    {
+      "rank": 73,
+      "title": "Wake Up Everybody",
+      "artist": "Harold Melvin & the Blue Notes",
+      "video_url": "https://www.youtube.com/watch?v=OOxoeGL3tTo",
+      "airtable_id": "rec7bFKpRpgMSYXl7"
+    },
+    {
+      "rank": 74,
+      "title": "Summer",
+      "artist": "War",
+      "video_url": "https://www.youtube.com/watch?v=Z5REZIwxv80",
+      "airtable_id": "rec43cozzcwh15How"
+    },
+    {
+      "rank": 75,
+      "title": "Let Her In",
+      "artist": "John Travolta",
+      "video_url": "https://www.youtube.com/watch?v=WmbuXJXArs8",
+      "airtable_id": "recwYQ1HZmClySG6E"
+    },
+    {
+      "rank": 76,
+      "title": "Fox on the Run",
+      "artist": "Sweet",
+      "video_url": "https://www.youtube.com/watch?v=qBdFA6sI6-8",
+      "airtable_id": "recezDBX0aCeEIcgG"
+    },
+    {
+      "rank": 77,
+      "title": "Rhiannon",
+      "artist": "Fleetwood Mac",
+      "video_url": "https://www.youtube.com/watch?v=jQAK6sVovUk",
+      "airtable_id": "recqAjMHM38mju6qh"
+    },
+    {
+      "rank": 78,
+      "title": "Got to Get You into My Life",
+      "artist": "The Beatles",
+      "video_url": "https://www.youtube.com/watch?v=rHwf0-yIemk",
+      "airtable_id": "recClLXVG1ZsMLTT5"
+    },
+    {
+      "rank": 79,
+      "title": "Fanny (Be Tender with My Love)",
+      "artist": "Bee Gees",
+      "video_url": "https://www.youtube.com/watch?v=YrXDmPthQKk",
+      "airtable_id": "recHNb0Dkm2ZoSvdr"
+    },
+    {
+      "rank": 80,
+      "title": "Getaway",
+      "artist": "Earth, Wind & Fire",
+      "video_url": "https://www.youtube.com/watch?v=xN_3nib4r3Y",
+      "airtable_id": "recg9G6dBs2iSozuk"
+    },
+    {
+      "rank": 81,
+      "title": "She's Gone",
+      "artist": "Hall & Oates",
+      "video_url": "https://www.youtube.com/watch?v=87Q042KlxI4",
+      "airtable_id": "recAq82j8PSWG4VOG"
+    },
+    {
+      "rank": 82,
+      "title": "Still the One",
+      "artist": "Orleans",
+      "video_url": "https://www.youtube.com/watch?v=RqjgLF3e-f0",
+      "airtable_id": "rec9mdAojiBIRjdVC"
+    },
+    {
+      "rank": 83,
+      "title": "You're My Best Friend",
+      "artist": "Queen",
+      "video_url": "https://www.youtube.com/watch?v=HaZpZQG2z10",
+      "airtable_id": "recVo9VRv16Hf8jgf"
+    },
+    {
+      "rank": 84,
+      "title": "With Your Love",
+      "artist": "Jefferson Starship",
+      "video_url": "https://www.youtube.com/watch?v=2SnmYs9OKqU",
+      "airtable_id": "recf4G6sSlBaXlLzG"
+    },
+    {
+      "rank": 85,
+      "title": "Slow Ride",
+      "artist": "Foghat",
+      "video_url": "https://www.youtube.com/watch?v=yaMNseIe_vI",
+      "airtable_id": "rec3qiqobfDFz5gBK"
+    },
+    {
+      "rank": 86,
+      "title": "Who'd She Coo?",
+      "artist": "Ohio Players",
+      "video_url": "https://www.youtube.com/watch?v=wTrGtchA4Jg",
+      "airtable_id": "recGQN9COXCmNbOOB"
+    },
+    {
+      "rank": 87,
+      "title": "The Boys Are Back in Town",
+      "artist": "Thin Lizzy",
+      "video_url": "https://www.youtube.com/watch?v=wIE5wwvicew",
+      "airtable_id": "rec3jmlr30rJQH0Oh"
+    },
+    {
+      "rank": 88,
+      "title": "Walk Away from Love",
+      "artist": "David Ruffin",
+      "video_url": "https://www.youtube.com/watch?v=MqiRV5n7lcw",
+      "airtable_id": "recZoTosAV0Oru2hw"
+    },
+    {
+      "rank": 89,
+      "title": "Baby, I Love Your Way (Live)",
+      "artist": "Peter Frampton",
+      "video_url": "https://www.youtube.com/watch?v=OVN-2qoquyE",
+      "airtable_id": "recgZX7nCqlHN4aXV"
+    },
+    {
+      "rank": 90,
+      "title": "Young Hearts Run Free",
+      "artist": "Candi Staton",
+      "video_url": "https://www.youtube.com/watch?v=FRAA-EIM4d0",
+      "airtable_id": "rec4ATJueLP17OSDC"
+    },
+    {
+      "rank": 91,
+      "title": "Breaking Up Is Hard to Do",
+      "artist": "Neil Sedaka",
+      "video_url": "https://www.youtube.com/watch?v=qzliaVBQKDs",
+      "airtable_id": "rec3fqqONBcQkQfVI"
+    },
+    {
+      "rank": 92,
+      "title": "Money Honey",
+      "artist": "Bay City Rollers",
+      "video_url": "https://www.youtube.com/watch?v=StSx0scuHnE",
+      "airtable_id": "recznbBYwJBpmqvlH"
+    },
+    {
+      "rank": 93,
+      "title": "Give Up the Funk (Tear the Roof off the Sucker)",
+      "artist": "Parliament",
+      "video_url": "https://www.youtube.com/watch?v=eoEm61_DMJg",
+      "airtable_id": "recAexyxIjMZrkfai"
+    },
+    {
+      "rank": 94,
+      "title": "Junk Food Junkie",
+      "artist": "Larry Groce",
+      "video_url": "https://www.youtube.com/watch?v=J7oOhMlsfeQ",
+      "airtable_id": "recaQQgHdYddr5QCZ"
+    },
+    {
+      "rank": 95,
+      "title": "Tryin' to Get the Feeling Again",
+      "artist": "Barry Manilow",
+      "video_url": "https://www.youtube.com/watch?v=cgKbT_AIV0Y",
+      "airtable_id": "rec6qqc7Z9mXfRnj0"
+    },
+    {
+      "rank": 96,
+      "title": "Rock and Roll All Nite",
+      "artist": "Kiss",
+      "video_url": "https://www.youtube.com/watch?v=EFMD7Usflbg",
+      "airtable_id": "recGnIiLH2Tr4QqJq"
+    },
+    {
+      "rank": 97,
+      "title": "Disco Duck",
+      "artist": "Rick Dees & His Cast of Idiots",
+      "video_url": "https://www.youtube.com/watch?v=yEE7AA7wvL4",
+      "airtable_id": "recq4mnC7BFEfxj5k"
+    },
+    {
+      "rank": 98,
+      "title": "Take the Money and Run",
+      "artist": "Steve Miller Band",
+      "video_url": "https://www.youtube.com/watch?v=r9oW1dHBZ5M",
+      "airtable_id": "recJwGr0CfL8JkJYn"
+    },
+    {
+      "rank": 99,
+      "title": "Squeeze Box",
+      "artist": "The Who",
+      "video_url": "https://www.youtube.com/watch?v=4n02PD18cFs",
+      "airtable_id": "recd6stka46nqjZsl"
+    },
+    {
+      "rank": 100,
+      "title": "Country Boy (You Got Your Feet in L.A.)",
+      "artist": "Glen Campbell",
+      "video_url": "https://www.youtube.com/watch?v=kwqfA-W1d7A",
+      "airtable_id": "recXGXAEQZXIJ1dWZ"
+    }
+  ],
+  "failed": [],
+  "not_found": [],
+  "quota_exceeded": false
+}

@@ -9,18 +9,20 @@ import SwiftUI
 import SuperwallKit
 
 struct MusicVideosView: View {
-    @StateObject private var airtableService = AirtableService()
+    @ObservedObject private var airtableService = AirtableService.shared
     @StateObject private var youtubeService = YouTubeService()
+    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
 
     @State private var selectedYear: Int?
     @State private var selectedPlaylist: Playlist?
     @State private var visibleVideoIndices: [Int] = []
     @State private var selectedVideoId: String?
+    @State private var isLoadingVideoInfo = false
 
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
-    
+
     var body: some View {
         NavigationStack {
             if UIDevice.current.userInterfaceIdiom == .pad {
@@ -32,8 +34,18 @@ struct MusicVideosView: View {
             }
         }
         .task {
-            await airtableService.fetchPlaylists()
+            // Only fetch if not already loaded (prevents reload on navigation back)
+            if airtableService.playlists.isEmpty {
+                await airtableService.fetchPlaylists()
+            }
             selectFirstAvailableYear()
+        }
+        .refreshable {
+            // Pull-to-refresh support
+            await airtableService.forceRefreshPlaylists()
+            if let year = selectedYear {
+                await batchLoadVideoInfo(for: year)
+            }
         }
     }
     
@@ -53,53 +65,55 @@ struct MusicVideosView: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Custom header row
                 HStack {
+                    // Left side - invisible spacer to balance right side
+                    HStack(spacing: 16) {
+                        Color.clear
+                            .frame(width: 22, height: 22)
+                        Color.clear
+                            .frame(width: 22, height: 22)
+                    }
+
                     Spacer()
-                    
+
                     // Logo centered
                     Image("logo")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 28)
-                    
+
                     Spacer()
-                    
-                    // Search and settings on right
-                    HStack(spacing: 16) {
-                        NavigationLink(destination: SearchView()) {
-                            Text("🔍")
-                        }
-                        NavigationLink(destination: SettingsView()) {
-                            Text("⚙️")
-                        }
-                    }
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
                 .background(Color.hitRewindBackground)
-                
+
                 videoGridView
             }
         }
         .navigationTitle("")
         .navigationBarHidden(true)
     }
-    
+
     // MARK: - iPhone Layout
     private var iPhoneLayout: some View {
         GeometryReader { geometry in
+            let sidebarWidth: CGFloat = 70
+            let videosWidth = geometry.size.width - sidebarWidth
+
             HStack(spacing: 0) {
-                // Years sidebar (1/4 width)
+                // Column 1: Videos area (with 3-column subgrid inside)
+                videoGridView
+                    .frame(width: videosWidth)
+
+                // Column 2: Years sidebar (fixed width)
                 YearSidebarView(
                     years: availableYears,
                     selectedYear: $selectedYear,
                     onYearSelected: handleYearSelection
                 )
-                .frame(width: geometry.size.width * 0.25)
+                .frame(width: sidebarWidth)
                 .background(Color.hitRewindBackground)
-
-                // Video grid (3/4 width)
-                videoGridView
-                    .frame(width: geometry.size.width * 0.75)
             }
         }
         .navigationTitle("")
@@ -113,16 +127,6 @@ struct MusicVideosView: View {
                         .frame(height: 28)
                 }
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 16) {
-                    NavigationLink(destination: SearchView()) {
-                        Text("🔍")
-                    }
-                    NavigationLink(destination: SettingsView()) {
-                        Text("⚙️")
-                    }
-                }
-            }
         }
         .background(
             NavigationConfigurator { nc in
@@ -134,6 +138,7 @@ struct MusicVideosView: View {
     // MARK: - Video Grid View
     private var videoGridView: some View {
         Group {
+            let _ = print("🔍 videoGridView: isLoading=\(airtableService.isLoading), isShowingSpotifyChart=\(isShowingSpotifyChart), spotifyChartVideos.count=\(airtableService.spotifyChartVideos.count), selectedPlaylist=\(selectedPlaylist != nil), visibleVideoIndices.count=\(visibleVideoIndices.count)")
             if airtableService.isLoading {
                 LoadingView()
             } else if let errorMessage = airtableService.errorMessage {
@@ -142,9 +147,15 @@ struct MusicVideosView: View {
                         await airtableService.fetchPlaylists()
                     }
                 }
+            } else if isShowingSpotifyChart && !airtableService.spotifyChartVideos.isEmpty {
+                // Spotify Top 50 chart
+                let _ = print("✅ Showing Spotify chart grid with \(airtableService.spotifyChartVideos.count) videos")
+                videoGrid
             } else if selectedPlaylist != nil && !visibleVideoIndices.isEmpty {
+                // Regular year playlist
                 videoGrid
             } else {
+                let _ = print("⚠️ Showing ContentUnavailableView - no videos condition")
                 ContentUnavailableView(
                     "No Videos Available",
                     systemImage: "music.note.list",
@@ -156,8 +167,24 @@ struct MusicVideosView: View {
     
     private var videoGrid: some View {
         ScrollView {
+            scrollContent
+        }
+        .id(selectedYear) // Reset scroll position when year changes
+    }
+
+    // Title text for the current view
+    private var gridTitle: String {
+        if isShowingSpotifyChart {
+            return "Top Today"
+        } else {
+            return "Music Videos \(String(selectedYear ?? 2025))"
+        }
+    }
+
+    private var scrollContent: some View {
+        Group {
             VStack(alignment: .center, spacing: 16) {
-                Text("Music Videos \(String(selectedYear ?? 2025))")
+                Text(gridTitle)
                     .font(.custom(AppFont.ticketingName(), size: 28))
                     .fontWeight(.bold)
                     .foregroundColor(.hitRewindPrimaryText)
@@ -178,13 +205,13 @@ struct MusicVideosView: View {
                             artist: item.artist,
                             year: item.year,
                             onTap: {},
+                            rank: item.rank,
                             hideDuration: true
                         )
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .id(selectedPlaylist?.id)
             .padding(gridPadding)
             .navigationDestination(isPresented: Binding(
                 get: { selectedVideoId != nil },
@@ -201,28 +228,31 @@ struct MusicVideosView: View {
     // MARK: - Computed Properties
     private var availableYears: [Int] {
         let years = airtableService.playlists.map { $0.fields.year }
-        return Array(Set(years)).sorted(by: >)
+        let sortedYears = Array(Set(years)).sorted(by: >)
+        // Add "Top Today" (Spotify chart) at the top
+        return [kSpotifyTop50Year] + sortedYears
+    }
+
+    // Check if currently showing Spotify Top 50
+    private var isShowingSpotifyChart: Bool {
+        selectedYear == kSpotifyTop50Year
     }
     
     private var gridColumns: [GridItem] {
-        let count = columnCount
-        return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: count)
+        // Force 3 columns with flexible sizing (minimum 50pt to ensure they fit)
+        return [
+            GridItem(.flexible(minimum: 50), spacing: gridSpacing),
+            GridItem(.flexible(minimum: 50), spacing: gridSpacing),
+            GridItem(.flexible(minimum: 50), spacing: gridSpacing)
+        ]
     }
-    
-    private var columnCount: Int {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return 3
-        } else {
-            return verticalSizeClass == .regular ? 1 : 2
-        }
-    }
-    
+
     private var gridSpacing: CGFloat {
-        UIDevice.current.userInterfaceIdiom == .pad ? 20 : 16
+        UIDevice.current.userInterfaceIdiom == .pad ? 12 : 4
     }
-    
+
     private var gridPadding: CGFloat {
-        UIDevice.current.userInterfaceIdiom == .pad ? 20 : 16
+        UIDevice.current.userInterfaceIdiom == .pad ? 12 : 4
     }
     
     // MARK: - Helper Methods
@@ -230,13 +260,28 @@ struct MusicVideosView: View {
         return "Top Music Videos"
     }
     private func selectFirstAvailableYear() {
-        guard selectedYear == nil, let firstYear = availableYears.first else { return }
+        guard selectedYear == nil, let firstYear = availableYears.first else {
+            // If year already selected, still trigger batch load on app launch
+            if let year = selectedYear {
+                Task {
+                    await batchLoadVideoInfo(for: year)
+                }
+            }
+            return
+        }
         selectedYear = firstYear
         handleYearSelection(firstYear)
     }
     
     private func handleVideoTap(item: VisibleVideo) {
         print("🎥 Video \(item.id) tapped")
+
+        // Check test subscriber mode first (for development testing)
+        if PaywallService.shared.testSubscriberMode {
+            print("🧪 Test subscriber mode enabled - playing video")
+            self.selectedVideoId = item.id
+            return
+        }
 
         Task { @MainActor in
             // Check StoreKit directly for active subscription
@@ -249,7 +294,7 @@ struct MusicVideosView: View {
             } else {
                 // User not subscribed - show paywall
                 print("🔒 User not subscribed - showing paywall")
-                Superwall.shared.register(placement: "MainPlacement") {
+                PaywallService.shared.presentPaywallWithOrientation {
                     // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
                     self.selectedVideoId = item.id
@@ -258,7 +303,7 @@ struct MusicVideosView: View {
         }
     }
 
-    private func createVideoView(from video: VisibleVideo) -> SingleVideoView {
+    private func createVideoView(from video: VisibleVideo) -> VJModeView {
         // Build playlist context for autoplay
         let playlistVideos = visibleVideos.map { video in
             PlaylistVideo(
@@ -273,11 +318,17 @@ struct MusicVideosView: View {
         // Find current video index
         guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == video.id }) else {
             print("⚠️ Could not find video index for autoplay")
-            return SingleVideoView(
+            let fallbackVideo = PlaylistVideo(
+                id: video.id,
                 youtubeURL: video.originalURL,
-                videoTitle: video.title,
-                artistName: video.artist,
-                year: video.year,
+                title: video.title,
+                artist: video.artist,
+                year: video.year
+            )
+            return VJModeView(
+                playerCoordinator: playerCoordinator,
+                initialVideo: fallbackVideo,
+                videos: [],
                 playlistContext: nil
             )
         }
@@ -287,11 +338,12 @@ struct MusicVideosView: View {
             currentIndex: currentIndex
         )
 
-        return SingleVideoView(
-            youtubeURL: video.originalURL,
-            videoTitle: video.title,
-            artistName: video.artist,
-            year: video.year,
+        let initialVideo = playlistVideos[currentIndex]
+
+        return VJModeView(
+            playerCoordinator: playerCoordinator,
+            initialVideo: initialVideo,
+            videos: playlistVideos,
             playlistContext: playlistContext
         )
     }
@@ -299,9 +351,111 @@ struct MusicVideosView: View {
     private func handleYearSelection(_ year: Int) {
         print("📅 Year selected: \(String(year))")
         selectedYear = year
-        selectedPlaylist = airtableService.playlists.first { $0.fields.year == year }
-        updateVisibleVideoIndices()
-        print("🎵 Found playlist: \(selectedPlaylist?.fields.title ?? "None") with \(visibleVideoIndices.count) visible videos")
+
+        if year == kSpotifyTop50Year {
+            // Handle Spotify Top Today selection
+            print("🎵 Loading Spotify Top Today chart")
+            selectedPlaylist = nil
+            visibleVideoIndices = []
+            // Set loading state IMMEDIATELY before Task starts (avoids race condition)
+            airtableService.isLoading = true
+            Task {
+                await airtableService.fetchSpotifyChartVideos()
+                // Batch load video info for Spotify chart videos
+                await batchLoadVideoInfoForSpotifyChart()
+            }
+        } else {
+            // Handle regular year selection
+            selectedPlaylist = airtableService.playlists.first { $0.fields.year == year }
+            updateVisibleVideoIndices()
+            print("🎵 Found playlist: \(selectedPlaylist?.fields.title ?? "None") with \(visibleVideoIndices.count) visible videos")
+
+            // Batch load video info for this year
+            Task {
+                await batchLoadVideoInfo(for: year)
+            }
+        }
+    }
+
+    /// Batch load video info for Spotify chart videos
+    private func batchLoadVideoInfoForSpotifyChart() async {
+        let videoInfoCache = VideoInfoCache.shared
+
+        let videoIds = airtableService.spotifyChartVideos.compactMap { video -> String? in
+            guard let url = video.fields.url else { return nil }
+            return extractYouTubeVideoID(from: url)
+        }
+
+        guard !videoIds.isEmpty else { return }
+
+        var uncachedIds: [String] = []
+        for id in videoIds {
+            if await videoInfoCache.info(for: id) == nil {
+                uncachedIds.append(id)
+            }
+        }
+
+        guard !uncachedIds.isEmpty else {
+            print("✅ All \(videoIds.count) Spotify chart videos already cached")
+            return
+        }
+
+        print("🎬 Batch loading video info for \(uncachedIds.count) Spotify chart videos...")
+        isLoadingVideoInfo = true
+
+        do {
+            let videos = try await youtubeService.getBatchVideoInfo(videoIds: uncachedIds)
+            await videoInfoCache.storeBatch(videos, youtubeService: youtubeService)
+            print("✅ Batch loaded info for \(videos.count) videos")
+        } catch {
+            print("❌ Batch load failed: \(error)")
+        }
+
+        isLoadingVideoInfo = false
+    }
+
+    /// Batch load video info (duration, view count) for all videos in a year
+    private func batchLoadVideoInfo(for year: Int) async {
+        let videoInfoCache = VideoInfoCache.shared
+
+        // Check if already loading this year
+        if await videoInfoCache.isLoadingYear(year) {
+            print("⏳ Already loading video info for \(year)")
+            return
+        }
+
+        // Get video IDs for this year
+        let videoIds = visibleVideos.map { $0.id }
+        guard !videoIds.isEmpty else { return }
+
+        // Check how many are already cached
+        var uncachedIds: [String] = []
+        for id in videoIds {
+            if await videoInfoCache.info(for: id) == nil {
+                uncachedIds.append(id)
+            }
+        }
+
+        guard !uncachedIds.isEmpty else {
+            print("✅ All \(videoIds.count) videos for \(year) already cached")
+            return
+        }
+
+        print("🎬 Batch loading video info for \(uncachedIds.count) videos in \(year)...")
+        await videoInfoCache.startLoadingYear(year)
+        isLoadingVideoInfo = true
+
+        do {
+            // Use batch API - fetches up to 50 videos per request
+            let videos = try await youtubeService.getBatchVideoInfo(videoIds: uncachedIds)
+            await videoInfoCache.storeBatch(videos, youtubeService: youtubeService)
+            print("✅ Batch loaded info for \(videos.count) videos")
+        } catch {
+            print("❌ Batch load failed: \(error)")
+        }
+
+        await videoInfoCache.finishLoadingYear(year)
+        isLoadingVideoInfo = false
     }
     
     private func updateVisibleVideoIndices() {
@@ -323,10 +477,37 @@ private struct VisibleVideo: Identifiable, Hashable {
     let title: String
     let artist: String
     let year: String
+    let rank: Int?        // Spotify chart rank (nil for regular year videos)
 }
 
 private extension MusicVideosView {
     var visibleVideos: [VisibleVideo] {
+        // Handle Spotify Top 50 chart
+        if selectedYear == kSpotifyTop50Year {
+            print("🎯 visibleVideos: Processing Spotify chart, spotifyChartVideos.count = \(airtableService.spotifyChartVideos.count)")
+            let results = airtableService.spotifyChartVideos.compactMap { video -> VisibleVideo? in
+                guard let url = video.fields.url,
+                      let videoId = extractYouTubeVideoID(from: url) else {
+                    print("  ⚠️ Skipping video: url=\(video.fields.url ?? "nil"), extraction failed")
+                    return nil
+                }
+                let title = video.fields.title ?? "Unknown Title"
+                let artist = video.fields.artistName ?? "Unknown Artist"
+                let rank = video.fields.rank ?? 0
+                return VisibleVideo(
+                    id: videoId,
+                    originalURL: url,
+                    title: title,
+                    artist: artist,
+                    year: "Top Today",
+                    rank: rank
+                )
+            }
+            print("🎯 visibleVideos: Returning \(results.count) Spotify chart videos")
+            return results
+        }
+
+        // Handle regular year playlists
         guard let playlist = selectedPlaylist else { return [] }
         var result: [VisibleVideo] = []
         for index in visibleVideoIndices {
@@ -334,7 +515,7 @@ private extension MusicVideosView {
                let videoId = extractYouTubeVideoID(from: url) {
                 let title = playlist.fields.videoTitles?[safe: index] ?? "Unknown Title"
                 let artist = playlist.fields.artistNames?[safe: index] ?? "Unknown Artist"
-                result.append(VisibleVideo(id: videoId, originalURL: url, title: title, artist: artist, year: String(playlist.fields.year)))
+                result.append(VisibleVideo(id: videoId, originalURL: url, title: title, artist: artist, year: String(playlist.fields.year), rank: nil))
             }
         }
         return result

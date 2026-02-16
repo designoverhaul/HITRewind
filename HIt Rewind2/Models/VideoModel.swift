@@ -67,6 +67,12 @@ struct DirectVideoRecordsResponse: Codable {
     let offset: String?
 }
 
+// MARK: - Cache Data
+struct DirectVideoCacheData: Codable {
+    let videos: [DirectVideoRecord]
+    let timestamp: Date
+}
+
 // MARK: - Error Types
 enum DirectVideoError: Error, LocalizedError {
     case invalidURL

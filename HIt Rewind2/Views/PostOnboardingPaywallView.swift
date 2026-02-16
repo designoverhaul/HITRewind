@@ -26,26 +26,23 @@ struct PostOnboardingPaywallView: View {
     private func presentPaywall() {
         print("🎯 Presenting Superwall paywall after onboarding...")
 
+        // Note: Post-onboarding paywall stays in portrait (onboarding was portrait)
+        // so we don't need to switch back to landscape - that happens when main app loads
         Task { @MainActor in
-            do {
-                // Present Superwall's native paywall and WAIT for dismissal
-                try await Superwall.shared.register(placement: "MainPlacement")
-                print("✅ Paywall completed (user may have subscribed)")
-            } catch {
-                print("⚠️ Paywall was dismissed: \(error.localizedDescription)")
-            }
+            // Ensure we're in portrait mode
+            await OrientationManager.shared.switchToPortraitForPaywallAsync()
+
+            // Present Superwall's native paywall (awaits until dismissed)
+            await Superwall.shared.register(placement: "MainPlacement")
+            print("✅ Paywall completed (user may have subscribed)")
 
             // IMMEDIATELY dismiss the paywall view for instant UI response
+            // Main app will handle locking to landscape
             print("🎯 Paywall dismissed, continuing to main app")
             UserDefaults.standard.set(true, forKey: "hasSeenPaywall")
             withAnimation {
                 hasSeenPaywall = true
             }
-
-            // Note: Subscription status updates are handled by:
-            // 1. StoreKit 2 transaction observer (for purchase detection)
-            // 2. SuperwallDelegate.paywallDidDismiss (for status check)
-            // 3. SuperwallDelegate.subscriptionStatusDidChange (for state updates)
         }
     }
 }

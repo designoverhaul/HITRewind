@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		939457572E5C9A1400465F32 /* YouTubeiOSPlayerHelper in Frameworks */ = {isa = PBXBuildFile; productRef = 939457562E5C9A1400465F32 /* YouTubeiOSPlayerHelper */; };
 		939882B42E946A970039DD36 /* SuperwallKit in Frameworks */ = {isa = PBXBuildFile; productRef = 939882B32E946A970039DD36 /* SuperwallKit */; };
+		93B7D89F2F21121800DF6A73 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 93B7D89E2F21121800DF6A73 /* FirebaseAuth */; };
+		93B7D8A12F21121800DF6A73 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 93B7D8A02F21121800DF6A73 /* FirebaseFirestore */; };
+		93B7D8A62F2505DA00DF6A73 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 93B7D8A52F2505DA00DF6A73 /* FirebaseAnalytics */; };
+		93B8C9912F1978A300685EC4 /* MTV is back! ---> Hit Rewind.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 93B8C9902F1978A300685EC4 /* MTV is back! ---> Hit Rewind.storekit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +36,7 @@
 		939457042E5BB71E00465F32 /* HIt Rewind2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "HIt Rewind2.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		939457112E5BB71F00465F32 /* HIt Rewind2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "HIt Rewind2Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9394571B2E5BB71F00465F32 /* HIt Rewind2UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "HIt Rewind2UITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		93B8C9902F1978A300685EC4 /* MTV is back! ---> Hit Rewind.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = "MTV is back! ---> Hit Rewind.storekit"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -58,6 +63,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				939457572E5C9A1400465F32 /* YouTubeiOSPlayerHelper in Frameworks */,
+				93B7D8A12F21121800DF6A73 /* FirebaseFirestore in Frameworks */,
+				93B7D89F2F21121800DF6A73 /* FirebaseAuth in Frameworks */,
+				93B7D8A62F2505DA00DF6A73 /* FirebaseAnalytics in Frameworks */,
 				939882B42E946A970039DD36 /* SuperwallKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -82,9 +90,11 @@
 		939456FB2E5BB71E00465F32 = {
 			isa = PBXGroup;
 			children = (
+				93B8C9902F1978A300685EC4 /* MTV is back! ---> Hit Rewind.storekit */,
 				939457062E5BB71E00465F32 /* HIt Rewind2 */,
 				939457142E5BB71F00465F32 /* HIt Rewind2Tests */,
 				9394571E2E5BB71F00465F32 /* HIt Rewind2UITests */,
+				93B7D8A42F2505DA00DF6A73 /* Frameworks */,
 				939457052E5BB71E00465F32 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -97,6 +107,13 @@
 				9394571B2E5BB71F00465F32 /* HIt Rewind2UITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		93B7D8A42F2505DA00DF6A73 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -121,6 +138,9 @@
 			packageProductDependencies = (
 				939457562E5C9A1400465F32 /* YouTubeiOSPlayerHelper */,
 				939882B32E946A970039DD36 /* SuperwallKit */,
+				93B7D89E2F21121800DF6A73 /* FirebaseAuth */,
+				93B7D8A02F21121800DF6A73 /* FirebaseFirestore */,
+				93B7D8A52F2505DA00DF6A73 /* FirebaseAnalytics */,
 			);
 			productName = "HIt Rewind2";
 			productReference = 939457042E5BB71E00465F32 /* HIt Rewind2.app */;
@@ -180,7 +200,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1630;
-				LastUpgradeCheck = 1630;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					939457032E5BB71E00465F32 = {
 						CreatedOnToolsVersion = 16.3;
@@ -207,6 +227,7 @@
 			packageReferences = (
 				939457552E5C9A1400465F32 /* XCRemoteSwiftPackageReference "youtube-ios-player-helper" */,
 				939882B22E946A970039DD36 /* XCRemoteSwiftPackageReference "Superwall-iOS" */,
+				93B7D89D2F21121800DF6A73 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 939457052E5BB71E00465F32 /* Products */;
@@ -225,6 +246,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93B8C9912F1978A300685EC4 /* MTV is back! ---> Hit Rewind.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -341,6 +363,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -398,6 +421,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -427,7 +451,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 5.1;
+				MARKETING_VERSION = 13;
 				PRODUCT_BUNDLE_IDENTIFIER = designoverhaul.mytv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -460,7 +484,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 5.1;
+				MARKETING_VERSION = 13;
 				PRODUCT_BUNDLE_IDENTIFIER = designoverhaul.mytv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -599,6 +623,14 @@
 				minimumVersion = 4.8.3;
 			};
 		};
+		93B7D89D2F21121800DF6A73 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -611,6 +643,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 939882B22E946A970039DD36 /* XCRemoteSwiftPackageReference "Superwall-iOS" */;
 			productName = SuperwallKit;
+		};
+		93B7D89E2F21121800DF6A73 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93B7D89D2F21121800DF6A73 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		93B7D8A02F21121800DF6A73 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93B7D89D2F21121800DF6A73 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		93B7D8A52F2505DA00DF6A73 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93B7D89D2F21121800DF6A73 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

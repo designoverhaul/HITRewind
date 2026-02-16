@@ -2,13 +2,16 @@
 //  AuthenticationService.swift
 //  HIt Rewind2
 //
-//  Created by Aaron Heine on 8/26/25.
+//  Firebase Authentication with Sign in with Apple
+//  (Migrated from standalone Sign in with Apple)
 //
 
 import SwiftUI
 import UIKit
 import AuthenticationServices
-import CloudKit
+import CryptoKit
+import FirebaseCore
+import FirebaseAuth
 
 @MainActor
 class AuthenticationService: NSObject, ObservableObject {
@@ -17,114 +20,160 @@ class AuthenticationService: NSObject, ObservableObject {
     @Published var userEmail: String?
     @Published var userFullName: String?
     @Published var isLoading = false
-    
+    @Published var errorMessage: String?
+
     static let shared = AuthenticationService()
-    
+
+    // Firebase user reference
+    private var currentUser: User? {
+        Auth.auth().currentUser
+    }
+
+    // For Sign in with Apple nonce verification
+    private var currentNonce: String?
+
     private override init() {
         super.init()
-        checkAuthenticationState()
+        setupAuthStateListener()
     }
-    
-    // MARK: - Authentication State Management
-    
-    func checkAuthenticationState() {
-        guard let userIdentifier = UserDefaults.standard.string(forKey: "userIdentifier") else {
-            let wasAuthenticated = isAuthenticated
-            isAuthenticated = false
-            if wasAuthenticated {
-                NotificationCenter.default.post(name: .authenticationStateChanged, object: nil)
-            }
-            return
-        }
 
-        self.userIdentifier = userIdentifier
-        self.userEmail = UserDefaults.standard.string(forKey: "userEmail")
-        self.userFullName = UserDefaults.standard.string(forKey: "userFullName")
+    // MARK: - Auth State Listener
 
-        // Verify the user identifier is still valid
-        let provider = ASAuthorizationAppleIDProvider()
-        provider.getCredentialState(forUserID: userIdentifier) { [weak self] credentialState, error in
-            DispatchQueue.main.async {
+    private func setupAuthStateListener() {
+        Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            Task { @MainActor in
                 let wasAuthenticated = self?.isAuthenticated ?? false
-                switch credentialState {
-                case .authorized:
-                    self?.isAuthenticated = true
-                    if !wasAuthenticated {
-                        NotificationCenter.default.post(name: .authenticationStateChanged, object: nil)
-                    }
-                case .revoked, .notFound:
-                    self?.signOut()
-                default:
-                    break
+                self?.isAuthenticated = user != nil
+                self?.userIdentifier = user?.uid
+                self?.userEmail = user?.email
+                self?.userFullName = user?.displayName
+
+                if let user = user {
+                    print("Firebase Auth: User signed in - \(user.uid)")
+                } else {
+                    print("Firebase Auth: User signed out")
+                }
+
+                // Notify if state changed
+                if wasAuthenticated != (user != nil) {
+                    NotificationCenter.default.post(name: .authenticationStateChanged, object: nil)
                 }
             }
         }
     }
-    
-    // MARK: - Sign In
-    
+
+    // MARK: - Check Authentication State (called on app launch)
+
+    func checkAuthenticationState() {
+        // Firebase handles this automatically via the state listener
+        // This method is kept for API compatibility
+        if let user = Auth.auth().currentUser {
+            isAuthenticated = true
+            userIdentifier = user.uid
+            userEmail = user.email
+            userFullName = user.displayName
+        }
+    }
+
+    // MARK: - Sign In with Apple
+
     func signInWithApple() {
         isLoading = true
-        
+        errorMessage = nil
+
+        let nonce = randomNonceString()
+        currentNonce = nonce
+
         let request = ASAuthorizationAppleIDProvider().createRequest()
         request.requestedScopes = [.fullName, .email]
-        
+        request.nonce = sha256(nonce)
+
         let authController = ASAuthorizationController(authorizationRequests: [request])
         authController.delegate = self
         authController.presentationContextProvider = self
         authController.performRequests()
     }
-    
+
+    // MARK: - SignInWithAppleButton Support
+
+    func prepareSignInRequest(_ request: ASAuthorizationAppleIDRequest) {
+        isLoading = true
+        errorMessage = nil
+        let nonce = randomNonceString()
+        currentNonce = nonce
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = sha256(nonce)
+    }
+
+    func handleSignInCompletion(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            handleAuthorization(authorization)
+        case .failure(let error):
+            handleAuthorizationError(error)
+        }
+    }
+
     // MARK: - Sign Out
 
-        func signOut() {
-        isAuthenticated = false
-        userIdentifier = nil
-        userEmail = nil
-        userFullName = nil
-
-        // Clear stored credentials
-        UserDefaults.standard.removeObject(forKey: "userIdentifier")
-        UserDefaults.standard.removeObject(forKey: "userEmail")
-        UserDefaults.standard.removeObject(forKey: "userFullName")
-
-        // Don't clear favorites on sign out - preserve local data
-        // Users may want to sign back in or sign in with different account
-        // FavoritesService.shared.clearAllFavorites()
-
-        // Notify that authentication state changed
-        NotificationCenter.default.post(name: .authenticationStateChanged, object: nil)
+    func signOut() {
+        do {
+            try Auth.auth().signOut()
+            isAuthenticated = false
+            userIdentifier = nil
+            userEmail = nil
+            userFullName = nil
+            print("Firebase sign out successful")
+        } catch {
+            print("Firebase sign out error: \(error.localizedDescription)")
+            errorMessage = error.localizedDescription
+        }
     }
 
     // MARK: - Delete Account
 
     func deleteAccount() {
-        // Clear all local data
-        signOut()
+        guard let user = currentUser else {
+            print("No user to delete")
+            return
+        }
 
-        // Note: For Sign in with Apple, the actual account deletion should be handled
-        // through Apple's account management. This method clears local data only.
-        // Users should be directed to Apple's account settings to fully delete their Apple ID.
-
-        print("Account data cleared locally. User should delete their Apple ID through Apple's account management.")
-
-        // Authentication state change notification is already posted in signOut()
+        Task {
+            do {
+                try await user.delete()
+                print("Firebase account deleted successfully")
+                signOut()
+            } catch {
+                print("Error deleting account: \(error.localizedDescription)")
+                errorMessage = error.localizedDescription
+            }
+        }
     }
-    
-    // MARK: - Private Methods
-    
-    private func saveUserCredentials(userIdentifier: String, email: String?, fullName: String?) {
-        UserDefaults.standard.set(userIdentifier, forKey: "userIdentifier")
-        UserDefaults.standard.set(email, forKey: "userEmail")
-        UserDefaults.standard.set(fullName, forKey: "userFullName")
 
-        self.userIdentifier = userIdentifier
-        self.userEmail = email
-        self.userFullName = fullName
-        self.isAuthenticated = true
+    // MARK: - Nonce Generation (required for Sign in with Apple + Firebase)
 
-        // Notify that authentication state changed
-        NotificationCenter.default.post(name: .authenticationStateChanged, object: nil)
+    private func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        var randomBytes = [UInt8](repeating: 0, count: length)
+        let errorCode = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+        if errorCode != errSecSuccess {
+            fatalError("Unable to generate nonce. SecRandomCopyBytes failed with OSStatus \(errorCode)")
+        }
+
+        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        let nonce = randomBytes.map { byte in
+            charset[Int(byte) % charset.count]
+        }
+        return String(nonce)
+    }
+
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+        let hashString = hashedData.compactMap {
+            String(format: "%02x", $0)
+        }.joined()
+        return hashString
     }
 }
 
@@ -132,36 +181,83 @@ class AuthenticationService: NSObject, ObservableObject {
 
 extension AuthenticationService: ASAuthorizationControllerDelegate {
     func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        isLoading = false
-        
-        if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-            let userIdentifier = appleIDCredential.user
-            let email = appleIDCredential.email
-            let fullName = appleIDCredential.fullName
-            
-            let fullNameString = [fullName?.givenName, fullName?.familyName]
-                .compactMap { $0 }
-                .joined(separator: " ")
-            
-            saveUserCredentials(
-                userIdentifier: userIdentifier,
-                email: email,
-                fullName: fullNameString.isEmpty ? nil : fullNameString
-            )
-            
-            print("✅ Sign in with Apple successful")
-        }
+        handleAuthorization(authorization)
     }
-    
+
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-        isLoading = false
-        print("❌ Sign in with Apple failed: \(error.localizedDescription)")
-        
-        // Don't show error for user cancellation
-        if let authError = error as? ASAuthorizationError,
-           authError.code == .canceled {
+        handleAuthorizationError(error)
+    }
+}
+
+// MARK: - Authorization Handling
+
+extension AuthenticationService {
+    func handleAuthorization(_ authorization: ASAuthorization) {
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+            isLoading = false
+            errorMessage = "Invalid credential type"
             return
         }
+
+        guard let nonce = currentNonce else {
+            isLoading = false
+            errorMessage = "Invalid state: A login callback was received, but no login request was sent."
+            return
+        }
+
+        guard let appleIDToken = appleIDCredential.identityToken,
+              let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+            isLoading = false
+            errorMessage = "Unable to fetch identity token"
+            return
+        }
+
+        // Create Firebase credential
+        let credential = OAuthProvider.appleCredential(
+            withIDToken: idTokenString,
+            rawNonce: nonce,
+            fullName: appleIDCredential.fullName
+        )
+
+        // Sign in to Firebase
+        Task {
+            do {
+                let result = try await Auth.auth().signIn(with: credential)
+                print("Firebase Sign in with Apple successful - UID: \(result.user.uid)")
+
+                // Update display name if available from Apple
+                if let fullName = appleIDCredential.fullName {
+                    let displayName = [fullName.givenName, fullName.familyName]
+                        .compactMap { $0 }
+                        .joined(separator: " ")
+
+                    if !displayName.isEmpty {
+                        let changeRequest = result.user.createProfileChangeRequest()
+                        changeRequest.displayName = displayName
+                        try? await changeRequest.commitChanges()
+                        self.userFullName = displayName
+                    }
+                }
+
+                isLoading = false
+            } catch {
+                print("Firebase sign in error: \(error.localizedDescription)")
+                errorMessage = error.localizedDescription
+                isLoading = false
+            }
+        }
+    }
+
+    func handleAuthorizationError(_ error: Error) {
+        isLoading = false
+
+        // Don't show error for user cancellation
+        if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+            return
+        }
+
+        print("Sign in with Apple failed: \(error.localizedDescription)")
+        errorMessage = error.localizedDescription
     }
 }
 

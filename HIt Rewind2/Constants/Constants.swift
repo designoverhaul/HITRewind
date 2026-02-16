@@ -17,6 +17,8 @@ struct AirtableConfig {
     static let categoriesUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/Category"
     static let artistsUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/Artists"
     static let videosUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/Videos"
+    static let mtvVideosNewUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/tblNwqwVyflL8hNDy"
+    static let spotifyChartVideosUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/TopToday"
 }
 
 // MARK: - YouTube Configuration
@@ -34,5 +36,7 @@ struct SuperwallConfig {
 struct AppConfig {
     static let appName = "Hit Rewind"
     static let version = "2.0"
-    static let useCloudKit = true
+    static let useCloudKit = false  // Deprecated - now using Firebase
+    static let useFirebase = true
+    static let appStoreId = "6479374259"  // App Store ID for reviews
 }

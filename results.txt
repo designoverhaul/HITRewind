@@ -1,0 +1,150 @@
+[1] Searching: Last Night - Morgan Wallen
+FOUND|1|Last Night|Morgan Wallen|https://www.youtube.com/watch?v=bUjPPBxbQrQ
+[2] Searching: Flowers - Miley Cyrus
+FOUND|2|Flowers|Miley Cyrus|https://www.youtube.com/watch?v=G7KNmW9a75Y
+[3] Searching: Kill Bill - SZA
+FOUND|3|Kill Bill|SZA|https://www.youtube.com/watch?v=MSRcC626prw
+[4] Searching: Anti-Hero - Taylor Swift
+FOUND|4|Anti-Hero|Taylor Swift|https://www.youtube.com/watch?v=b1kbLwvqugk
+[5] Searching: Creepin' - Metro Boomin, the Weeknd and 21 Savage
+FOUND|5|Creepin'|Metro Boomin, the Weeknd|https://www.youtube.com/watch?v=6DWjiWEmxME
+[6] Searching: Calm Down - Rema and Selena Gomez
+FOUND|6|Calm Down|Rema|https://www.youtube.com/watch?v=WcIcVapfqXw
+[7] Searching: Die for You - The Weeknd and Ariana Grande
+FOUND|7|Die for You|The Weeknd|https://www.youtube.com/watch?v=YQ-qToZUybM
+[8] Searching: Fast Car - Luke Combs
+FOUND|8|Fast Car|Luke Combs|https://www.youtube.com/watch?v=Fr7oYjnt3bM
+[9] Searching: Snooze - SZA
+FOUND|9|Snooze|SZA|https://www.youtube.com/watch?v=LDY_XyxBu8A
+[10] Searching: I'm Good (Blue) - David Guetta and Bebe Rexha
+FOUND|10|I'm Good (Blue)|David Guetta|https://www.youtube.com/watch?v=90RLzVUuXe4
+[11] Searching: Unholy - Sam Smith and Kim Petras
+FOUND|11|Unholy|Sam Smith|https://www.youtube.com/watch?v=Uq9gPaIzbe8
+[12] Searching: You Proof - Morgan Wallen
+FOUND|12|You Proof|Morgan Wallen|https://www.youtube.com/watch?v=3CkLMG5NwUg
+[13] Searching: Something in the Orange - Zach Bryan
+FOUND|13|Something in the Orange|Zach Bryan|https://www.youtube.com/watch?v=sDOxeU02NUM
+[14] Searching: Rich Flex - Drake and 21 Savage
+FOUND|14|Rich Flex|Drake|https://www.youtube.com/watch?v=I4DjHHVHWAE
+[15] Searching: As It Was - Harry Styles
+FOUND|15|As It Was|Harry Styles|https://www.youtube.com/watch?v=H5v3kku4y6Q
+[16] Searching: Rock and a Hard Place - Bailey Zimmerman
+FOUND|16|Rock and a Hard Place|Bailey Zimmerman|https://www.youtube.com/watch?v=C7rJJsrDsss
+[17] Searching: Under the Influence - Chris Brown
+FOUND|17|Under the Influence|Chris Brown|https://www.youtube.com/watch?v=pfxyk1glEq4
+[18] Searching: Cruel Summer - Taylor Swift
+FOUND|18|Cruel Summer|Taylor Swift|https://www.youtube.com/watch?v=GrKQvyXpNgc
+[19] Searching: Thinkin' Bout Me - Morgan Wallen
+FOUND|19|Thinkin' Bout Me|Morgan Wallen|https://www.youtube.com/watch?v=5DCdL1zdpdM
+[20] Searching: Boy's a Liar Pt. 2 - PinkPantheress and Ice Spice
+FOUND|20|Boy's a Liar Pt. 2|PinkPantheress|https://www.youtube.com/watch?v=oftolPu9qp4
+[21] Searching: Favorite Song - Toosii
+FOUND|21|Favorite Song|Toosii|https://www.youtube.com/watch?v=4D89Qr5vH6U
+[22] Searching: Thought You Should Know - Morgan Wallen
+FOUND|22|Thought You Should Know|Morgan Wallen|https://www.youtube.com/watch?v=Dw9VmOLwxoM
+[23] Searching: Thank God - Kane Brown and Katelyn Brown
+FOUND|23|Thank God|Kane Brown|https://www.youtube.com/watch?v=bLzUmfLckEw
+[24] Searching: Sure Thing - Miguel
+FOUND|24|Sure Thing|Miguel|https://www.youtube.com/watch?v=q4GJVOMjCC4
+[25] Searching: All My Life - Lil Durk featuring J. Cole
+FOUND|25|All My Life|Lil Durk|https://www.youtube.com/watch?v=Z4N8lzKNfy4
+[26] Searching: Ella Baila Sola - Eslabon Armado and Peso Pluma
+FOUND|26|Ella Baila Sola|Eslabon Armado|https://www.youtube.com/watch?v=lZiaYpD9ZrI
+[27] Searching: Karma - Taylor Swift featuring Ice Spice
+FOUND|27|Karma|Taylor Swift|https://www.youtube.com/watch?v=XzOvgu3GPwY
+[28] Searching: Just Wanna Rock - Lil Uzi Vert
+FOUND|28|Just Wanna Rock|Lil Uzi Vert|https://www.youtube.com/watch?v=UhbixyxgsiU
+[29] Searching: Cuff It - Beyoncé
+FOUND|29|Cuff It|Beyoncé|https://www.youtube.com/watch?v=yrtWLyp5gLI
+[30] Searching: Vampire - Olivia Rodrigo
+FOUND|30|Vampire|Olivia Rodrigo|https://www.youtube.com/watch?v=RlPNh_PBZb4
+[31] Searching: FukUMean - Gunna
+FOUND|31|FukUMean|Gunna|https://www.youtube.com/watch?v=V6ZsXKE8QmQ
+[32] Searching: Lavender Haze - Taylor Swift
+FOUND|32|Lavender Haze|Taylor Swift|https://www.youtube.com/watch?v=h8DLofLM7No
+[33] Searching: Players - Coi Leray
+FOUND|33|Players|Coi Leray|https://www.youtube.com/watch?v=5gr755jYWQU
+[34] Searching: Need a Favor - Jelly Roll
+FOUND|34|Need a Favor|Jelly Roll|https://www.youtube.com/watch?v=P1nRboaLTzU
+[35] Searching: Dance the Night - Dua Lipa
+FOUND|35|Dance the Night|Dua Lipa|https://www.youtube.com/watch?v=OiC1rgCPmUQ
+[36] Searching: Love You Anyway - Luke Combs
+FOUND|36|Love You Anyway|Luke Combs|https://www.youtube.com/watch?v=27nRqoBQLl4
+[37] Searching: One Thing at a Time - Morgan Wallen
+FOUND|37|One Thing at a Time|Morgan Wallen|https://www.youtube.com/watch?v=S-OKqDu8YmA
+[38] Searching: Superhero (Heroes & Villains) - Metro Boomin, Future and Chris Brown
+FOUND|38|Superhero (Heroes & Villains)|Metro Boomin, Future|https://www.youtube.com/watch?v=_WCD3Z9UmJ4
+[39] Searching: Bad Habit - Steve Lacy
+FOUND|39|Bad Habit|Steve Lacy|https://www.youtube.com/watch?v=VF-FGf_ZZiI
+[40] Searching: La Bebé - Yng Lvcas and Peso Pluma
+FOUND|40|La Bebé|Yng Lvcas|https://www.youtube.com/watch?v=3mchJ-EW9rM
+[41] Searching: Golden Hour - Jvke
+FOUND|41|Golden Hour|Jvke|https://www.youtube.com/watch?v=PEM0Vs8jf1w
+[42] Searching: Religiously - Bailey Zimmerman
+FOUND|42|Religiously|Bailey Zimmerman|https://www.youtube.com/watch?v=0NXHMhW5nw8
+[43] Searching: Spin Bout U - Drake and 21 Savage
+FOUND|43|Spin Bout U|Drake|https://www.youtube.com/watch?v=T8nbNQpRwNo
+[44] Searching: Cupid - Fifty Fifty
+FOUND|44|Cupid|Fifty Fifty|https://www.youtube.com/watch?v=Qc7_zRjH808
+[45] Searching: Search & Rescue - Drake
+FOUND|45|Search & Rescue|Drake|https://www.youtube.com/watch?v=ntp9_iznQ-0
+[46] Searching: Barbie World - Nicki Minaj and Ice Spice with Aqua
+FOUND|46|Barbie World|Nicki Minaj|https://www.youtube.com/watch?v=CUj2AWEJnwQ
+[47] Searching: Next Thing You Know - Jordan Davis
+FOUND|47|Next Thing You Know|Jordan Davis|https://www.youtube.com/watch?v=3c909oqLfao
+[48] Searching: Escapism - Raye featuring 070 Shake
+FOUND|48|Escapism|Raye|https://www.youtube.com/watch?v=Dll6VJ2C7wo
+[49] Searching: Un x100to - Grupo Frontera and Bad Bunny
+FOUND|49|Un x100to|Grupo Frontera|https://www.youtube.com/watch?v=3inw26U-os4
+[50] Searching: Until I Found You - Stephen Sanchez
+FOUND|50|Until I Found You|Stephen Sanchez|https://www.youtube.com/watch?v=GxldQ9eX2wo
+[51] Searching: Shirt - SZA
+FOUND|51|Shirt|SZA|https://www.youtube.com/watch?v=hdFDrjfW548
+[52] Searching: Paint the Town Red - Doja Cat
+FOUND|52|Paint the Town Red|Doja Cat|https://www.youtube.com/watch?v=m4_9TFeMfJE
+[53] Searching: Made You Look - Meghan Trainor
+FOUND|53|Made You Look|Meghan Trainor|https://www.youtube.com/watch?v=gPCCYMeXin0
+[54] Searching: Wait in the Truck - Hardy featuring Lainey Wilson
+FOUND|54|Wait in the Truck|Hardy|https://www.youtube.com/watch?v=YsMB0i5YTOc
+[55] Searching: All I Want for Christmas Is You - Mariah Carey
+FOUND|55|All I Want for Christmas Is You|Mariah Carey|https://www.youtube.com/watch?v=aAkMkVFwAoo
+[56] Searching: Everything I Love - Morgan Wallen
+FOUND|56|Everything I Love|Morgan Wallen|https://www.youtube.com/watch?v=IVdNtA0M2tM
+[57] Searching: Chemical - Post Malone
+FOUND|57|Chemical|Post Malone|https://www.youtube.com/watch?v=IzPQ_jA00bk
+[58] Searching: Heart Like a Truck - Lainey Wilson
+FOUND|58|Heart Like a Truck|Lainey Wilson|https://www.youtube.com/watch?v=rNReepITjN0
+[59] Searching: Goin', Going, Gone - Luke Combs
+FOUND|59|Goin', Going, Gone|Luke Combs|https://www.youtube.com/watch?v=iG-JNwGYAjo
+[60] Searching: Rockin' Around the Christmas Tree - Brenda Lee
+FOUND|60|Rockin' Around the Christmas Tree|Brenda Lee|https://www.youtube.com/watch?v=TFsZy9t-qDc
+[61] Searching: Dancin' in the Country - Tyler Hubbard
+FOUND|61|Dancin' in the Country|Tyler Hubbard|https://www.youtube.com/watch?v=ma3L7xWB_1U
+[62] Searching: Daylight - David Kushner
+FOUND|62|Daylight|David Kushner|https://www.youtube.com/watch?v=MoN9ql6Yymw
+[63] Searching: Lift Me Up - Rihanna
+FOUND|63|Lift Me Up|Rihanna|https://www.youtube.com/watch?v=Mx_OexsUI2M
+[64] Searching: Eyes Closed - Ed Sheeran
+FOUND|64|Eyes Closed|Ed Sheeran|https://www.youtube.com/watch?v=u6wOyMUs74I
+[65] Searching: TQG - Karol G and Shakira
+FOUND|65|TQG|Karol G|https://www.youtube.com/watch?v=jZGpkLElSu8
+[66] Searching: Try That in a Small Town - Jason Aldean
+FOUND|66|Try That in a Small Town|Jason Aldean|https://www.youtube.com/watch?v=b1_RKu-ESCY
+[67] Searching: Tennessee Orange - Megan Moroney
+FOUND|67|Tennessee Orange|Megan Moroney|https://www.youtube.com/watch?v=MPacja3hGdA
+[68] Searching: Jingle Bell Rock - Bobby Helms
+FOUND|68|Jingle Bell Rock|Bobby Helms|https://www.youtube.com/watch?v=ZnDmmiiFSUU
+[69] Searching: Princess Diana - Ice Spice and Nicki Minaj
+FOUND|69|Princess Diana|Ice Spice|https://www.youtube.com/watch?v=gMq-I0dejjE
+[70] Searching: Tomorrow 2 - GloRilla and Cardi B
+FOUND|70|Tomorrow 2|GloRilla|https://www.youtube.com/watch?v=zwa7NzNBQig
+[71] Searching: A Holly Jolly Christmas - Burl Ives
+FOUND|71|A Holly Jolly Christmas|Burl Ives|https://www.youtube.com/watch?v=e_AMTbO50vU
+[72] Searching: Where She Goes - Bad Bunny
+FOUND|72|Where She Goes|Bad Bunny|https://www.youtube.com/watch?v=bef8QLNHubw
+[73] Searching: Bebe Dame - Fuerza Regida and Grupo Frontera
+FOUND|73|Bebe Dame|Fuerza Regida|https://www.youtube.com/watch?v=Oie--p6YqJo
+[74] Searching: I Remember Everything - Zach Bryan featuring Kacey Musgraves
+FOUND|74|I Remember Everything|Zach Bryan|https://www.youtube.com/watch?v=ZVVvJjwzl6c
+[75] Searching: I Like You (A Happier Song) - Post Malone featuring Doja Cat
+FOUND|75|I Like You (A Happier Song)|Post Malone|https://www.youtube.com/watch?v=7aekxC_monc

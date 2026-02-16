@@ -1,0 +1,531 @@
+{
+  "successful": [
+    {
+      "rank": 1,
+      "title": "Levitating",
+      "artist": "Dua Lipa",
+      "video_url": "https://www.youtube.com/watch?v=TUVcZfQe-Kw",
+      "airtable_id": "rec7G5sjWnLqTXqLU"
+    },
+    {
+      "rank": 2,
+      "title": "Save Your Tears",
+      "artist": "The Weeknd and Ariana Grande",
+      "video_url": "https://www.youtube.com/watch?v=s37x2VSZrLw",
+      "airtable_id": "rec8nHSFGdhJtWIG0"
+    },
+    {
+      "rank": 3,
+      "title": "Blinding Lights",
+      "artist": "The Weeknd",
+      "video_url": "https://www.youtube.com/watch?v=4NRXx6U8ABQ",
+      "airtable_id": "recV6WwvQd2ToA3tB"
+    },
+    {
+      "rank": 4,
+      "title": "Mood",
+      "artist": "24kGoldn featuring Iann Dior",
+      "video_url": "https://www.youtube.com/watch?v=GrAchTdepsU",
+      "airtable_id": "recXuYzrndrM8Ow4X"
+    },
+    {
+      "rank": 5,
+      "title": "Good 4 U",
+      "artist": "Olivia Rodrigo",
+      "video_url": "https://www.youtube.com/watch?v=gNi_6U5Pm_o",
+      "airtable_id": "rec315M4tmt5KbHpF"
+    },
+    {
+      "rank": 6,
+      "title": "Kiss Me More",
+      "artist": "Doja Cat featuring SZA",
+      "video_url": "https://www.youtube.com/watch?v=0EVVKs6DQLo",
+      "airtable_id": "recQ60UeFzhpoVLMj"
+    },
+    {
+      "rank": 7,
+      "title": "Leave the Door Open",
+      "artist": "Silk Sonic (Bruno Mars and Anderson .Paak)",
+      "video_url": "https://www.youtube.com/watch?v=adLGHcj_fmA",
+      "airtable_id": "recQreoBBLdx1RKTv"
+    },
+    {
+      "rank": 8,
+      "title": "Drivers License",
+      "artist": "Olivia Rodrigo",
+      "video_url": "https://www.youtube.com/watch?v=ZmDBbnmKpqQ",
+      "airtable_id": "rececA89TSScY13fa"
+    },
+    {
+      "rank": 9,
+      "title": "Montero (Call Me by Your Name)",
+      "artist": "Lil Nas X",
+      "video_url": "https://www.youtube.com/watch?v=6swmTBVI83k",
+      "airtable_id": "recItIcoLn2IfhYij"
+    },
+    {
+      "rank": 10,
+      "title": "Peaches",
+      "artist": "Justin Bieber featuring Daniel Caesar and Giveon",
+      "video_url": "https://www.youtube.com/watch?v=tQ0yjYUFKAE",
+      "airtable_id": "recwVRYGI5cXfM7a0"
+    },
+    {
+      "rank": 11,
+      "title": "Butter",
+      "artist": "BTS",
+      "video_url": "https://www.youtube.com/watch?v=WMweEpGlu_U",
+      "airtable_id": "recoE2r30WqL7iExa"
+    },
+    {
+      "rank": 12,
+      "title": "Stay",
+      "artist": "The Kid Laroi and Justin Bieber",
+      "video_url": "https://www.youtube.com/watch?v=kTJczUoc26U",
+      "airtable_id": "recoO1kO6YhwoWndf"
+    },
+    {
+      "rank": 13,
+      "title": "Deja Vu",
+      "artist": "Olivia Rodrigo",
+      "video_url": "https://www.youtube.com/watch?v=cii6ruuycQA",
+      "airtable_id": "recTpKSOaeT9lrzZN"
+    },
+    {
+      "rank": 14,
+      "title": "Positions",
+      "artist": "Ariana Grande",
+      "video_url": "https://www.youtube.com/watch?v=tcYodQoapMg",
+      "airtable_id": "reckmR81hZljewgTt"
+    },
+    {
+      "rank": 15,
+      "title": "Bad Habits",
+      "artist": "Ed Sheeran",
+      "video_url": "https://www.youtube.com/watch?v=orJSJGHjBLI",
+      "airtable_id": "rec7QP6xo2g8LG5MB"
+    },
+    {
+      "rank": 16,
+      "title": "Heat Waves",
+      "artist": "Glass Animals",
+      "video_url": "https://www.youtube.com/watch?v=mRD0-GxqHVo",
+      "airtable_id": "rec8imhe4l5ICtPDs"
+    },
+    {
+      "rank": 17,
+      "title": "Without You",
+      "artist": "The Kid Laroi",
+      "video_url": "https://www.youtube.com/watch?v=SJOKlqJho8U",
+      "airtable_id": "reci4mcYSD4SAWGWu"
+    },
+    {
+      "rank": 18,
+      "title": "Forever After All",
+      "artist": "Luke Combs",
+      "video_url": "https://www.youtube.com/watch?v=TDpOcp98b5k",
+      "airtable_id": "recQPFjphEydXn5KT"
+    },
+    {
+      "rank": 19,
+      "title": "Go Crazy",
+      "artist": "Chris Brown and Young Thug",
+      "video_url": "https://www.youtube.com/watch?v=dPhwbZBvW2o",
+      "airtable_id": "recHvhPRjlZ2poypJ"
+    },
+    {
+      "rank": 20,
+      "title": "Astronaut in the Ocean",
+      "artist": "Masked Wolf",
+      "video_url": "https://www.youtube.com/watch?v=Ju9xgdp89Jk",
+      "airtable_id": "reczLudjkGot1rl4B"
+    },
+    {
+      "rank": 21,
+      "title": "34+35",
+      "artist": "Ariana Grande featuring Doja Cat and Megan Thee Stallion",
+      "video_url": "https://www.youtube.com/watch?v=ssq6X6alZ3w",
+      "airtable_id": "recwN0fVkj0UJmVeZ"
+    },
+    {
+      "rank": 22,
+      "title": "What You Know Bout Love",
+      "artist": "Pop Smoke",
+      "video_url": "https://www.youtube.com/watch?v=uuodbSVO3z0",
+      "airtable_id": "rec5yAD0YP9Q2JGdc"
+    },
+    {
+      "rank": 23,
+      "title": "My Ex's Best Friend",
+      "artist": "Machine Gun Kelly featuring Blackbear",
+      "video_url": "https://www.youtube.com/watch?v=J_n01uvyhI8",
+      "airtable_id": "recSyFRddxgZ6Jve8"
+    },
+    {
+      "rank": 24,
+      "title": "Industry Baby",
+      "artist": "Lil Nas X and Jack Harlow",
+      "video_url": "https://www.youtube.com/watch?v=UTHLKHL_whs",
+      "airtable_id": "recKJuNhCUaJiwM6K"
+    },
+    {
+      "rank": 25,
+      "title": "Therefore I Am",
+      "artist": "Billie Eilish",
+      "video_url": "https://www.youtube.com/watch?v=RUQl6YcMalg",
+      "airtable_id": "recxRdArQrBXpd9Ey"
+    },
+    {
+      "rank": 26,
+      "title": "Up",
+      "artist": "Cardi B",
+      "video_url": "https://www.youtube.com/watch?v=rCiBgLOcuKU",
+      "airtable_id": "recWWazSlhWFUCvzc"
+    },
+    {
+      "rank": 27,
+      "title": "Fancy Like",
+      "artist": "Walker Hayes",
+      "video_url": "https://www.youtube.com/watch?v=G_zuB-ogIBw",
+      "airtable_id": "rectcZftFFBkvTDxb"
+    },
+    {
+      "rank": 28,
+      "title": "Dakiti",
+      "artist": "Bad Bunny and Jhay Cortez",
+      "video_url": "https://www.youtube.com/watch?v=TmKh7lAwnBI",
+      "airtable_id": "rec383RDsaNQo4Jbb"
+    },
+    {
+      "rank": 29,
+      "title": "Best Friend",
+      "artist": "Saweetie featuring Doja Cat",
+      "video_url": "https://www.youtube.com/watch?v=i85LB0tdYcY",
+      "airtable_id": "recwyVoaGev9xOL0h"
+    },
+    {
+      "rank": 30,
+      "title": "Rapstar",
+      "artist": "Polo G",
+      "video_url": "https://www.youtube.com/watch?v=w2IhccXakkE",
+      "airtable_id": "recAuwVznPdXsQ1jA"
+    },
+    {
+      "rank": 31,
+      "title": "Heartbreak Anniversary",
+      "artist": "Giveon",
+      "video_url": "https://www.youtube.com/watch?v=uWRlisQu4fo",
+      "airtable_id": "recFHjoUVC2fTxr6B"
+    },
+    {
+      "rank": 32,
+      "title": "For the Night",
+      "artist": "Pop Smoke featuring Lil Baby and DaBaby",
+      "video_url": "https://www.youtube.com/watch?v=Q9pjm4cNsfc",
+      "airtable_id": "recVVUI3nkduYqS3D"
+    },
+    {
+      "rank": 33,
+      "title": "Calling My Phone",
+      "artist": "Lil Tjay and 6lack",
+      "video_url": "https://www.youtube.com/watch?v=zzd4ydafGR0",
+      "airtable_id": "reccet0am37zikv3x"
+    },
+    {
+      "rank": 34,
+      "title": "Beautiful Mistakes",
+      "artist": "Maroon 5 featuring Megan Thee Stallion",
+      "video_url": "https://www.youtube.com/watch?v=BSzSn-PRdtI",
+      "airtable_id": "rec2rZcCicqiOurza"
+    },
+    {
+      "rank": 35,
+      "title": "Holy",
+      "artist": "Justin Bieber featuring Chance the Rapper",
+      "video_url": "https://www.youtube.com/watch?v=pvPsJFRGleA",
+      "airtable_id": "recU6HHJaqurSrORP"
+    },
+    {
+      "rank": 36,
+      "title": "On Me",
+      "artist": "Lil Baby",
+      "video_url": "https://www.youtube.com/watch?v=ieTnO1Dvt-I",
+      "airtable_id": "recO0XRsf4HSTLPTE"
+    },
+    {
+      "rank": 37,
+      "title": "You Broke Me First",
+      "artist": "Tate McRae",
+      "video_url": "https://www.youtube.com/watch?v=AG-erEMhumc",
+      "airtable_id": "recuK8Wu5fAOJnK6q"
+    },
+    {
+      "rank": 38,
+      "title": "Traitor",
+      "artist": "Olivia Rodrigo",
+      "video_url": "https://www.youtube.com/watch?v=CRrf3h9vhp8",
+      "airtable_id": "recrBoVGL8DoAqACu"
+    },
+    {
+      "rank": 39,
+      "title": "Back in Blood",
+      "artist": "Pooh Shiesty featuring Lil Durk",
+      "video_url": "https://www.youtube.com/watch?v=0-Tm65i96TY",
+      "airtable_id": "recr5qQmdUeqMeuDH"
+    },
+    {
+      "rank": 40,
+      "title": "I Hope",
+      "artist": "Gabby Barrett featuring Charlie Puth",
+      "video_url": "https://www.youtube.com/watch?v=fDFdVIp6rHg",
+      "airtable_id": "rect3rX8fJIJctX3K"
+    },
+    {
+      "rank": 41,
+      "title": "Dynamite",
+      "artist": "BTS",
+      "video_url": "https://www.youtube.com/watch?v=gdZLi9oWNZg",
+      "airtable_id": "rec9rYoOqGx5Vo7IH"
+    },
+    {
+      "rank": 42,
+      "title": "Wockesha",
+      "artist": "Moneybagg Yo",
+      "video_url": "https://www.youtube.com/watch?v=6bN45f9NjlA",
+      "airtable_id": "recpnPcHpyYk04PVh"
+    },
+    {
+      "rank": 43,
+      "title": "You Right",
+      "artist": "Doja Cat and the Weeknd",
+      "video_url": "https://www.youtube.com/watch?v=JXgV1rXUoME",
+      "airtable_id": "recFDj1FIhdpOrKAP"
+    },
+    {
+      "rank": 44,
+      "title": "Beat Box 2",
+      "artist": "SpotemGottem featuring Pooh Shiesty",
+      "video_url": "https://www.youtube.com/watch?v=94zTrkr5_xY",
+      "airtable_id": "recOrYABOfUhC4Qi5"
+    },
+    {
+      "rank": 45,
+      "title": "Laugh Now Cry Later",
+      "artist": "Drake featuring Lil Durk",
+      "video_url": "https://www.youtube.com/watch?v=JFm7YDVlqnI",
+      "airtable_id": "recCFWgMbXHiEKVBV"
+    },
+    {
+      "rank": 46,
+      "title": "Need to Know",
+      "artist": "Doja Cat",
+      "video_url": "https://www.youtube.com/watch?v=dI3xkL7qUAc",
+      "airtable_id": "rec0JaufZZR2im203"
+    },
+    {
+      "rank": 47,
+      "title": "Wants and Needs",
+      "artist": "Drake featuring Lil Baby",
+      "video_url": "https://www.youtube.com/watch?v=cnqUrYjqGaU",
+      "airtable_id": "recYJ5T4DrMNHmvV1"
+    },
+    {
+      "rank": 48,
+      "title": "Way 2 Sexy",
+      "artist": "Drake featuring Future and Young Thug",
+      "video_url": "https://www.youtube.com/watch?v=vX9msKu75qs",
+      "airtable_id": "recrmHlCO6rQGxbTu"
+    },
+    {
+      "rank": 49,
+      "title": "Telepat\u00eda",
+      "artist": "Kali Uchis",
+      "video_url": "https://www.youtube.com/watch?v=bn_p95HbHoQ",
+      "airtable_id": "recXVldMGvL3fvLMU"
+    },
+    {
+      "rank": 50,
+      "title": "Whoopty",
+      "artist": "CJ",
+      "video_url": "https://www.youtube.com/watch?v=2xWkATdMQms",
+      "airtable_id": "recgDig473HrKOzHp"
+    },
+    {
+      "rank": 51,
+      "title": "Lemonade",
+      "artist": "Internet Money and Gunna featuring Don Toliver and Nav",
+      "video_url": "https://www.youtube.com/watch?v=pmIMl2zyj3w",
+      "airtable_id": "recjA1qydRkcdqkwj"
+    },
+    {
+      "rank": 52,
+      "title": "Good Days",
+      "artist": "SZA",
+      "video_url": "https://www.youtube.com/watch?v=2p3zZoraK9g",
+      "airtable_id": "recl0tMRh8dfbUKbT"
+    },
+    {
+      "rank": 53,
+      "title": "Starting Over",
+      "artist": "Chris Stapleton",
+      "video_url": "https://www.youtube.com/watch?v=A3svABDnmio",
+      "airtable_id": "recVDiQz9y1T95NmN"
+    },
+    {
+      "rank": 54,
+      "title": "Body",
+      "artist": "Megan Thee Stallion",
+      "video_url": "https://www.youtube.com/watch?v=7PBYGu4Az8s",
+      "airtable_id": "recIrlAuhjg5ZchvV"
+    },
+    {
+      "rank": 55,
+      "title": "Willow",
+      "artist": "Taylor Swift",
+      "video_url": "https://www.youtube.com/watch?v=RsEZmictANA",
+      "airtable_id": "recxM249r63ubqGKb"
+    },
+    {
+      "rank": 56,
+      "title": "Bang!",
+      "artist": "AJR",
+      "video_url": "https://www.youtube.com/watch?v=4THFRpw68oQ",
+      "airtable_id": "recO3nxH9QiFoa36C"
+    },
+    {
+      "rank": 57,
+      "title": "Better Together",
+      "artist": "Luke Combs",
+      "video_url": "https://www.youtube.com/watch?v=ObDQtfZZ0_k",
+      "airtable_id": "recALLYhGHexcK3Tq"
+    },
+    {
+      "rank": 58,
+      "title": "You're Mines Still",
+      "artist": "Yung Bleu featuring Drake",
+      "video_url": "https://www.youtube.com/watch?v=_bptrMV3zHE",
+      "airtable_id": "rec3h9NsPHNxqz05G"
+    },
+    {
+      "rank": 59,
+      "title": "Every Chance I Get",
+      "artist": "DJ Khaled featuring Lil Baby and Lil Durk",
+      "video_url": "https://www.youtube.com/watch?v=BTivsHlVcGU",
+      "airtable_id": "rec5fvbuEmz7QQrNR"
+    },
+    {
+      "rank": 60,
+      "title": "Essence",
+      "artist": "Wizkid featuring Justin Bieber and Tems",
+      "video_url": "https://www.youtube.com/watch?v=jipQpjUA_o8",
+      "airtable_id": "recz85UidCP8RB1lY"
+    },
+    {
+      "rank": 61,
+      "title": "Chasing After You",
+      "artist": "Ryan Hurd and Maren Morris",
+      "video_url": "https://www.youtube.com/watch?v=yKXw_MMm0UA",
+      "airtable_id": "recFjGTsjTI4L1BOO"
+    },
+    {
+      "rank": 62,
+      "title": "The Good Ones",
+      "artist": "Gabby Barrett",
+      "video_url": "https://www.youtube.com/watch?v=CV7GVjg3TV4",
+      "airtable_id": "recievHoellpJwUl6"
+    },
+    {
+      "rank": 63,
+      "title": "Leave Before You Love Me",
+      "artist": "Marshmello and Jonas Brothers",
+      "video_url": "https://www.youtube.com/watch?v=hmUyEDG7Jy0",
+      "airtable_id": "recEKTuW9vEbA2C4z"
+    },
+    {
+      "rank": 64,
+      "title": "Glad You Exist",
+      "artist": "Dan + Shay",
+      "video_url": "https://www.youtube.com/watch?v=eQzcHDAbfm8",
+      "airtable_id": "recYjALh1yFDTX8Mh"
+    },
+    {
+      "rank": 65,
+      "title": "Lonely",
+      "artist": "Justin Bieber and Benny Blanco",
+      "video_url": "https://www.youtube.com/watch?v=xQOO2xGQ1Pc",
+      "airtable_id": "recpHMsP2VUBTVTJh"
+    },
+    {
+      "rank": 66,
+      "title": "Beggin'",
+      "artist": "M\u00e5neskin",
+      "video_url": "https://www.youtube.com/watch?v=Xg72z08aTXY",
+      "airtable_id": "rec600BMpx9Wkmbcy"
+    },
+    {
+      "rank": 67,
+      "title": "Streets",
+      "artist": "Doja Cat",
+      "video_url": "https://www.youtube.com/watch?v=jJdlgKzVsnI",
+      "airtable_id": "reco7fODATtknFRE2"
+    },
+    {
+      "rank": 68,
+      "title": "What's Next",
+      "artist": "Drake",
+      "video_url": "https://www.youtube.com/watch?v=7EUVJaKJtBY",
+      "airtable_id": "recDbOO54STiD5L9B"
+    },
+    {
+      "rank": 69,
+      "title": "Famous Friends",
+      "artist": "Chris Young and Kane Brown",
+      "video_url": "https://www.youtube.com/watch?v=qpMOx2Ul9RA",
+      "airtable_id": "reczQgu7UbVeCn89r"
+    },
+    {
+      "rank": 70,
+      "title": "Lil Bit",
+      "artist": "Nelly and Florida Georgia Line",
+      "video_url": "https://www.youtube.com/watch?v=CTYXd__nbvo",
+      "airtable_id": "recZSknmUaICjz059"
+    },
+    {
+      "rank": 71,
+      "title": "Thot Shit",
+      "artist": "Megan Thee Stallion",
+      "video_url": "https://www.youtube.com/watch?v=KynkMn5Hv3Q",
+      "airtable_id": "recnkjy6h7xAq1Wtf"
+    },
+    {
+      "rank": 72,
+      "title": "Late at Night",
+      "artist": "Roddy Ricch",
+      "video_url": "https://www.youtube.com/watch?v=sJDRfZJFAk0",
+      "airtable_id": "recaFlRGsRvoQWjW3"
+    },
+    {
+      "rank": 73,
+      "title": "Kings & Queens",
+      "artist": "Ava Max",
+      "video_url": "https://www.youtube.com/watch?v=jH1RNk8954Q",
+      "airtable_id": "rec487UTrChVbLS07"
+    },
+    {
+      "rank": 74,
+      "title": "Anyone",
+      "artist": "Justin Bieber",
+      "video_url": "https://www.youtube.com/watch?v=KIK3azN4w34",
+      "airtable_id": "rec8XQDggSoryCaSA"
+    },
+    {
+      "rank": 75,
+      "title": "Track Star",
+      "artist": "Mooski",
+      "video_url": "https://www.youtube.com/watch?v=KPfcycMj8BE",
+      "airtable_id": "recFLPbeaX3N713Ap"
+    }
+  ],
+  "failed": [],
+  "no_video_found": []
+}

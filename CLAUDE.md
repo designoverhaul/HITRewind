@@ -1,281 +1,543 @@
-# Hit Rewind 2 - iOS Implementation Notes
+# Hit Rewind 2 - iOS App
 
 ## Project Overview
-This is the iOS SwiftUI conversion of the Hit Rewind Apple TV app. The focus has been on implementing the **Music Videos** page first, with responsive layouts that work across iPhone and iPad.
+Hit Rewind is a music video streaming app featuring Billboard Hot 100 songs, concert footage, and live performances. The app is built with SwiftUI, uses Airtable as the backend, and features a VJ Mode for immersive video playback.
 
 ## Architecture
-- **SwiftUI-based** with dark mode only
-- **TabView navigation** with 6 tabs matching Apple TV version
-- **Responsive layouts** that adapt from 1 column (iPhone portrait) to 4 columns (iPad landscape)
-- **Airtable backend** integration preserved from Apple TV version
-- **YouTube Data API v3** integration for video metadata and thumbnails
 
-## Completed Implementation
+### Core Stack
+- **SwiftUI** - UI framework
+- **Airtable** - Backend database via REST API
+- **YouTube iOS Player Helper** - Video playback (YouTubeiOSPlayerHelper)
+- **Superwall** - Paywall/subscription management
+- **Firebase** - Analytics
+- **CloudKit** - Favorites sync across devices
+- **Sign in with Apple** - Authentication
 
-### ✅ Core Structure
-- SwiftUI TabView with all 6 tabs from Apple TV app
-- Dark mode theming with Hit Rewind purple accent color (#A789FD)
-- Color extensions for consistent theming throughout app
+### Orientation & Display
+- **Landscape-only** for main app (locked to landscape-right)
+- **Portrait mode** only for onboarding and paywall
+- **Dark mode only** - no light mode support
+- Managed by `OrientationManager.shared`
 
-### ✅ Data Layer
-- **Models**: Adapted `PlaylistModel.swift` from Apple TV for SwiftUI compatibility
-- **AirtableService**: ObservableObject for async data fetching with proper error handling
-- **YouTubeService**: API v3 integration for video info, thumbnails, and duration
-- **Constants**: API keys and configuration (copied from Apple TV version)
+## Tab Structure
 
-### ✅ Authentication & Cloud Storage
-- **AuthenticationService**: Sign in with Apple integration
-- **FavoritesService**: CloudKit-based favorites with local storage fallback
-- **User Management**: Secure authentication state with automatic validation
+| Tab | View | Description |
+|-----|------|-------------|
+| Collections | `EpicShowsView` | Concert banners and featured shows |
+| Top 100 | `NEWVideosView` | Billboard Hot 100 music videos by year |
+| Live | `FanCamsView` | Fan-filmed concert footage by category/artist |
+| Favorites | `FavoritesView` | User's favorited videos (requires sign-in) |
+| More | `MoreMenuView` | Search and Settings access |
 
-### ✅ Music Videos Implementation
-- **MusicVideosView**: Main implementation with responsive LazyVGrid
-- **YearSidebarView**: Year filtering sidebar (permanent on iPad, sliding on iPhone)
-- **VideoThumbnailView**: Reusable video card component with heart icons and AsyncImage loading
-- **VideoPlayerView**: UIViewControllerRepresentable for video playback with favorites integration
+## Key Features
 
-### ✅ Favorites System
-- **Heart Icons**: Added to all video thumbnails with tap-to-favorite functionality
-- **Sign-in Integration**: Requires Sign in with Apple for cloud sync
-- **FavoritesView**: Complete implementation with empty states and sign-in prompts
-- **CloudKit Sync**: Automatic syncing across devices with local storage fallback
-- **Visual Feedback**: Animated heart icons with haptic feedback
+### VJ Mode (`VJModeView`)
+The primary video player experience. Landscape-only interface with:
+- YouTube video playback via `YouTubePlayerCoordinator`
+- Control strip (play/pause, skip, favorite, AirPlay)
+- Video queue/stack for browsing
+- Year/artist picker for navigation
+- Screen share tutorial for AirPlay
 
-### ✅ Sharing Features
-- **ShareLink Integration**: Native iOS share functionality on video player screen
-- **YouTube Links**: Direct sharing of YouTube video URLs with metadata
+### Onboarding Flow
+- `OnboardingView` - Main onboarding container
+- `OnboardingPageView` - Individual onboarding pages
+- `PostOnboardingPaywallView` - Paywall after onboarding
+- Runs in **portrait mode**, then locks to landscape after completion
 
-### ✅ Responsive Design
-- **iPhone Portrait**: 1 column grid with sliding year sidebar
-- **iPhone Landscape**: 2 column grid with compact year picker
-- **iPad Portrait**: 2-3 column grid with permanent NavigationSplitView sidebar
-- **iPad Landscape**: 4 column grid matching Apple TV layout closely
+### Paywall System
+- `PaywallService` - Manages Superwall integration
+- Switches to portrait for paywall display
+- Test modes: `testSubscriberMode` and `testUnsubscriberMode`
+- Subscription check via StoreKit in `HIt_Rewind2App.hasActiveSubscription()`
 
-### ✅ Features
-- Automatic year selection (newest first)
-- Video thumbnail loading with fallbacks for missing videos
-- Duration display on thumbnails
-- Heart icons for favoriting videos
-- Share functionality for music videos
-- Sign in with Apple authentication
-- CloudKit-based favorites syncing
-- Loading and error states throughout
-- Smooth animations and transitions
-- Dark mode only (no light mode support)
+### Favorites System
+- `FavoritesService` - CloudKit-based with local fallback
+- `AuthenticationService` - Sign in with Apple
+- Heart icons on all video thumbnails
+- Syncs across devices when signed in
 
 ## File Structure
+
 ```
-HitRewind2/
-├── HIt_Rewind2App.swift (main app with dark mode)
-├── ContentView.swift (TabView container with FavoritesView)
-├── HIt Rewind2.entitlements (Sign in with Apple + CloudKit capabilities)
+HIt Rewind2/
+├── HIt_Rewind2App.swift          # App entry, Firebase/Superwall config
+├── ContentView.swift             # TabView container, FavoritesView, MoreMenuView
+├── HIt Rewind2.entitlements      # Sign in with Apple + CloudKit
+│
+├── Constants/
+│   └── Constants.swift           # API keys, Superwall config
+│
 ├── Extensions/
-│   ├── AppFont.swift (custom font loading)
-│   ├── Color+Extensions.swift (Hit Rewind colors)
-│   ├── FontLoader.swift (font utilities)
-│   └── NavigationConfigurator.swift (navigation customization)
+│   ├── AppFont.swift             # Custom Ticketing font
+│   ├── Array+SafeAccess.swift    # Safe array subscripting
+│   ├── Color+Extensions.swift    # hitRewindPurple, theme colors
+│   ├── FontLoader.swift          # Font registration
+│   ├── NavigationConfigurator.swift
+│   ├── OnboardingEnvironment.swift
+│   └── PerformanceTimer.swift    # Debug timing
+│
 ├── Models/
-│   ├── FanCamCategory.swift (fan cam data structures)
-│   └── PlaylistModel.swift (Airtable data structures)
+│   ├── Concert.swift             # Concert data model
+│   ├── ConcertVideo.swift        # Concert video model
+│   ├── FanCamCategory.swift      # Fan cam categories
+│   ├── LegendaryCategory.swift   # Legendary show categories
+│   ├── LegendaryShow.swift       # Legendary show model
+│   ├── OnboardingPage.swift      # Onboarding page data
+│   ├── PlaylistContext.swift     # Video playlist for autoplay
+│   ├── PlaylistModel.swift       # Airtable playlist structures
+│   ├── SpotifyChartVideo.swift   # Spotify chart data
+│   └── VideoModel.swift          # Generic video model
+│
 ├── Services/
-│   ├── AirtableService.swift (API integration)
-│   ├── AuthenticationService.swift (Sign in with Apple)
-│   ├── FavoritesService.swift (CloudKit favorites with local fallback)
-│   └── YouTubeService.swift (YouTube Data API v3)
-├── Views/
-│   ├── FanCams/ (fan cam related views)
-│   └── MusicVideos/
-│       ├── ArtistSongsView.swift (artist-specific videos)
-│       ├── MusicVideosView.swift (main responsive layout)
-│       ├── VideoPlayerView.swift (video playback + favorites + sharing)
-│       ├── VideoThumbnailView.swift (video cards with heart icons)
-│       └── YearSidebarView.swift (year filtering)
-└── Constants/
-    └── Constants.swift (API keys and config)
+│   ├── AirtableService.swift     # Main Airtable API client
+│   ├── AuthenticationService.swift # Sign in with Apple
+│   ├── DirectVideoService.swift  # MTvVideosNEW table access
+│   ├── FavoritesService.swift    # CloudKit favorites
+│   ├── ImageCache.swift          # Image caching
+│   ├── ImagePreloader.swift      # Preload thumbnails
+│   ├── OnboardingAudioService.swift # Onboarding audio
+│   ├── PaywallService.swift      # Superwall integration
+│   ├── SearchService.swift       # Search functionality
+│   ├── VideoPlayerManager.swift  # Player state management
+│   └── YouTubeService.swift      # YouTube Data API v3
+│
+├── Utilities/
+│   └── OrientationManager.swift  # Device orientation control
+│
+└── Views/
+    ├── Components/
+    │   └── HeadroomHeader.swift  # Reusable header component
+    │
+    ├── EpicShows/
+    │   ├── ConcertBannerView.swift
+    │   ├── ConcertDetailView.swift
+    │   └── EpicShowsView.swift
+    │
+    ├── FanCams/
+    │   ├── ArtistSidebarView.swift
+    │   ├── CategoryBannerView.swift
+    │   ├── CategorySidebarView.swift
+    │   └── FanCamsView.swift
+    │
+    ├── MusicVideos/
+    │   ├── ArtistSongsView.swift
+    │   ├── MusicVideosView.swift    # Legacy view
+    │   ├── NEWVideosView.swift      # Current Top 100 view
+    │   ├── VideoPlayerView.swift    # Legacy player
+    │   ├── VideoThumbnailView.swift # Video card component
+    │   └── YearSidebarView.swift
+    │
+    ├── VJMode/
+    │   ├── ScreenShareTutorialView.swift
+    │   ├── VJModeControlStrip.swift
+    │   ├── VJModeOverlay.swift
+    │   ├── VJModePicker.swift
+    │   ├── VJModeVideoStack.swift
+    │   └── VJModeView.swift         # Main video player
+    │
+    ├── AnimatedGIFView.swift
+    ├── GIFCarouselView.swift
+    ├── LoopingVideoPlayerView.swift
+    ├── OnboardingPageView.swift
+    ├── OnboardingView.swift
+    ├── PanningImageView.swift
+    ├── PostOnboardingPaywallView.swift
+    ├── SearchView.swift
+    ├── SignInSheetView.swift
+    └── TVCarouselView.swift
 ```
 
-## Next Steps for Full App
+## Theme Colors
 
-### Immediate Tasks
-1. ✅ **YouTube Data API v3 key configured** (copied from Apple TV project)
-2. ✅ **Airtable integration ready** (using same credentials as Apple TV project)
-3. ✅ **Video playback implemented** (using YouTube web player for best compatibility)
-4. ✅ **Sign in with Apple configured** (requires Xcode project capability setup)
-5. ✅ **Favorites system complete** (CloudKit integration with local fallback)
-6. ✅ **Share functionality implemented** (native iOS ShareLink integration)
-
-### Future Pages (Coming Soon)
-1. **Epic Shows** - Large banners and featured video rows
-2. **Fan Cams** - Artist-based grouping with categories (partially implemented)
-3. **Search** - Full text search across all content
-4. **Settings** - App preferences, terms, and user management
-
-### Setup Requirements
-1. **Xcode Project Setup**:
-   - Add Sign in with Apple capability in project settings
-   - Add CloudKit capability in project settings  
-   - Ensure entitlements file is properly linked
-   - Configure App ID with Sign in with Apple on Apple Developer portal
-
-2. **CloudKit Setup**:
-   - Create CloudKit container in developer console
-   - Add `FavoriteVideo` record type with fields: videoId, title, artist, year, dateAdded
-
-### Enhancement Opportunities
-- Add pull-to-refresh functionality
-- Implement video offline downloading
-- Add haptic feedback for interactions  
-- Optimize thumbnail loading and caching
-- Add accessibility improvements
-- Implement proper YouTube player integration
-
-## Key Design Decisions
-
-### SwiftUI Over UIKit
-- Modern iOS development approach
-- Built-in responsive layout system
-- Better state management with @State/@StateObject
-- Native dark mode and animation support
-
-### Responsive Grid System
-- Uses SwiftUI's LazyVGrid with dynamic column counts
-- Automatically adapts to device size and orientation
-- Maintains visual hierarchy across all screen sizes
-
-### Service-Oriented Architecture  
-- Separate services for Airtable and YouTube operations
-- ObservableObject pattern for reactive UI updates
-- Proper error handling and loading states
-
-## Build Status
-✅ **Project builds successfully** for iOS simulator and device targets (requires capability setup)
-✅ **All SwiftUI components compile** without errors
-✅ **Responsive layouts tested** across different device configurations
-✅ **Debug logging implemented** for troubleshooting data loading and video playback
-✅ **Authentication system ready** for Sign in with Apple integration
-✅ **Favorites system complete** with CloudKit sync and local fallback
-✅ **Share functionality operational** using native iOS ShareLink
-
-## Favorites & Authentication System
-- **Sign in with Apple** - secure authentication with automatic credential validation
-- **CloudKit Integration** - favorites sync across devices with local storage fallback
-- **Heart Icons** - visible on all video thumbnails with tap-to-favorite functionality
-- **Complete Favorites Page** - with sign-in prompts, empty states, and full video grid
-- **Haptic Feedback** - enhanced user experience with tactile responses
-- **Auto-Sync** - favorites automatically sync when user signs in
-
-## Share Implementation
-- **Native ShareLink** - uses iOS built-in sharing with YouTube URLs
-- **Rich Metadata** - includes video title and artist information
-- **Easy Access** - share button in video player toolbar for quick sharing
-
-## Video Playback Solution
-- **Standard YouTube Web Player** - loads full YouTube page in web view for maximum compatibility
-- **Full-screen video experience** with native YouTube controls and features  
-- **Simple and reliable** - no complex embed restrictions to worry about
-- **Integrated Controls** - favorites and share functionality built into player interface
-
-The app now includes a complete favorites system with Sign in with Apple authentication and CloudKit cloud sync!
-
-## Airtable MCP Integration
-
-This project uses the [Airtable MCP Server](https://github.com/rashidazarang/airtable-mcp) for AI-powered Airtable operations. The MCP server provides comprehensive access to Airtable bases, tables, records, and schema management.
-
-### Available Operations
-
-#### Data Operations
-- **list_records** - Query records with filtering and pagination
-- **get_record** - Retrieve a single record by ID
-- **create_record** - Add new records to any table
-- **update_records** - Modify existing record fields (up to 10 at once)
-- **delete_records** - Remove records from a table (up to 10 at once)
-- **search_records** - Advanced search with Airtable formulas
-
-#### Schema Discovery
-- **list_bases** - List all accessible bases with permissions
-- **list_tables** - Get all tables in a base with schema information
-- **describe_table** - Get detailed table and field specifications
-- **get_base_schema** - Get complete schema for any base
-
-#### Schema Management (Requires Token Permissions)
-- **create_table** - Create tables with custom field definitions
-- **update_table** - Modify table names and descriptions
-- **create_field** - Add fields to existing tables
-- **update_field** - Modify field properties and options
-- **delete_field** - Remove fields (requires confirmation)
-
-#### Batch Operations
-- **batch_create_records** - Create up to 10 records at once
-- **batch_update_records** - Update up to 10 records simultaneously
-- **batch_delete_records** - Delete up to 10 records in one operation
-- **batch_upsert_records** - Update or create records based on key fields
-
-### Current Airtable Setup
-
-**Base ID**: `appxCBIOkiJEZiph7` (Front Row Live Music App)
-
-**Tables**:
-- `MTvVideos` (original) - `tbl3waFYL7jfER18L`
-- `MTvVideosNEW` (new version) - `tblNwqwVyflL8hNDy`
-- `MTvPlaylists` - `tblByi6o9LzE3bkc4`
-- `Artists` - `tblu9a6MnrdzECJFJ`
-- `Category` - `tblhHeWHex8DXdq3R`
-- `Concerts` - `tbl9umYOUTEVUZKnh`
-- `Concert Videos` - `tbloVr52R37ZRNLFS`
-
-### MTvVideosNEW Table Structure
-
-**Required Fields** (matching MTvVideos, excluding channelName, thumbnail, Find Replace):
-- `title` (Single line text)
-- `url` (Single line text) - YouTube video URL
-- `Rank` (Number, precision 1)
-- `artistName` (Single line text)
-- `year` (Number, precision 0)
-- `playlist` (Multiple record links → MTvPlaylists)
-- `artistID` (Single line text)
-- `videoImage` (Formula) - Generates YouTube thumbnail URL (mqdefault.jpg)
-- `videoImage0` (Formula) - Generates YouTube thumbnail URL (0.jpg)
-
-**Excluded Fields** (not in NEW table):
-- `channelName`
-- `thumbnail`
-- `Find Replace` (formula)
-- `80sFeatured` (checkbox)
-- `isVisible` (checkbox)
-
-### Token Permissions
-
-To enable schema management operations (create_field, update_field, etc.), the Airtable Personal Access Token needs these scopes:
-- `schema.bases:read` - Read table structure
-- `schema.bases:write` - Modify table structure
-- `data.records:read` - Read records
-- `data.records:write` - Write records
-
-### Usage Notes
-
-- **Record Updates**: Can update up to 10 records at once using `update_records`
-- **Field Types**: Formula fields cannot be created via MCP (Airtable API limitation)
-- **URL Fields**: The `url` field in MTvVideosNEW should be Single line text (not URL type) to match MTvVideos structure
-- **Video Thumbnails**: The `videoImage` and `videoImage0` formula fields generate YouTube thumbnail URLs dynamically - they don't store images, just generate URLs
-
-### Common Operations
-
-**List records from MTvVideosNEW**:
-```
-list_records with baseId: appxCBIOkiJEZiph7, tableId: tblNwqwVyflL8hNDy
+```swift
+Color.hitRewindPurple      // #A789FD - Primary accent
+Color.hitRewindBackground  // Dark background
+Color.hitRewindPrimaryText // Primary text
+Color.hitRewindSecondaryText // Secondary/muted text
 ```
 
-**Create new video record**:
-```
-create_record with fields: {title, url, Rank, artistName, year, artistID}
+## Airtable Integration
+
+### Base & Tables
+- **Base ID**: `appxCBIOkiJEZiph7`
+- **MTvVideosNEW** (active): `tblNwqwVyflL8hNDy` - All music videos
+- **MTvVideos** (deprecated): `tbl3waFYL7jfER18L` - Do not use
+- **Concerts**: `tbl9umYOUTEVUZKnh`
+- **Concert Videos**: `tbloVr52R37ZRNLFS`
+- **Artists**: `tblu9a6MnrdzECJFJ`
+- **Category**: `tblhHeWHex8DXdq3R`
+- **MTvPlaylists**: `tblByi6o9LzE3bkc4`
+
+### MTvVideosNEW Fields
+- `title` - Song title
+- `url` - YouTube video URL
+- `Rank` - Billboard chart position (1-100)
+- `artistName` - Primary artist
+- `year` - Chart year
+- `videoImage` - Formula: YouTube thumbnail URL
+
+## Billboard Hot 100 Video Collection
+
+The video library is sourced from Billboard Year-End Hot 100 charts.
+
+### Reference Data
+- **Source**: `Full_Billboard_year_end_hot_100_USA.csv` (1946-2025)
+- **Format**: `No., Title, Artist(s), Year`
+
+### Years Completed
+- 1973-1979 (pre-MTV era)
+- 1980s (full decade)
+- 1990s (full decade)
+- 2001, 2002, 2021, 2022, 2023, 2024, 2025
+
+### Adding New Videos
+1. Extract songs from Billboard CSV
+2. Search YouTube: `"{title} {artist} official music video"`
+3. Clean artist name (remove "featuring", etc.)
+4. Add to MTvVideosNEW via Airtable MCP or API
+
+## Development Notes
+
+### Orientation Handling
+```swift
+// Lock to landscape (main app)
+OrientationManager.shared.lockToLandscape()
+
+// Portrait for paywall
+OrientationManager.shared.switchToPortraitForPaywall()
+
+// Portrait for onboarding
+OrientationManager.shared.switchToPortraitForOnboarding()
 ```
 
-**Update multiple records**:
-```
-update_records with array of record objects (max 10)
+### Subscription Check
+```swift
+let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
+if isSubscribed {
+    // Play video
+} else {
+    PaywallService.shared.presentPaywallWithOrientation { /* success */ }
+}
 ```
 
-**Check table structure**:
+### Video Playback Flow
+1. User taps video thumbnail
+2. Check subscription status
+3. If not subscribed, show paywall
+4. On success, navigate to `VJModeView`
+5. VJMode handles playback, controls, and queue
+
+## Build Requirements
+
+### Xcode Capabilities
+- Sign in with Apple
+- CloudKit (for favorites sync)
+- Push Notifications (optional)
+
+### Dependencies (SPM)
+- YouTubeiOSPlayerHelper
+- SuperwallKit
+- Firebase (FirebaseAnalytics)
+
+### API Keys (in Constants.swift)
+- Airtable API key
+- YouTube Data API v3 key
+- Superwall API key
+
+## Known Patterns
+
+### Singleton Services
+Most services use the singleton pattern:
+```swift
+FavoritesService.shared
+AuthenticationService.shared
+DirectVideoService.shared
+OrientationManager.shared
+PaywallService.shared
 ```
-describe_table with baseId and tableId
+
+### Video Thumbnail Loading
+`VideoThumbnailView` handles:
+- AsyncImage loading with fallbacks
+- Heart icon overlay for favorites
+- Duration badge (optional)
+- Artist/title labels
+
+### Notification-Based Communication
+```swift
+.videoPlayerPresented    // Video started
+.videoPlayerDismissed    // Video ended
+.playerTogglePlayPause   // Play/pause control
+.playerSkipForward       // Skip 10s
+.showSignInSheet         // Trigger sign-in
+.favoriteAdded           // Animate heart
 ```
+
+## Paywall Portrait Orientation System (WORKING SOLUTION)
+
+### Goal
+Show Superwall paywall in portrait mode while main app is landscape-locked on iPhone.
+
+### Architecture Overview
+
+The solution uses a **UIViewController wrapper** (`PortraitPaywallHost`) that:
+1. Forces portrait orientation via `supportedInterfaceOrientations`
+2. Presents itself fullscreen before showing Superwall
+3. Uses Superwall's delegate to know when paywall dismisses
+4. Switches orientation permissions before dismissing itself
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `PortraitPaywallHost.swift` | UIViewController that forces portrait, hosts Superwall |
+| `PaywallService.swift` | Entry point, manages Superwall delegate |
+| `OrientationManager.swift` | Tracks `isPaywallShowing` flag, returns allowed orientations |
+| `HIt_Rewind2App.swift` | AppDelegate calls `OrientationManager.shared.supportedOrientations()` |
+
+### Flow Diagram
+
+```
+User taps locked video
+        ↓
+PaywallService.presentPaywallWithOrientation()
+        ↓
+OrientationManager.isPaywallShowing = true  ← BLOCKS lockToLandscape()
+        ↓
+PortraitPaywallHost.present()
+        ↓
+Host presented fullscreen (.portrait locked)
+        ↓
+Host.viewDidAppear → Superwall.register("MainPlacement")
+        ↓
+Superwall shows paywall (in portrait)
+        ↓
+User dismisses or purchases
+        ↓
+SuperwallDelegate.paywallDidDismiss() fires
+        ↓
+PaywallService calls PortraitPaywallHost.current?.dismissHost()
+        ↓
+Host sets allowDismiss = true (unlocks orientation)
+        ↓
+Host sets OrientationManager.isPaywallShowing = false
+        ↓
+Host dismisses itself
+        ↓
+App returns to landscape
+```
+
+### Critical Implementation Details
+
+#### 1. PortraitPaywallHost (Views/PortraitPaywallHost.swift)
+
+```swift
+class PortraitPaywallHost: UIViewController {
+    private var allowDismiss = false
+
+    // FORCE PORTRAIT - NO EXCEPTIONS (until allowDismiss = true)
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        return allowDismiss ? .all : .portrait
+    }
+
+    override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
+        return .portrait
+    }
+
+    override var shouldAutorotate: Bool {
+        return allowDismiss
+    }
+
+    // Static reference so Superwall delegate can find us
+    static weak var current: PortraitPaywallHost?
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        PortraitPaywallHost.current = self
+
+        Task { @MainActor in
+            await Superwall.shared.register(placement: "MainPlacement")
+            // Fallback if delegate doesn't fire
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            if !hasDismissed { dismissHost() }
+        }
+    }
+
+    func dismissHost() {
+        guard !hasDismissed else { return }
+        hasDismissed = true
+
+        Task { @MainActor in
+            let subscribed = await HIt_Rewind2App.hasActiveSubscription()
+            finishAndDismiss(subscribed: subscribed)
+        }
+    }
+
+    private func finishAndDismiss(subscribed: Bool) {
+        // CRITICAL: Allow rotation BEFORE dismissing
+        allowDismiss = true
+        OrientationManager.shared.isPaywallShowing = false
+        setNeedsUpdateOfSupportedInterfaceOrientations()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.dismiss(animated: true) {
+                self.completion?(subscribed)
+            }
+        }
+    }
+}
+```
+
+#### 2. PaywallService Delegate (Services/PaywallService.swift)
+
+```swift
+extension PaywallService: SuperwallDelegate {
+    func paywallDidDismiss(withInfo paywallInfo: PaywallInfo) {
+        // Tell the portrait host to dismiss itself
+        PortraitPaywallHost.current?.dismissHost()
+    }
+}
+```
+
+#### 3. OrientationManager (Utilities/OrientationManager.swift)
+
+```swift
+final class OrientationManager {
+    static let shared = OrientationManager()
+
+    var isPaywallShowing: Bool = false
+    var isOnboardingShowing: Bool = false
+
+    func lockToLandscape() {
+        // BLOCKED if paywall is showing
+        if isPaywallShowing { return }
+        // ... rotation code
+    }
+
+    func supportedOrientations() -> UIInterfaceOrientationMask {
+        if isPaywallShowing || isOnboardingShowing {
+            return .portrait
+        }
+        return UIDevice.current.userInterfaceIdiom == .pad ? .landscape : .landscapeRight
+    }
+}
+```
+
+#### 4. AppDelegate (HIt_Rewind2App.swift)
+
+```swift
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        return OrientationManager.shared.supportedOrientations()
+    }
+}
+```
+
+### Why This Works
+
+1. **UIViewController orientation overrides take precedence** - When a VC is presented fullscreen, iOS respects its `supportedInterfaceOrientations`
+
+2. **The flag blocks competing rotation requests** - `isPaywallShowing = true` prevents `lockToLandscape()` from running while paywall is up
+
+3. **Superwall delegate provides dismiss timing** - `paywallDidDismiss` fires reliably when user closes paywall
+
+4. **Order matters on dismiss**:
+   - First: `allowDismiss = true` (so VC allows landscape)
+   - Second: `isPaywallShowing = false` (so AppDelegate allows landscape)
+   - Third: `setNeedsUpdateOfSupportedInterfaceOrientations()` (notify system)
+   - Fourth: Small delay, then `dismiss(animated: true)`
+
+### Previous Failed Attempts
+
+| Attempt | Problem |
+|---------|---------|
+| Flag + requestGeometryUpdate | Superwall.register() doesn't block, flag cleared too early |
+| Multiple requestGeometryUpdate calls | Same issue |
+| Simple VC wrapper without delegate | "None of the requested orientations supported" on dismiss |
+
+### KEY DISCOVERY
+**`Superwall.shared.register()` does NOT block!** It fires the paywall asynchronously and returns immediately. This is why the Superwall delegate is essential - it's the only reliable way to know when the paywall is actually dismissed.
+
+### Debug Commands
+```swift
+// Check orientation state
+print("📐 isPaywallShowing=\(OrientationManager.shared.isPaywallShowing)")
+print("🎯 PortraitPaywallHost.current = \(PortraitPaywallHost.current != nil ? "exists" : "nil")")
+```
+
+## iPad Landscape Orientation Enforcement
+
+### Goal
+Force iPad to stay in landscape mode (main app), with portrait only for onboarding/paywall.
+
+### Implementation
+
+#### 1. UIRequiresFullScreen (Info.plist)
+```xml
+<key>UIRequiresFullScreen</key>
+<true/>
+```
+- **Location**: `HIt-Rewind2-Info.plist`
+- **Effect**: Disables iPad multitasking (Slide Over, Split View)
+- **Why**: Without this, iPad may ignore AppDelegate orientation restrictions
+
+#### 2. AppDelegate Orientation Control
+```swift
+func application(_ application: UIApplication,
+                 supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+    return OrientationManager.shared.supportedOrientations()
+}
+```
+
+#### 3. OrientationManager Configuration
+```swift
+func supportedOrientations() -> UIInterfaceOrientationMask {
+    if isPaywallShowing || isOnboardingShowing {
+        return .portrait
+    }
+    // iPad: either landscape direction
+    // iPhone: landscape right only (dynamic island on left)
+    return UIDevice.current.userInterfaceIdiom == .pad ? .landscape : .landscapeRight
+}
+```
+
+#### 4. Scene Activation Observer
+OrientationManager observes `UIScene.didActivateNotification` to re-enforce landscape when:
+- App returns from background
+- Scene becomes active after multitasking
+
+```swift
+private init() {
+    sceneObserver = NotificationCenter.default.addObserver(
+        forName: UIScene.didActivateNotification,
+        object: nil,
+        queue: .main
+    ) { [weak self] _ in
+        self?.enforceOrientationIfNeeded()
+    }
+}
+```
+
+### Key Differences: iPad vs iPhone
+
+| Aspect | iPhone | iPad |
+|--------|--------|------|
+| Preferred Landscape | `.landscapeRight` | `.landscape` (both) |
+| Multitasking | N/A | Disabled via `UIRequiresFullScreen` |
+| AppDelegate respected | Yes | Only with `UIRequiresFullScreen` |
+| Extra enforcement | None needed | Scene activation observer |
+
+### Troubleshooting iPad Orientation
+
+**iPad rotates to portrait:**
+1. Check `UIRequiresFullScreen = YES` in Info.plist
+2. Verify `supportedOrientations()` returns `.landscape` for iPad
+3. Check scene activation observer is firing
+
+**iPad ignores orientation lock:**
+1. Multitasking may be overriding - ensure `UIRequiresFullScreen`
+2. Check for competing `requestGeometryUpdate` calls
+3. Verify no other VCs are overriding `supportedInterfaceOrientations`

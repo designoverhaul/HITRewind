@@ -11,244 +11,73 @@ import SuperwallKit
 struct FanCamsView: View {
     @StateObject private var airtableService = AirtableService()
     @StateObject private var youtubeService = YouTubeService()
+    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
 
     @State private var selectedCategory: FanCamCategory?
     @State private var selectedArtist: Playlist?
     @State private var visibleVideoIndices: [Int] = []
-    @State private var showCategorySidebar = false
-    @State private var currentMode: FanCamMode = .categories
     @State private var selectedVideoId: String?
+    @State private var isLoadingVideos: Bool = false
 
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
-    
-    enum FanCamMode {
-        case categories
-        case artist
-    }
-    
+
     var body: some View {
         NavigationStack {
             if UIDevice.current.userInterfaceIdiom == .pad {
-                // iPad layout with permanent sidebar
                 iPadLayout
             } else {
-                // iPhone layout with sliding sidebar
                 iPhoneLayout
             }
         }
         .task {
-            await airtableService.fetchCategories() // Lazy: no full artist fetch here
+            await airtableService.fetchCategories()
+
+            // Default to "Pop" category on load
+            if let popCategory = airtableService.categories.first(where: { $0.name == "Pop" }) {
+                selectedCategory = popCategory
+                await airtableService.fetchVideoCounts(for: popCategory.artists)
+            }
         }
     }
-    
+
     // MARK: - iPad Layout
     private var iPadLayout: some View {
-        Group {
-            if currentMode == .categories {
-                // Top level: show categories in main area, no sidebar
-                VStack(alignment: .leading, spacing: 0) {
-                    // Custom header row
-                    HStack {
-                        Spacer()
-                        
-                        // Logo centered
-                        Image("logo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 28)
-                        
-                        Spacer()
-                        
-                        // Search and settings on right
-                        HStack(spacing: 16) {
-                            NavigationLink(destination: SearchView()) {
-                                Text("🔍")
-                            }
-                            NavigationLink(destination: SettingsView()) {
-                                Text("⚙️")
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
-                    .background(Color.hitRewindBackground)
-                    
-                    contentView
-                }
-            } else {
-                // Artist mode: show sidebar with artists
-                HStack(spacing: 0) {
-                    // Artist sidebar
-                    ArtistSidebarView(
-                        artists: artistsInCategory,
-                        selectedArtist: $selectedArtist,
-                        onArtistSelected: handleArtistSelection,
-                        onBackToCategories: {
-                            currentMode = .categories
-                            selectedCategory = nil
-                            selectedArtist = nil
-                        }
-                    )
-                    .frame(width: 200)
-                    .background(Color.hitRewindBackground)
-                    
-                    // Main content area
-                    VStack(alignment: .leading, spacing: 0) {
-                        // Custom header row
-                        HStack {
-                            Spacer()
-                            
-                            // Logo centered
-                            Image("logo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 28)
-                            
-                            Spacer()
-                            
-                            // Search and settings on right
-                            HStack(spacing: 16) {
-                                NavigationLink(destination: SearchView()) {
-                                    Text("🔍")
-                                }
-                                NavigationLink(destination: SettingsView()) {
-                                    Text("⚙️")
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 16)
-                        .background(Color.hitRewindBackground)
-                        
-                        contentView
-                    }
-                }
+        VStack(alignment: .leading, spacing: 0) {
+            // Custom header row
+            HStack {
+                Color.clear
+                    .frame(width: 60, height: 22)
+
+                Spacer()
+
+                // Logo centered
+                Image("logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 28)
+
+                Spacer()
             }
+            .padding(.horizontal, 24)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+            .background(Color.hitRewindBackground)
+
+            contentView
         }
         .navigationTitle("")
         .navigationBarHidden(true)
     }
-    
+
     // MARK: - iPhone Layout
     private var iPhoneLayout: some View {
-        ZStack(alignment: .leading) {
-            contentView
-                .navigationTitle("")
-                .navigationBarTitleDisplayMode(.inline)
-                .gesture(
-                    DragGesture()
-                        .onEnded { value in
-                            // Swipe right (positive translation) to go back
-                            if value.translation.width > 100 && abs(value.translation.height) < 50 {
-                                withAnimation(.easeInOut(duration: 0.5).delay(0.1)) {
-                                    handleSwipeBack()
-                                }
-                            }
-                        }
-                )
-                .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        HStack(spacing: 8) {
-                            Image("logo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 28)
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Group {
-                            if currentMode == .artist && selectedArtist != nil {
-                                // Video feed by artist → "Artist" back button (back to artist list)
-                                Button("Artist") {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        selectedArtist = nil
-                                        visibleVideoIndices = []
-                                    }
-                                }
-                                .foregroundColor(.hitRewindPurple)
-                            } else if currentMode == .artist && selectedArtist == nil {
-                                // List of artists → "Genre" back button (back to categories)
-                                Button("Genre") {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        currentMode = .categories
-                                        selectedCategory = nil
-                                    }
-                                }
-                                .foregroundColor(.hitRewindPurple)
-                            }
-                            // Removed Genre button for top-level categories screen
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        HStack(spacing: 16) {
-                            NavigationLink(destination: SearchView()) {
-                                Text("🔍")
-                            }
-                            NavigationLink(destination: SettingsView()) {
-                                Text("⚙️")
-                            }
-                        }
-                    }
-                }
-                .background(
-                    NavigationConfigurator { nc in
-                        nc.hidesBarsOnSwipe = true
-                    }
-                )
-            
-            // Sliding sidebar for iPhone
-            if showCategorySidebar {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showCategorySidebar = false
-                        }
-                    }
-                
-                if currentMode == .categories {
-                    CategorySidebarView(
-                        categories: availableCategories,
-                        selectedCategory: $selectedCategory,
-                        onCategorySelected: { category in
-                            handleCategorySelection(category)
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                showCategorySidebar = false
-                            }
-                        }
-                    )
-                    .frame(width: UIScreen.main.bounds.width)
-                    .background(Color.hitRewindBackground)
-                    .transition(.move(edge: .leading))
-                } else {
-                    ArtistSidebarView(
-                        artists: artistsInCategory,
-                        selectedArtist: $selectedArtist,
-                        onArtistSelected: { artist in
-                            handleArtistSelection(artist)
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                showCategorySidebar = false
-                            }
-                        },
-                        onBackToCategories: {
-                            currentMode = .categories
-                            selectedCategory = nil
-                            selectedArtist = nil
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                showCategorySidebar = false
-                            }
-                        }
-                    )
-                    .frame(width: UIScreen.main.bounds.width)
-                    .background(Color.hitRewindBackground)
-                    .transition(.move(edge: .leading))
-                }
-            }
-        }
+        contentView
+            .navigationTitle("")
+            .navigationBarHidden(true)
     }
-    
+
     // MARK: - Content View
     private var contentView: some View {
         Group {
@@ -260,126 +89,189 @@ struct FanCamsView: View {
                         await airtableService.fetchArtists()
                     }
                 }
-            } else if currentMode == .categories {
-                categoryGridView
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .leading).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
-            } else if currentMode == .artist && selectedArtist == nil {
-                artistListView
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .trailing).combined(with: .opacity)
-                    ))
-            } else if selectedArtist != nil && !visibleVideoIndices.isEmpty {
-                fanCamVideosGrid
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
             } else {
-                ContentUnavailableView(
-                    "No Fan Cams Available",
-                    systemImage: "person.2.crop.square.stack",
-                    description: Text("Select an artist to view fan cam videos")
-                )
+                threeColumnLayout
             }
         }
-        .animation(.easeInOut(duration: 0.5), value: currentMode)
-        .animation(.easeInOut(duration: 0.5), value: selectedArtist?.id)
     }
-    
-    // MARK: - Category Grid View
-    private var categoryGridView: some View {
+
+    // MARK: - Three Column Layout (Categories | Artists | Videos)
+    private var threeColumnLayout: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                // Column 1: Categories list
+                categoriesColumn
+                    .frame(width: geometry.size.width * 0.22)
+                    .background(Color.hitRewindBackground)
+
+                // Divider
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 1)
+
+                // Column 2: Artists list for selected category
+                artistsColumn
+                    .frame(width: geometry.size.width * 0.28 - 1)
+                    .background(Color.hitRewindBackground.opacity(0.7))
+
+                // Divider
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 1)
+
+                // Column 3: Videos for selected artist
+                videosColumn
+                    .frame(width: geometry.size.width * 0.50 - 1)
+                    .background(Color.hitRewindBackground.opacity(0.5))
+            }
+        }
+    }
+
+    // MARK: - Categories Column
+    private var categoriesColumn: some View {
         ScrollView {
-            LazyVGrid(columns: categoryGridColumns, spacing: gridSpacing) {
+            LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(availableCategories) { category in
-                    CategoryBannerView(category: category) {
-                        handleCategorySelection(category)
-                    }
-                }
-            }
-            .padding(gridPadding)
-        }
-    }
-    
-    // MARK: - Fan Cam Videos Grid
-    private var fanCamVideosGrid: some View {
-        ScrollView {
-            VStack(alignment: .center, spacing: 4) {
-                Text(selectedArtist?.fields.title ?? "Fan Cam Videos")
-                    .font(.custom(AppFont.ticketingName(), size: 24))
-                    .fontWeight(.bold)
-                    .foregroundColor(.hitRewindPrimaryText)
-                
-                if let yearRange = videoYearRange {
-                    Text(yearRange)
-                        .font(.system(size: 16))
-                        .foregroundColor(.hitRewindSecondaryText)
-                }
-            }
-            .padding(.top, gridPadding)
-            
-            LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
-                ForEach(visibleVideos) { item in
                     Button(action: {
-                        handleVideoTap(item: item)
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            handleCategorySelection(category)
+                        }
                     }) {
-                        VideoThumbnailView(
-                            videoId: item.id,
-                            title: item.title,
-                            artist: item.artist,
-                            year: item.year,
-                            onTap: {},
-                            hideArtistName: true
-                        )
+                        HStack {
+                            Text(formattedCategoryName(category.name))
+                                .font(.custom(AppFont.ticketingName(), size: 18))
+                                .fontWeight(selectedCategory?.id == category.id ? .semibold : .regular)
+                                .foregroundColor(selectedCategory?.id == category.id ? .hitRewindPurple : .hitRewindPrimaryText)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Spacer()
+                        }
+                        .padding(.leading, 8)
+                        .padding(.trailing, 4)
+                        .padding(.vertical, 12)
+                        .background(selectedCategory?.id == category.id ? Color.hitRewindPurple.opacity(0.15) : Color.clear)
                     }
                     .buttonStyle(.plain)
-                }
-            }
-            .id(selectedArtist?.id)
-            .padding(gridPadding)
-            .navigationDestination(isPresented: Binding(
-                get: { selectedVideoId != nil },
-                set: { if !$0 { selectedVideoId = nil } }
-            )) {
-                if let videoId = selectedVideoId,
-                   let video = visibleVideos.first(where: { $0.id == videoId }) {
-                    createVideoView(from: video)
                 }
             }
         }
     }
 
-    // MARK: - Artist List View (after selecting a category)
-    private var artistListView: some View {
-        List(artistsInCategory) { artist in
-            Button(action: {
-                handleArtistSelection(artist)
-            }) {
-                HStack {
-                    Text(artist.fields.title)
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Text("\(airtableService.artistVideoCounts[artist.fields.title] ?? 0)")
-                        .foregroundColor(.secondary)
+    // MARK: - Artists Column
+    private var artistsColumn: some View {
+        Group {
+            if selectedCategory != nil {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(artistsInCategory) { artist in
+                            let isSelected = selectedArtist?.fields.title == artist.fields.title
+                            Button(action: {
+                                handleArtistSelection(artist)
+                            }) {
+                                HStack {
+                                    Text(artist.fields.title)
+                                        .font(.system(size: 14))
+                                        .fontWeight(isSelected ? .semibold : .regular)
+                                        .foregroundColor(isSelected ? .hitRewindPurple : .hitRewindPrimaryText)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    Text("\(airtableService.artistVideoCounts[artist.fields.title] ?? 0)")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(isSelected ? .hitRewindPurple.opacity(0.7) : .hitRewindSecondaryText)
+                                }
+                                .padding(.leading, 8)
+                                .padding(.trailing, 4)
+                                .padding(.vertical, 12)
+                                .background(isSelected ? Color.hitRewindPurple.opacity(0.15) : Color.clear)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
+            } else {
+                VStack {
+                    Spacer()
+                    Text("Select a genre")
+                        .font(.system(size: 16))
+                        .foregroundColor(.hitRewindSecondaryText)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
             }
-            .listRowBackground(Color.hitRewindBackground)
         }
-        .listStyle(.plain)
-        .background(Color.hitRewindBackground)
     }
-    
+
+    // MARK: - Videos Column
+    private var videosColumn: some View {
+        Group {
+            if isLoadingVideos {
+                VStack {
+                    Spacer()
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading...")
+                        .font(.system(size: 14))
+                        .foregroundColor(.hitRewindSecondaryText)
+                        .padding(.top, 8)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+            } else if selectedArtist != nil && !visibleVideos.isEmpty {
+                ScrollView {
+                    LazyVGrid(columns: videoGridColumns, spacing: 12) {
+                        ForEach(visibleVideos) { item in
+                            Button(action: {
+                                handleVideoTap(item: item)
+                            }) {
+                                VideoThumbnailView(
+                                    videoId: item.id,
+                                    title: item.title,
+                                    artist: item.artist,
+                                    year: item.year,
+                                    onTap: {},
+                                    hideArtistName: true
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.top, 12)
+                    .padding(.bottom, 16)
+                    .navigationDestination(isPresented: Binding(
+                        get: { selectedVideoId != nil },
+                        set: { if !$0 { selectedVideoId = nil } }
+                    )) {
+                        if let videoId = selectedVideoId,
+                           let video = visibleVideos.first(where: { $0.id == videoId }) {
+                            createVideoView(from: video)
+                        }
+                    }
+                }
+            } else {
+                VStack {
+                    Spacer()
+                    Image(systemName: "music.mic")
+                        .font(.system(size: 36))
+                        .foregroundColor(.hitRewindSecondaryText.opacity(0.5))
+                    Text("Select an artist")
+                        .font(.system(size: 16))
+                        .foregroundColor(.hitRewindSecondaryText)
+                        .padding(.top, 8)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
     // MARK: - Computed Properties
     private var availableCategories: [FanCamCategory] {
         return airtableService.categories
     }
-    
+
     private var artistsInCategory: [Playlist] {
         guard let selectedCategory = selectedCategory else { return [] }
-        // Build lightweight artist list purely from category names; no videos loaded yet
         let names = selectedCategory.artists
         let placeholder = URL(string: "https://via.placeholder.com/300x200")!
         let playlists = names.map { name in
@@ -398,59 +290,24 @@ struct FanCamsView: View {
         }
         return playlists.sorted { $0.fields.title.localizedCaseInsensitiveCompare($1.fields.title) == .orderedAscending }
     }
-    
-    private var gridColumns: [GridItem] {
-        let count = columnCount
-        return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: count)
+
+    private var videoGridColumns: [GridItem] {
+        // 2 columns in the video area
+        return [
+            GridItem(.flexible(), spacing: 12),
+            GridItem(.flexible(), spacing: 12)
+        ]
     }
-    
-    private var categoryGridColumns: [GridItem] {
-        let count = categoryColumnCount
-        return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: count)
-    }
-    
-    private var columnCount: Int {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return 3
-        } else {
-            return verticalSizeClass == .regular ? 1 : 2
-        }
-    }
-    
-    private var categoryColumnCount: Int {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return horizontalSizeClass == .regular ? 2 : 3
-        } else {
-            return verticalSizeClass == .regular ? 1 : 2
-        }
-    }
-    
-    private var gridSpacing: CGFloat {
-        UIDevice.current.userInterfaceIdiom == .pad ? 20 : 16
-    }
-    
-    private var gridPadding: CGFloat {
-        UIDevice.current.userInterfaceIdiom == .pad ? 20 : 16
-    }
-    
-    private var navigationTitleString: String {
-        switch currentMode {
-        case .categories:
-            return ""
-        case .artist:
-            return selectedArtist?.fields.title ?? "Fan Cam Videos"
-        }
-    }
-    
+
     private var videoYearRange: String? {
         guard !visibleVideos.isEmpty else { return nil }
-        
+
         let years = visibleVideos.compactMap { Int($0.year) }
         guard !years.isEmpty else { return nil }
-        
+
         let minYear = years.min() ?? 0
         let maxYear = years.max() ?? 0
-        
+
         if minYear == maxYear {
             return "\(minYear)"
         } else {
@@ -458,25 +315,59 @@ struct FanCamsView: View {
         }
     }
 
-    
+
     // MARK: - Helper Methods
+
+    private func formattedCategoryName(_ name: String) -> String {
+        let lowercased = name.lowercased()
+
+        switch lowercased {
+        case "pop":
+            return "💋 Pop"
+        case "modern rock":
+            return "🎸 Modern Rock"
+        case "classic rock":
+            return "🤘 Classic Rock"
+        case "jam bands":
+            return "🍄 Jam Bands"
+        case "jazz":
+            return "🎺 Jazz"
+        case "country":
+            return "👢 Country"
+        case "latin":
+            return "🌶️ Latin"
+        case "indi", "indie":
+            return "☕ Indi"
+        case "r&b":
+            return "🕯️ R&B"
+        case "electronic":
+            return "🎧 Electronic"
+        case "hip hop":
+            return "🍑 Hip Hop"
+        default:
+            return name
+        }
+    }
 
     private func handleVideoTap(item: VisibleVideo) {
         print("🎥 Fan Cam video \(item.id) tapped")
 
+        // Check test subscriber mode first (for development testing)
+        if PaywallService.shared.testSubscriberMode {
+            print("🧪 Test subscriber mode enabled - playing video")
+            self.selectedVideoId = item.id
+            return
+        }
+
         Task { @MainActor in
-            // Check StoreKit directly for active subscription
             let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
 
             if isSubscribed {
-                // User is subscribed - play video immediately
                 print("✅ User subscribed - playing video")
                 self.selectedVideoId = item.id
             } else {
-                // User not subscribed - show paywall
                 print("🔒 User not subscribed - showing paywall")
-                Superwall.shared.register(placement: "MainPlacement") {
-                    // After successful purchase, play video
+                PaywallService.shared.presentPaywallWithOrientation {
                     print("✅ Purchase complete - playing video")
                     self.selectedVideoId = item.id
                 }
@@ -484,8 +375,7 @@ struct FanCamsView: View {
         }
     }
 
-    private func createVideoView(from video: VisibleVideo) -> SingleVideoView {
-        // Build playlist context for autoplay
+    private func createVideoView(from video: VisibleVideo) -> VJModeView {
         let playlistVideos = visibleVideos.map { video in
             PlaylistVideo(
                 id: video.id,
@@ -496,28 +386,40 @@ struct FanCamsView: View {
             )
         }
 
-        // Find current video index
         guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == video.id }) else {
             print("⚠️ Could not find video index for autoplay")
-            return SingleVideoView(
+            let fallbackVideo = PlaylistVideo(
+                id: video.id,
                 youtubeURL: video.originalURL,
-                videoTitle: video.title,
-                artistName: video.artist,
-                year: video.year,
+                title: video.title,
+                artist: video.artist,
+                year: video.year
+            )
+            return VJModeView(
+                playerCoordinator: playerCoordinator,
+                initialVideo: fallbackVideo,
+                videos: [],
                 playlistContext: nil
             )
         }
 
+        let categoryArtists = selectedCategory?.artists ?? []
+        let artistName = selectedArtist?.fields.title ?? video.artist
+        var allArtistVideos: [String: [PlaylistVideo]] = [:]
+        allArtistVideos[artistName] = playlistVideos
+
         let playlistContext = PlaylistContext(
             videos: playlistVideos,
-            currentIndex: currentIndex
+            currentIndex: currentIndex,
+            sourceType: .live(artistName: artistName, categoryArtists: categoryArtists, allArtistVideos: allArtistVideos)
         )
 
-        return SingleVideoView(
-            youtubeURL: video.originalURL,
-            videoTitle: video.title,
-            artistName: video.artist,
-            year: video.year,
+        let initialVideo = playlistVideos[currentIndex]
+
+        return VJModeView(
+            playerCoordinator: playerCoordinator,
+            initialVideo: initialVideo,
+            videos: playlistVideos,
             playlistContext: playlistContext
         )
     }
@@ -525,66 +427,38 @@ struct FanCamsView: View {
     private func handleCategorySelection(_ category: FanCamCategory) {
         print("📂 Category selected: \(category.name)")
         selectedCategory = category
-        
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            // iPad: Skip artist selection screen and go directly to a random artist
-            currentMode = .artist
-            Task {
-                await airtableService.fetchVideoCounts(for: category.artists)
-                // Pick a random artist from the category
-                let randomArtistName = category.artists.randomElement() ?? category.artists.first ?? ""
-                await selectRandomArtist(named: randomArtistName)
-            }
-        } else {
-            // iPhone: Show artist selection screen as before
-            currentMode = .artist
-            selectedArtist = nil
-            visibleVideoIndices = []
-            Task {
-                await airtableService.fetchVideoCounts(for: category.artists)
-            }
+        selectedArtist = nil
+        visibleVideoIndices = []
+
+        Task {
+            await airtableService.fetchVideoCounts(for: category.artists)
         }
     }
-    
-    private func selectRandomArtist(named artistName: String) async {
-        print("🎲 Randomly selecting artist: \(artistName)")
-        if let loaded = try? await airtableService.fetchArtist(byName: artistName) {
-            await MainActor.run {
-                selectedArtist = loaded
-                updateVisibleVideoIndices()
-                let visibleFlags = loaded.fields.isVisible
-                let urlsCount = loaded.fields.videoUrls?.count ?? 0
-                let titlesCount = loaded.fields.videoTitles?.count ?? 0
-                print("🎵 Loaded random artist: \(loaded.fields.title) urls=\(urlsCount) titles=\(titlesCount) isVisibleCount=\(visibleFlags.count) visibleIndices=\(visibleVideoIndices.count)")
-            }
-        } else {
-            print("⚠️ Failed to load random artist: \(artistName)")
-        }
-    }
-    
+
     private func handleArtistSelection(_ artist: Playlist) {
         print("👤 Artist selected: \(artist.fields.title)")
+        isLoadingVideos = true
+
         Task {
             print("🔎 Loading videos for artist: \(artist.fields.title)")
             if let loaded = try? await airtableService.fetchArtist(byName: artist.fields.title) {
                 await MainActor.run {
                     selectedArtist = loaded
                     updateVisibleVideoIndices()
-                    let visibleFlags = loaded.fields.isVisible
-                    let urlsCount = loaded.fields.videoUrls?.count ?? 0
-                    let titlesCount = loaded.fields.videoTitles?.count ?? 0
-                    print("🎵 Loaded artist: \(loaded.fields.title) urls=\(urlsCount) titles=\(titlesCount) isVisibleCount=\(visibleFlags.count) visibleIndices=\(visibleVideoIndices.count)")
+                    isLoadingVideos = false
+                    print("🎵 Loaded artist: \(loaded.fields.title) with \(visibleVideoIndices.count) videos")
                 }
             } else {
-                print("⚠️ Failed to load artist from all sources: \(artist.fields.title)")
+                print("⚠️ Failed to load artist: \(artist.fields.title)")
                 await MainActor.run {
                     selectedArtist = artist
                     visibleVideoIndices = []
+                    isLoadingVideos = false
                 }
             }
         }
     }
-    
+
     private func updateVisibleVideoIndices() {
         guard let artist = selectedArtist else {
             visibleVideoIndices = []
@@ -593,34 +467,18 @@ struct FanCamsView: View {
         let isVisibleFlags = artist.fields.isVisible
         let urlsCount = artist.fields.videoUrls?.count ?? 0
         if isVisibleFlags.isEmpty && urlsCount > 0 {
-            // Fallback: if no flags provided, show all videos we have URLs for
             visibleVideoIndices = Array(0..<urlsCount)
-            print("ℹ️ No isVisible flags; defaulting to all indices 0..<(\(urlsCount))")
             return
         }
         let indices = isVisibleFlags.enumerated().compactMap { index, flag in (flag ?? false) ? index : nil }
         visibleVideoIndices = indices
-        print("ℹ️ Computed visible indices: \(visibleVideoIndices)")
-    }
-    
-    private func handleSwipeBack() {
-        if currentMode == .artist && selectedArtist != nil {
-            // From video feed → back to artist list
-            selectedArtist = nil
-            visibleVideoIndices = []
-        } else if currentMode == .artist && selectedArtist == nil {
-            // From artist list → back to categories
-            currentMode = .categories
-            selectedCategory = nil
-        }
-        // No action for top level (categories) as there's nothing to go back to
     }
 }
 
 // MARK: - Visible Video Model
 private struct VisibleVideo: Identifiable, Hashable {
-    let id: String        // YouTube videoId (for VideoThumbnailView compatibility)
-    let originalURL: String  // Full YouTube URL with timestamps
+    let id: String
+    let originalURL: String
     let title: String
     let artist: String
     let year: String
@@ -635,16 +493,14 @@ private extension FanCamsView {
                let videoId = extractYouTubeVideoID(from: url) {
                 let title = artist.fields.videoTitles?[safe: index] ?? "Unknown Title"
                 let artistName = artist.fields.artistNames?[safe: index] ?? artist.fields.title
-                // Use individual video year if available, fallback to artist year
                 let videoYear = artist.fields.videoYears?[safe: index] ?? String(artist.fields.year)
                 result.append(VisibleVideo(id: videoId, originalURL: url, title: title, artist: artistName, year: videoYear))
             }
         }
-        // Sort by year (newest first), then by title
         return result.sorted { first, second in
             if let firstYear = Int(first.year), let secondYear = Int(second.year) {
                 if firstYear != secondYear {
-                    return firstYear > secondYear // Newest first
+                    return firstYear > secondYear
                 }
             }
             return first.title.localizedCaseInsensitiveCompare(second.title) == .orderedAscending

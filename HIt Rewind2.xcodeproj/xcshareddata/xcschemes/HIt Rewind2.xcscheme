@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "2600"
+   LastUpgradeVersion = "2620"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -75,7 +75,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <StoreKitConfigurationFileReference
-         identifier = "../../HIt Rewind2/Products.storekit">
+         identifier = "../../MTV is back! ---&gt; Hit Rewind.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction

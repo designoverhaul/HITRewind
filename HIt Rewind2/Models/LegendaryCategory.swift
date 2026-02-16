@@ -7,11 +7,11 @@
 
 import Foundation
 
-struct LegendaryCategory: Identifiable, Equatable {
+struct LegendaryCategory: Identifiable, Equatable, Codable {
     let id: String
     let name: String
     var shows: [LegendaryShow]
-    
+
     init(id: String = UUID().uuidString, name: String, shows: [LegendaryShow]) {
         self.id = id
         self.name = name

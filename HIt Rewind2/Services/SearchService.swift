@@ -46,13 +46,13 @@ class SearchService: ObservableObject {
         errorMessage = nil
         searchResults = []
         
-        // Search both Videos and MTvVideos tables in parallel like Apple TV
+        // Search both Videos and Top100Videos tables in parallel like Apple TV
         async let videosResults = searchVideosTable(query: query)
-        async let mtvVideosResults = searchMTVVideosTable(query: query)
-        
+        async let top100VideosResults = searchTop100VideosTable(query: query)
+
         do {
-            let (videos, mtvVideos) = try await (videosResults, mtvVideosResults)
-            let allResults = videos + mtvVideos
+            let (videos, top100Videos) = try await (videosResults, top100VideosResults)
+            let allResults = videos + top100Videos
             
             // Sort by relevance score and artist name
             let sortedResults = allResults.sorted { first, second in
@@ -148,7 +148,7 @@ class SearchService: ObservableObject {
         }
     }
     
-    private func searchMTVVideosTable(query: String) async throws -> [SearchResult] {
+    private func searchTop100VideosTable(query: String) async throws -> [SearchResult] {
         let safeQuery = query.replacingOccurrences(of: "'", with: "\\'")
         
         // Don't search if query is effectively empty
@@ -205,10 +205,10 @@ class SearchService: ObservableObject {
             throw SearchError.unexpectedResponse("Missing 'records' field in API response")
         }
         
-        let apiResponse = try decoder.decode(MTVVideosSearchResponse.self, from: data)
-        
+        let apiResponse = try decoder.decode(Top100VideosSearchResponse.self, from: data)
+
         return apiResponse.records.flatMap { record in
-            convertMTVRecordToSearchResults(record: record, query: safeQuery)
+            convertTop100RecordToSearchResults(record: record, query: safeQuery)
         }
     }
     
@@ -238,31 +238,40 @@ class SearchService: ObservableObject {
             videoImage: "", // Will be loaded from YouTube API
             type: type,
             matchType: matchType,
-            relevanceScore: relevanceScore
+            relevanceScore: relevanceScore,
+            rank: nil // Videos table doesn't have Billboard rank
         )
     }
     
-    private func convertMTVRecordToSearchResults(record: MTVVideoRecord, query: String) -> [SearchResult] {
+    private func convertTop100RecordToSearchResults(record: Top100VideoRecord, query: String) -> [SearchResult] {
         var results: [SearchResult] = []
-        
+
         let videoUrls = record.fields.videoUrls ?? []
         let videoTitles = record.fields.videoTitles ?? []
         let artistNames = record.fields.artistNames ?? []
         let mtvVideos = record.fields.mtvVideos ?? []
-        
+        let queryLower = query.lowercased()
+
         let maxCount = max(videoUrls.count, videoTitles.count, artistNames.count)
-        
+
         for i in 0..<maxCount {
             let videoUrl = i < videoUrls.count ? videoUrls[i] : ""
             let videoTitle = i < videoTitles.count ? videoTitles[i] : ""
             let artistName = i < artistNames.count ? artistNames[i] : ""
             let videoId = i < mtvVideos.count ? mtvVideos[i] : ""
-            
+
             guard !videoUrl.isEmpty, !videoTitle.isEmpty, !artistName.isEmpty else { continue }
-            
+
+            // Only include videos where artist or title actually matches the query
+            let artistMatches = artistName.lowercased().contains(queryLower)
+            let titleMatches = videoTitle.lowercased().contains(queryLower)
+            let yearMatches = String(record.fields.year).contains(query)
+
+            guard artistMatches || titleMatches || yearMatches else { continue }
+
             let matchType = determineMatchType(query: query, artistName: artistName, title: videoTitle)
             let relevanceScore = calculateRelevanceScore(matchType: matchType, query: query, artistName: artistName, title: videoTitle)
-            
+
             let searchResult = SearchResult(
                 id: "\(record.id)_\(i)",
                 videoId: videoId.isEmpty ? extractYouTubeVideoID(from: videoUrl) ?? "" : videoId,
@@ -271,14 +280,15 @@ class SearchService: ObservableObject {
                 year: String(record.fields.year),
                 url: videoUrl,
                 videoImage: "",
-                type: .mtvVideo,
+                type: .top100Video,
                 matchType: matchType,
-                relevanceScore: relevanceScore
+                relevanceScore: relevanceScore,
+                rank: i + 1 // Billboard rank (1-indexed)
             )
-            
+
             results.append(searchResult)
         }
-        
+
         return results
     }
     
@@ -383,11 +393,12 @@ struct SearchResult: Identifiable, Hashable {
     let type: SearchResultType
     let matchType: SearchMatchType
     let relevanceScore: Int
+    let rank: Int? // Billboard rank for top100Videos, nil for other videos
 }
 
 enum SearchResultType: Hashable {
     case video
-    case mtvVideo
+    case top100Video
 }
 
 enum SearchMatchType: Hashable {
@@ -469,23 +480,23 @@ struct VideoFields: Codable {
     }
 }
 
-struct MTVVideosSearchResponse: Codable {
-    let records: [MTVVideoRecord]
+struct Top100VideosSearchResponse: Codable {
+    let records: [Top100VideoRecord]
 }
 
-struct MTVVideoRecord: Codable {
+struct Top100VideoRecord: Codable {
     let id: String
-    let fields: MTVVideoFields
+    let fields: Top100VideoFields
 }
 
-struct MTVVideoFields: Codable {
+struct Top100VideoFields: Codable {
     let year: Int
     let title: String
     let videoUrls: [String]?
     let artistNames: [String]?
     let videoTitles: [String]?
-    let mtvVideos: [String]?
-    
+    let mtvVideos: [String]?  // Field name in Airtable, kept for compatibility
+
     private enum CodingKeys: String, CodingKey {
         case year
         case title

@@ -1,0 +1,253 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "F515294A",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "39.99",
+      "familyShareable" : true,
+      "internalID" : "6642660738",
+      "localizations" : [
+        {
+          "description" : "Hit Rewind Unlocked",
+          "displayName" : "Hit Rewind Unlocked",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Hit Rewind Unlocked",
+          "displayName" : "Hit Rewind Unlocked",
+          "locale" : "en_GB"
+        }
+      ],
+      "productID" : "hitrewind_ifetime_subscription",
+      "referenceName" : "Hitrewind Lifetime Subscription",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6479374259",
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_developerTeamID" : "8Z26HLRJ65",
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 790198440.58992696,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21627815",
+      "localizations" : [
+
+      ],
+      "name" : "Hit Rewind - General Subscriptions",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "6741119788",
+          "introductoryOffer" : {
+            "internalID" : "D3E90E75",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
+          "localizations" : [
+            {
+              "description" : "Access to all videos for a month",
+              "displayName" : "Monthly Music Video Access",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "monthlyUnlock",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Full Monthly Unlock",
+          "subscriptionGroupID" : "21627815",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "44.99",
+          "familyShareable" : true,
+          "groupNumber" : 2,
+          "internalID" : "6741119796",
+          "introductoryOffer" : {
+            "internalID" : "4054ECFE",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
+          "localizations" : [
+            {
+              "description" : "Access to all videos for a year",
+              "displayName" : "Yearly Music Video Access",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "yearlyUnlock",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Full Yearly Unlock",
+          "subscriptionGroupID" : "21627815",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "8.99",
+          "familyShareable" : false,
+          "groupNumber" : 4,
+          "internalID" : "6751439820",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "HIt Rewind full monthly unlock.",
+              "displayName" : "Monthly Unlock",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.HitRewind.monthly.notrial",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly Unlock no trial",
+          "subscriptionGroupID" : "21627815",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "6746451099",
+          "introductoryOffer" : {
+            "internalID" : "FD5EE208",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
+          "localizations" : [
+            {
+              "description" : "Weekly music unlock",
+              "displayName" : "Weekly Music Unlock",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "weeklyunlocked",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Weekly Unlock",
+          "subscriptionGroupID" : "21627815",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6751439866",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "HIt Rewind full weekly unlock.",
+              "displayName" : "Full Unlock Weekly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.HitRewind.weekly.notrial",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Weekly Unlock no trial",
+          "subscriptionGroupID" : "21627815",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 5,
+          "internalID" : "6751440311",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "HIt Rewind full yearly unlock.",
+              "displayName" : "Full year unlocked.",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.HitRewind.yearly.notrial",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Yearly Unlock no trial",
+          "subscriptionGroupID" : "21627815",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

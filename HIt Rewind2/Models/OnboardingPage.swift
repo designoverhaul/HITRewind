@@ -44,10 +44,18 @@ extension OnboardingPage {
             useGIFCarousel: true
         ),
         OnboardingPage(
-            imageName: "onboarding4",
+            imageName: "Onboarding4",
             gifName: nil,
-            title: "Press \"Send to TV\"",
-            subtitle: "Rock your room",
+            title: "VJ Mode",
+            subtitle: "Perfect for screen-sharing {{screenShare}} short music videos on your TV",
+            useCarousel: false,
+            useGIFCarousel: false
+        ),
+        OnboardingPage(
+            imageName: "Onboarding4.5",
+            gifName: nil,
+            title: "AirPlay {{airplay}}",
+            subtitle: "For playing longer concerts\nor just playing audio",
             useCarousel: false,
             useGIFCarousel: false
         ),

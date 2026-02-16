@@ -17,9 +17,10 @@ struct VideoThumbnailView: View {
     let hideArtistName: Bool // New parameter to hide only artist name (for artist-specific views)
     let rank: Int? // Optional Billboard rank to display
     let hideDuration: Bool // Flag to hide duration badge (for music videos)
+    let showDurationInline: Bool // Show duration inline with title in purple (for concert videos)
 
     // Convenience initializer with default parameters
-    init(videoId: String, title: String, artist: String, year: String, onTap: @escaping () -> Void, hideArtistAndYear: Bool = false, hideArtistName: Bool = false, rank: Int? = nil, hideDuration: Bool = false) {
+    init(videoId: String, title: String, artist: String, year: String, onTap: @escaping () -> Void, hideArtistAndYear: Bool = false, hideArtistName: Bool = false, rank: Int? = nil, hideDuration: Bool = false, showDurationInline: Bool = false) {
         self.videoId = videoId
         self.title = title
         self.artist = artist
@@ -29,17 +30,20 @@ struct VideoThumbnailView: View {
         self.hideArtistName = hideArtistName
         self.rank = rank
         self.hideDuration = hideDuration
+        self.showDurationInline = showDurationInline
     }
     
-    @StateObject private var youtubeService = YouTubeService()
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
     @State private var thumbnailImage: Image?
     @State private var duration: String = ""
     @State private var viewCount: String = ""
-    @State private var isLoading = true
     @State private var showingRemoveFavoriteConfirmation = false
     @State private var heartBounceEffect = false
+
+    // Shared caches for better performance
+    private let imageCache = ImageCache.shared
+    private let videoInfoCache = VideoInfoCache.shared
 
     private var displayTitle: String {
         title
@@ -52,12 +56,25 @@ struct VideoThumbnailView: View {
             thumbnailView
                 .frame(maxWidth: .infinity)
                 .aspectRatio(16/9, contentMode: .fit)
-            
+
             // Video information
             videoInfo
         }
+        .onAppear {
+            // Synchronously check memory cache for instant display (no loading flash)
+            let cached = imageCache.cachedImage(for: videoId)
+            if thumbnailImage == nil, let cached = cached {
+                thumbnailImage = Image(uiImage: cached)
+            }
+        }
         .task {
-            await loadVideoData()
+            // Only load if not already loaded from cache
+            if thumbnailImage == nil {
+                await loadVideoData()
+            } else {
+                // Still load video info even if thumbnail is cached
+                await loadVideoInfoFromCache()
+            }
         }
         .confirmationDialog("Remove from favorites?", isPresented: $showingRemoveFavoriteConfirmation) {
             Button("Remove", role: .destructive) {
@@ -77,20 +94,9 @@ struct VideoThumbnailView: View {
                         .resizable()
                         .scaledToFill()
                 } else {
-                    // Placeholder while loading
+                    // Simple placeholder - no spinner to avoid flash on navigation
                     Rectangle()
                         .fill(Color.hitRewindDarkGray)
-                        .overlay {
-                            if isLoading {
-                                ProgressView()
-                                    .tint(.hitRewindPurple)
-                            } else {
-                                // Custom fallback image
-                                Image("missing")
-                                    .resizable()
-                                    .scaledToFill()
-                            }
-                        }
                 }
             }
             .clipped()
@@ -177,10 +183,10 @@ struct VideoThumbnailView: View {
     // MARK: - Video Information
     private var videoInfo: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // Title and view count on same line
+            // Title and duration/view count on same line
             HStack(alignment: .top, spacing: 8) {
                 Text(displayTitle)
-                    .font(.subheadline)
+                    .font(.system(size: 13))
                     .fontWeight(.medium)
                     .foregroundColor(.hitRewindPrimaryText)
                     .lineLimit(2)
@@ -188,8 +194,13 @@ struct VideoThumbnailView: View {
 
                 Spacer(minLength: 4)
 
-                // View count (right-aligned)
-                if !viewCount.isEmpty {
+                // Duration inline (purple) for concert videos, or view count for others
+                if showDurationInline && !duration.isEmpty {
+                    Text(duration)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.hitRewindPurple)
+                        .lineLimit(1)
+                } else if !viewCount.isEmpty {
                     Text(viewCount)
                         .font(.caption2)
                         .foregroundColor(.hitRewindSecondaryText)
@@ -209,7 +220,7 @@ struct VideoThumbnailView: View {
                 } else if shouldShowArtistName {
                     // Normal view: show artist name below title
                     Text(artist)
-                        .font(.subheadline)
+                        .font(.system(size: 13))
                         .fontWeight(.medium)
                         .foregroundColor(.hitRewindPurple)
                         .lineLimit(1)
@@ -242,73 +253,68 @@ struct VideoThumbnailView: View {
     
     // MARK: - Data Loading
     private func loadVideoData() async {
-        isLoading = true
-        
-        // Load thumbnail image
+        // Load video info from cache first (populated by batch load)
+        await loadVideoInfoFromCache()
+
+        // Load thumbnail image with caching
         await loadThumbnailImage()
-        
-        // Load video info for duration
-        await loadVideoInfo()
-        
-        isLoading = false
     }
-    
+
     private func loadThumbnailImage() async {
-        let qualities: [ThumbnailQuality] = [.medium, .high, .default]
-        let hosts: [String] = ["i.ytimg.com", "img.youtube.com"]
-        for quality in qualities {
-            for host in hosts {
-                let path: String
-                switch quality {
-                case .default: path = "default.jpg"
-                case .medium: path = "mqdefault.jpg"
-                case .high: path = "hqdefault.jpg"
-                case .standard: path = "sddefault.jpg"
-                case .maxres: path = "maxresdefault.jpg"
-                }
-                guard let url = URL(string: "https://\(host)/vi/\(videoId)/\(path)") else { continue }
-                var request = URLRequest(url: url)
-                // Simulator sometimes needs a mobile UA and explicit Accept for images
-                request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148", forHTTPHeaderField: "User-Agent")
-                request.setValue("image/avif,image/webp,image/apng,image/*,*/*;q=0.8", forHTTPHeaderField: "Accept")
-                do {
-                    let (data, response) = try await URLSession.shared.data(for: request)
-                    if let http = response as? HTTPURLResponse,
-                       (200..<300).contains(http.statusCode),
-                       let contentType = http.value(forHTTPHeaderField: "Content-Type"), contentType.hasPrefix("image"),
-                       let uiImage = UIImage(data: data) {
-                        await MainActor.run { thumbnailImage = Image(uiImage: uiImage) }
-                        return
-                    }
-                } catch {
-                    // Try next host/quality
-                    continue
-                }
+        // Use shared image cache for efficient loading
+        if let uiImage = await imageCache.loadYouTubeThumbnail(videoId: videoId) {
+            await MainActor.run {
+                thumbnailImage = Image(uiImage: uiImage)
             }
         }
     }
-    
-    private func loadVideoInfo() async {
+
+    private func loadVideoInfoFromCache() async {
+        // Check if video info is already in cache (from batch load)
+        if let cachedInfo = await videoInfoCache.info(for: videoId) {
+            await MainActor.run {
+                duration = cachedInfo.duration
+                viewCount = cachedInfo.viewCount
+            }
+            return
+        }
+
+        // If showDurationInline is true (e.g., concert videos), fetch from YouTube API
+        if showDurationInline {
+            await fetchVideoInfoFromAPI()
+            return
+        }
+
+        // Otherwise, info will be loaded by batch loader in MusicVideosView
+        // We don't make individual API calls to reduce API usage
+    }
+
+    private func fetchVideoInfoFromAPI() async {
+        let youtubeService = YouTubeService()
         do {
             let video = try await youtubeService.getVideoInfo(videoId: videoId)
-            
+            var fetchedDuration = ""
+            var fetchedViewCount = ""
+
+            if let contentDetails = video.contentDetails {
+                fetchedDuration = youtubeService.formatDuration(contentDetails.duration)
+            }
+
+            if let statistics = video.statistics,
+               let viewCountString = statistics.viewCount,
+               let viewCountNumber = Int(viewCountString) {
+                fetchedViewCount = formatViewCount(viewCountNumber)
+            }
+
+            // Cache the result
+            await videoInfoCache.store(videoId: videoId, duration: fetchedDuration, viewCount: fetchedViewCount)
+
             await MainActor.run {
-                // Duration
-                if let contentDetails = video.contentDetails {
-                    let formattedDuration = youtubeService.formatDuration(contentDetails.duration)
-                    duration = formattedDuration
-                }
-                
-                // View count
-                if let statistics = video.statistics,
-                   let viewCountString = statistics.viewCount,
-                   let viewCountNumber = Int(viewCountString) {
-                    viewCount = formatViewCount(viewCountNumber)
-                }
+                duration = fetchedDuration
+                viewCount = fetchedViewCount
             }
         } catch {
-            // Video info loading failed, but we can continue without it
-            print("Failed to load video info for \(videoId): \(error)")
+            print("⚠️ Failed to fetch video info for \(videoId): \(error)")
         }
     }
     
@@ -381,12 +387,9 @@ struct ThumbnailFavoriteButton: View {
         }) {
             Image(systemName: isFavorited ? "heart.fill" : "heart")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(isFavorited ? .red : .white)
+                .foregroundColor(isFavorited ? .red : .hitRewindPurple)
                 .symbolEffect(.bounce, value: bounceEffect)
-                .frame(width: 28, height: 28)
-                .background(Color.black.opacity(0.7))
-                .clipShape(Circle())
-                .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                .shadow(color: Color.black.opacity(0.5), radius: 2, x: 0, y: 1)
         }
         .buttonStyle(.plain)
         .onAppear {

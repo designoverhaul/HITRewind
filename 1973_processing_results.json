@@ -1,0 +1,707 @@
+{
+  "successful": [],
+  "failed": [
+    {
+      "rank": 1,
+      "title": "Tie a Yellow Ribbon Round the Ole Oak Tree",
+      "artist": "Tony Orlando and Dawn",
+      "video_url": "https://www.youtube.com/watch?v=hCioQf3gMI8",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 2,
+      "title": "Bad, Bad Leroy Brown",
+      "artist": "Jim Croce",
+      "video_url": "https://www.youtube.com/watch?v=JzYf6qskdfA",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 3,
+      "title": "Killing Me Softly with His Song",
+      "artist": "Roberta Flack",
+      "video_url": "https://www.youtube.com/watch?v=zlq0CUtkOSI",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 4,
+      "title": "Let's Get It On",
+      "artist": "Marvin Gaye",
+      "video_url": "https://www.youtube.com/watch?v=AqPBfbLoF_M",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 5,
+      "title": "My Love",
+      "artist": "Paul McCartney & Wings",
+      "video_url": "https://www.youtube.com/watch?v=A5g9ZwxFKdg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 6,
+      "title": "Why Me",
+      "artist": "Kris Kristofferson",
+      "video_url": "https://www.youtube.com/watch?v=DzVycgM8XHQ",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 7,
+      "title": "Crocodile Rock",
+      "artist": "Elton John",
+      "video_url": "https://www.youtube.com/watch?v=75r0nQu-hMs",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 8,
+      "title": "Will It Go Round in Circles",
+      "artist": "Billy Preston",
+      "video_url": "https://www.youtube.com/watch?v=FFHMdY9HijM",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 9,
+      "title": "You're So Vain",
+      "artist": "Carly Simon",
+      "video_url": "https://www.youtube.com/watch?v=mQZmCJUSC6g",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 10,
+      "title": "Touch Me in the Morning",
+      "artist": "Diana Ross",
+      "video_url": "https://www.youtube.com/watch?v=nvZfQzlS9t8",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 11,
+      "title": "The Night the Lights Went Out in Georgia",
+      "artist": "Vicki Lawrence",
+      "video_url": "https://www.youtube.com/watch?v=Z4GMUlCBgd0",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 12,
+      "title": "Playground in My Mind",
+      "artist": "Clint Holmes",
+      "video_url": "https://www.youtube.com/watch?v=qG10uhcN8go",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 13,
+      "title": "Brother Louie",
+      "artist": "Stories",
+      "video_url": "https://www.youtube.com/watch?v=C6yLdrkP-Bk",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 14,
+      "title": "Delta Dawn",
+      "artist": "Helen Reddy",
+      "video_url": "https://www.youtube.com/watch?v=n5SOZ_6sHFY",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 15,
+      "title": "Me and Mrs. Jones",
+      "artist": "Billy Paul",
+      "video_url": "https://www.youtube.com/watch?v=u0_76JRjqDY",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 16,
+      "title": "Frankenstein",
+      "artist": "The Edgar Winter Group",
+      "video_url": "https://www.youtube.com/watch?v=bpOhZ_wvVzA",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 17,
+      "title": "Drift Away",
+      "artist": "Dobie Gray",
+      "video_url": "https://www.youtube.com/watch?v=OnDu1HHOo78",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 18,
+      "title": "Little Willy",
+      "artist": "Sweet",
+      "video_url": "https://www.youtube.com/watch?v=NM6I-pmV0RA",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 19,
+      "title": "You Are the Sunshine of My Life",
+      "artist": "Stevie Wonder",
+      "video_url": "https://www.youtube.com/watch?v=sp6hzycBsTI",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 20,
+      "title": "Half-Breed",
+      "artist": "Cher",
+      "video_url": "https://www.youtube.com/watch?v=RQ0lpiXQ__Y",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 21,
+      "title": "That Lady",
+      "artist": "The Isley Brothers",
+      "video_url": "https://www.youtube.com/watch?v=S1Mvy3E8P2U",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 22,
+      "title": "Pillow Talk",
+      "artist": "Sylvia Robinson",
+      "video_url": "https://www.youtube.com/watch?v=YIg5I1xU-Uc",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 23,
+      "title": "We're an American Band",
+      "artist": "Grand Funk Railroad",
+      "video_url": "https://www.youtube.com/watch?v=QxNXFNCTr2I",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 24,
+      "title": "Right Place Wrong Time",
+      "artist": "Dr. John",
+      "video_url": "https://www.youtube.com/watch?v=W4PjWgiH-LQ",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 25,
+      "title": "Wildflower",
+      "artist": "Skylark",
+      "video_url": "https://www.youtube.com/watch?v=Ikfj2Hrsqlg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 26,
+      "title": "Superstition",
+      "artist": "Stevie Wonder",
+      "video_url": "https://www.youtube.com/watch?v=ftdZ363R9kQ",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 27,
+      "title": "Loves Me Like a Rock",
+      "artist": "Paul Simon",
+      "video_url": "https://www.youtube.com/watch?v=CjFzw8AxSBA",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 28,
+      "title": "The Morning After",
+      "artist": "Maureen McGovern",
+      "video_url": "https://www.youtube.com/watch?v=HkF4A3aFvds",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 29,
+      "title": "Rocky Mountain High",
+      "artist": "John Denver",
+      "video_url": "https://www.youtube.com/watch?v=cOS5-n7dyj4",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 30,
+      "title": "Stuck in the Middle with You",
+      "artist": "Stealers Wheel",
+      "video_url": "https://www.youtube.com/watch?v=8StG4fFWHqg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 31,
+      "title": "Shambala",
+      "artist": "Three Dog Night",
+      "video_url": "https://www.youtube.com/watch?v=SlWrMpV1vy0",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 32,
+      "title": "Love Train",
+      "artist": "The O'Jays",
+      "video_url": "https://www.youtube.com/watch?v=SsYOAIR4L_w",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 33,
+      "title": "I'm Gonna Love You Just a Little More Baby",
+      "artist": "Barry White",
+      "video_url": "https://www.youtube.com/watch?v=dELXCjSWYIg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 34,
+      "title": "Say, Has Anybody Seen My Sweet Gypsy Rose",
+      "artist": "Tony Orlando and Dawn",
+      "video_url": "https://www.youtube.com/watch?v=yBEER06xrx8",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 35,
+      "title": "Keep on Truckin'",
+      "artist": "Eddie Kendricks",
+      "video_url": "https://www.youtube.com/watch?v=2rw04_eKXNk",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 36,
+      "title": "Danny's Song",
+      "artist": "Anne Murray",
+      "video_url": "https://www.youtube.com/watch?v=IS0AvH8pMto",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 37,
+      "title": "Dancing in the Moonlight",
+      "artist": "King Harvest",
+      "video_url": "https://www.youtube.com/watch?v=g5JqPxmYhlo",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 38,
+      "title": "Monster Mash",
+      "artist": "Bobby 'Boris' Pickett",
+      "video_url": "https://www.youtube.com/watch?v=bRLML36HnzU",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 39,
+      "title": "Natural High",
+      "artist": "Bloodstone",
+      "video_url": "https://www.youtube.com/watch?v=cbuCt5wJ8-U",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 40,
+      "title": "Diamond Girl",
+      "artist": "Seals and Crofts",
+      "video_url": "https://www.youtube.com/watch?v=tNtOYomo4Qg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 41,
+      "title": "Long Train Runnin'",
+      "artist": "The Doobie Brothers",
+      "video_url": "https://www.youtube.com/watch?v=CVsLEI-hCXw",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 42,
+      "title": "Give Me Love (Give Me Peace on Earth)",
+      "artist": "George Harrison",
+      "video_url": "https://www.youtube.com/watch?v=P0d_P11B6Tg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 43,
+      "title": "If You Want Me to Stay",
+      "artist": "Sly & the Family Stone",
+      "video_url": "https://www.youtube.com/watch?v=gZFabOuF4Ps",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 44,
+      "title": "Daddy's Home",
+      "artist": "Jermaine Jackson",
+      "video_url": "https://www.youtube.com/watch?v=uhNnlD3uNS0",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 45,
+      "title": "Neither One of Us (Wants to Be the First to Say Goodbye)",
+      "artist": "Gladys Knight & the Pips",
+      "video_url": "https://www.youtube.com/watch?v=veCMzbksKec",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 46,
+      "title": "I'm Doin' Fine Now",
+      "artist": "New York City",
+      "video_url": "https://www.youtube.com/watch?v=0KkC6mTxZaI",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 47,
+      "title": "Could It Be I'm Falling in Love",
+      "artist": "The Spinners",
+      "video_url": "https://www.youtube.com/watch?v=qdvRCAEVKFA",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 48,
+      "title": "Daniel",
+      "artist": "Elton John",
+      "video_url": "https://www.youtube.com/watch?v=-9xib-hCm6c",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 49,
+      "title": "Midnight Train to Georgia",
+      "artist": "Gladys Knight & the Pips",
+      "video_url": "https://www.youtube.com/watch?v=A0F9lh8TiSM",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 50,
+      "title": "Smoke on the Water",
+      "artist": "Deep Purple",
+      "video_url": "https://www.youtube.com/watch?v=Q2FzZSBD5LE",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 51,
+      "title": "The Cover of the Rolling Stone",
+      "artist": "Dr. Hook & The Medicine Show",
+      "video_url": "https://www.youtube.com/watch?v=tXcJNljjTG0",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 52,
+      "title": "Behind Closed Doors",
+      "artist": "Charlie Rich",
+      "video_url": "https://www.youtube.com/watch?v=Rf_baiRNUYU",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 53,
+      "title": "Your Mama Don't Dance",
+      "artist": "Loggins and Messina",
+      "video_url": "https://www.youtube.com/watch?v=VTu4yQH8KBs",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 54,
+      "title": "Feelin' Stronger Every Day",
+      "artist": "Chicago",
+      "video_url": "https://www.youtube.com/watch?v=DljvkWj_siY",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 55,
+      "title": "The Cisco Kid",
+      "artist": "War",
+      "video_url": "https://www.youtube.com/watch?v=8TkpolQKie8",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 56,
+      "title": "Live and Let Die",
+      "artist": "Paul McCartney & Wings",
+      "video_url": "https://www.youtube.com/watch?v=iv_UStbLzpI",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 57,
+      "title": "Ring Ring",
+      "artist": "ABBA",
+      "video_url": "https://www.youtube.com/watch?v=TL0EoXdpOqg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 58,
+      "title": "I Believe in You (You Believe in Me)",
+      "artist": "Johnnie Taylor",
+      "video_url": "https://www.youtube.com/watch?v=rGTEHS0HWS4",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 59,
+      "title": "Sing",
+      "artist": "The Carpenters",
+      "video_url": "https://www.youtube.com/watch?v=SJmmaIGiGBg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 60,
+      "title": "Ain't No Woman (Like the One I've Got)",
+      "artist": "The Four Tops",
+      "video_url": "https://www.youtube.com/watch?v=kWGp6HVMnMg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 61,
+      "title": "Dueling Banjos",
+      "artist": "Eric Weissberg & Steve Mandell",
+      "video_url": "https://www.youtube.com/watch?v=J6UG1Jlwiow",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 62,
+      "title": "Higher Ground",
+      "artist": "Stevie Wonder",
+      "video_url": "https://www.youtube.com/watch?v=zGSxvH5i6XQ",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 63,
+      "title": "Here I Am (Come and Take Me)",
+      "artist": "Al Green",
+      "video_url": "https://www.youtube.com/watch?v=vHAXp39WjZM",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 64,
+      "title": "My Maria",
+      "artist": "B.W. Stevenson",
+      "video_url": "https://www.youtube.com/watch?v=ewyu4dIVj-8",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 65,
+      "title": "Superfly",
+      "artist": "Curtis Mayfield",
+      "video_url": "https://www.youtube.com/watch?v=muLcm3_JSR4",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 66,
+      "title": "Last Song",
+      "artist": "Edward Bear",
+      "video_url": "https://www.youtube.com/watch?v=ch_Fb0AnzC0",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 67,
+      "title": "Get Down",
+      "artist": "Gilbert O'Sullivan",
+      "video_url": "https://www.youtube.com/watch?v=Bro-OgAkgEU",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 68,
+      "title": "Reelin' in the Years",
+      "artist": "Steely Dan",
+      "video_url": "https://www.youtube.com/watch?v=91XTZ92zs2w",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 69,
+      "title": "Hocus Pocus",
+      "artist": "Focus",
+      "video_url": "https://www.youtube.com/watch?v=UrD-YezckvI",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 70,
+      "title": "Yesterday Once More",
+      "artist": "The Carpenters",
+      "video_url": "https://www.youtube.com/watch?v=_CXU6Q4gMeo",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 71,
+      "title": "Boogie Woogie Bugle Boy",
+      "artist": "Bette Midler",
+      "video_url": "https://www.youtube.com/watch?v=BdhSxwMnvjs",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 72,
+      "title": "Clair",
+      "artist": "Gilbert O'Sullivan",
+      "video_url": "https://www.youtube.com/watch?v=DDTiC1sL-X8",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 73,
+      "title": "Do It Again",
+      "artist": "Steely Dan",
+      "video_url": "https://www.youtube.com/watch?v=Qb1wNA5PnKQ",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 74,
+      "title": "Kodachrome",
+      "artist": "Paul Simon",
+      "video_url": "https://www.youtube.com/watch?v=8rlDTK6QI-w",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 75,
+      "title": "Why Can't We Live Together",
+      "artist": "Timmy Thomas",
+      "video_url": "https://www.youtube.com/watch?v=GvwrzLAbCLg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 76,
+      "title": "Do You Wanna Dance?",
+      "artist": "Bette Midler",
+      "video_url": "https://www.youtube.com/watch?v=gtZX56T6Bcc",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 77,
+      "title": "So Very Hard to Go",
+      "artist": "Tower of Power",
+      "video_url": "https://www.youtube.com/watch?v=cbyKxiVvpaE",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 78,
+      "title": "Rockin' Pneumonia and the Boogie Woogie Flu",
+      "artist": "Johnny Rivers",
+      "video_url": "https://www.youtube.com/watch?v=5Ra1DEd1ueA",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 79,
+      "title": "Ramblin' Man",
+      "artist": "The Allman Brothers Band",
+      "video_url": "https://www.youtube.com/watch?v=Wa4DCp6cl2U",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 80,
+      "title": "Masterpiece",
+      "artist": "The Temptations",
+      "video_url": "https://www.youtube.com/watch?v=dMelAm7mEZI",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 81,
+      "title": "Peaceful",
+      "artist": "Helen Reddy",
+      "video_url": "https://www.youtube.com/watch?v=goEwCg7-5aw",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 82,
+      "title": "One of a Kind (Love Affair)",
+      "artist": "The Spinners",
+      "video_url": "https://www.youtube.com/watch?v=NWVZdU7F9nc",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 83,
+      "title": "Funny Face",
+      "artist": "Donna Fargo",
+      "video_url": "https://www.youtube.com/watch?v=cEv6HmGPRJU",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 84,
+      "title": "Funky Worm",
+      "artist": "Ohio Players",
+      "video_url": "https://www.youtube.com/watch?v=wWiBJJ2dvBg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 85,
+      "title": "Angie",
+      "artist": "The Rolling Stones",
+      "video_url": "https://www.youtube.com/watch?v=RcZn2-bGXqQ",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 86,
+      "title": "Jambalaya (On the Bayou)",
+      "artist": "Blue Ridge Rangers",
+      "video_url": "https://www.youtube.com/watch?v=Qcqw1btI9rA",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 87,
+      "title": "Don't Expect Me to Be Your Friend",
+      "artist": "Lobo",
+      "video_url": "https://www.youtube.com/watch?v=srRgSahT6lU",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 88,
+      "title": "Break Up to Make Up",
+      "artist": "The Stylistics",
+      "video_url": "https://www.youtube.com/watch?v=kCfgAZUWEb0",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 89,
+      "title": "Daisy a Day",
+      "artist": "Jud Strunk",
+      "video_url": "https://www.youtube.com/watch?v=LJj1CQLJM30",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 90,
+      "title": "Also Sprach Zarathustra (2001)",
+      "artist": "Deodato",
+      "video_url": "https://www.youtube.com/watch?v=Ge0vaqnijB0",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 91,
+      "title": "Stir It Up",
+      "artist": "Johnny Nash",
+      "video_url": "https://www.youtube.com/watch?v=xm355wcPSN4",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 92,
+      "title": "Money",
+      "artist": "Pink Floyd",
+      "video_url": "https://www.youtube.com/watch?v=-0kcet4aPpQ",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 93,
+      "title": "Gypsy Man",
+      "artist": "War",
+      "video_url": "https://www.youtube.com/watch?v=3p0cofSgEHE",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 94,
+      "title": "The World Is a Ghetto",
+      "artist": "War",
+      "video_url": "https://www.youtube.com/watch?v=pCvH7Uf-7kw",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 95,
+      "title": "Yes We Can Can",
+      "artist": "The Pointer Sisters",
+      "video_url": "https://www.youtube.com/watch?v=uyTVyCp7xrw",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 96,
+      "title": "Free Ride",
+      "artist": "The Edgar Winter Group",
+      "video_url": "https://www.youtube.com/watch?v=JAFyvePcR_o",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 97,
+      "title": "Space Oddity",
+      "artist": "David Bowie",
+      "video_url": "https://www.youtube.com/watch?v=iYYRH4apXDo",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 98,
+      "title": "It Never Rains in Southern California",
+      "artist": "Albert Hammond",
+      "video_url": "https://www.youtube.com/watch?v=FEMJ2AnEg6s",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 99,
+      "title": "The Twelfth of Never",
+      "artist": "Donny Osmond",
+      "video_url": "https://www.youtube.com/watch?v=e4ZnX3RvkGg",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    },
+    {
+      "rank": 100,
+      "title": "Papa Was a Rollin' Stone",
+      "artist": "The Temptations",
+      "video_url": "https://www.youtube.com/watch?v=71l85z2bXAs",
+      "error": "HTTP 422: {'error': {'type': 'UNKNOWN_FIELD_NAME', 'message': 'Unknown field name: \"year\"'}}"
+    }
+  ],
+  "not_found": [],
+  "quota_exceeded": false
+}

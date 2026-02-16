@@ -7,6 +7,9 @@
 
 import SwiftUI
 
+// Special value for "Top Today" - Spotify chart
+let kSpotifyTop50Year = 9999
+
 struct YearSidebarView: View {
     let years: [Int]
     @Binding var selectedYear: Int?
@@ -15,7 +18,17 @@ struct YearSidebarView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 2) {
-                ForEach(years, id: \.self) { year in
+                // Hardcoded "Top Today" row at the top
+                YearRowView(
+                    year: kSpotifyTop50Year,
+                    isSelected: selectedYear == kSpotifyTop50Year,
+                    onTap: {
+                        onYearSelected(kSpotifyTop50Year)
+                    }
+                )
+
+                // Regular year rows
+                ForEach(years.filter { $0 != kSpotifyTop50Year }, id: \.self) { year in
                     YearRowView(
                         year: year,
                         isSelected: selectedYear == year,
@@ -36,32 +49,31 @@ struct YearRowView: View {
     let isSelected: Bool
     let onTap: () -> Void
 
+    // Display text for the row
+    private var displayText: String {
+        if year == kSpotifyTop50Year {
+            return "Today"
+        } else {
+            return String(year)
+        }
+    }
+
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 4) {
-                Text(verbatim: String(year))
-                    .font(.custom(AppFont.ticketingName(), size: 22))
-                    .fontWeight(isSelected ? .bold : .medium)
-                    .foregroundColor(isSelected ? .black : .hitRewindPrimaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                Spacer(minLength: 4)
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.black)
-                        .font(.system(size: 18))
-                        .frame(width: 18, height: 18)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 12)
-            .background(
-                Rectangle()
-                    .fill(isSelected ? Color.hitRewindPurple : Color.clear)
-            )
-            .contentShape(Rectangle())
+            Text(displayText)
+                .font(.custom(AppFont.ticketingName(), size: 20))
+                .fontWeight(isSelected ? .bold : .medium)
+                .foregroundColor(isSelected ? .black : .hitRewindPrimaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 4)
+                .background(
+                    Rectangle()
+                        .fill(isSelected ? Color.hitRewindPurple : Color.clear)
+                )
+                .contentShape(Rectangle())
         }
         .buttonStyle(YearButtonStyle())
     }

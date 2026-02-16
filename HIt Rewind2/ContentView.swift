@@ -14,10 +14,10 @@ import SuperwallKit
 extension Notification.Name {
     static let videoPlayerPresented = Notification.Name("videoPlayerPresented")
     static let videoPlayerDismissed = Notification.Name("videoPlayerDismissed")
-    static let playerSkipBackward = Notification.Name("playerSkipBackward")
     static let playerTogglePlayPause = Notification.Name("playerTogglePlayPause")
     static let playerSkipForward = Notification.Name("playerSkipForward")
     static let playerSkip60Forward = Notification.Name("playerSkip60Forward")
+    static let playerSkipToNext = Notification.Name("playerSkipToNext")
     static let playerStateChanged = Notification.Name("playerStateChanged")
     static let  searchArtist = Notification.Name("searchArtist")
     static let switchToSearch = Notification.Name("switchToSearch")
@@ -27,13 +27,12 @@ extension Notification.Name {
 struct ContentView: View {
     @Binding var shouldRestartOnboarding: Bool
     @State private var heartAnimationTrigger = false
-    @State private var selectedTab = 1  // Start with MTV (Music Videos) page
+    @State private var selectedTab = 1  // Start with Top 100 (Music Videos) page
     @State private var previousTab = 1
     @State private var showingVideoPlayer = false
     @State private var currentVideoInfo: (id: String, title: String, artist: String, year: String)?
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
-    @State private var isAirPlayActive = false
     @State private var isVideoPlaying = false
     @State private var navigateToSearch = false
     @State private var searchArtistName = ""
@@ -46,11 +45,6 @@ struct ContentView: View {
     
     private func videoInfoSection(for videoInfo: (id: String, title: String, artist: String, year: String)) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Year
-            Text(videoInfo.year)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
             // Video name and artist name row - horizontally aligned
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(videoInfo.title)
@@ -59,9 +53,9 @@ struct ContentView: View {
                     .foregroundColor(.primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                
+
                 Spacer()
-                
+
                 Text(videoInfo.artist)
                     .font(.subheadline)
                     .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
@@ -77,18 +71,6 @@ struct ContentView: View {
             FavoriteButton(videoInfo: videoInfo)
                 .environmentObject(authService)
                 .environmentObject(favoritesService)
-
-            Button(action: {
-                NotificationCenter.default.post(name: .playerSkipBackward, object: nil)
-            }) {
-                Image(systemName: "gobackward.10")
-                    .font(.system(size: 24))
-                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
-                    .frame(width: 60, height: 60)
-                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-            }
 
             Button(action: {
                 NotificationCenter.default.post(name: .playerTogglePlayPause, object: nil)
@@ -125,76 +107,72 @@ struct ContentView: View {
                     .clipShape(Circle())
                     .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
             }
-            
+
+            Button(action: {
+                NotificationCenter.default.post(name: .playerSkipToNext, object: nil)
+            }) {
+                Image(systemName: "forward.end.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(Color(red: 0.65, green: 0.53, blue: 0.99))
+                    .frame(width: 60, height: 60)
+                    .background(Color(red: 0.06, green: 0.02, blue: 0.18))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+            }
+
             Spacer(minLength: 0)
         }
     }
     
+    // Controls are now in VideoPlayerView itself, so overlay is disabled
     private var videoPlayerControlsOverlay: some View {
-        Group {
-            let shouldShow = showingVideoPlayer && (currentVideoInfo != nil) && !isLandscape
-            if shouldShow {
-                VStack {
-                    Spacer()
-
-                    VStack(spacing: 14) {
-                        if let videoInfo = currentVideoInfo {
-                            videoInfoSection(for: videoInfo)
-                            controlButtonsSection(for: videoInfo)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-
-                    Color.clear
-                        .frame(height: 80)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onAppear {
-                    print("🎬 Showing video player controls overlay for: \(currentVideoInfo?.title ?? "unknown")")
-                }
-            }
-        }
+        EmptyView()
     }
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            EpicShowsView()
-                .tabItem {
-                    Image(systemName: "music.mic")
-                    Text("Epic Shows")
-                }
-                .tag(0)
+            Tab("Collections", systemImage: "music.mic", value: 0) {
+                EpicShowsView()
+            }
 
-            NEWVideosView()
-                .tabItem {
-                    Image(systemName: "movieclapper")
-                    Text("MTV")
-                }
-                .tag(1)
+            Tab("Top 100", systemImage: "movieclapper", value: 1) {
+                NEWVideosView()
+            }
 
-            // AirPlay tab - empty view, picker is handled by custom tab item
-            Color.clear
-                .tabItem {
-                    AirPlayTabItem()
-                }
-                .tag(2)
+            Tab("Live", systemImage: "ticket", value: 2) {
+                FanCamsView()
+            }
 
-            FanCamsView()
-                .tabItem {
-                    Image(systemName: "ticket")
-                    Text("Live")
-                }
-                .tag(3)
+            Tab("Faves", systemImage: "heart.fill", value: 3) {
+                FavoritesView()
+            }
 
-            FavoritesView()
-                .tabItem {
-                    AnimatedHeartTabIcon(animationTrigger: heartAnimationTrigger, isSelected: selectedTab == 4)
-                    Text("Favorites")
-                }
-                .tag(4)
+            Tab("", systemImage: "ellipsis", value: 4) {
+                MoreMenuView()
+            }
+            .accessibilityLabel("More")
         }
+        .tabViewStyle(.tabBarOnly)
         .environment(\.onboardingRestart, $shouldRestartOnboarding)
         .overlay(videoPlayerControlsOverlay)
+        .overlay(alignment: .bottom) {
+            // Animated heart overlay when favorite is added
+            if heartAnimationTrigger {
+                HStack {
+                    Spacer()
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.red)
+                        .scaleEffect(heartAnimationTrigger ? 1.3 : 0.8)
+                        .opacity(heartAnimationTrigger ? 1 : 0)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.5), value: heartAnimationTrigger)
+                    Spacer()
+                }
+                .padding(.bottom, 70) // Position above tab bar
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: heartAnimationTrigger)
         .accentColor(Color.hitRewindPurple)
         .onAppear {
             detectOrientation()
@@ -203,15 +181,7 @@ struct ContentView: View {
             detectOrientation()
         }
         .onChange(of: selectedTab) { oldValue, newValue in
-            if newValue == 2 {
-                // AirPlay tab tapped - reset to previous tab immediately and trigger AirPlay picker
-                selectedTab = previousTab
-                // Trigger AirPlay picker
-                AirPlayHelper.shared.showAirPlayPicker()
-            } else {
-                // Update previous tab for any other tab selection
-                previousTab = newValue
-            }
+            previousTab = newValue
         }
         .onReceive(NotificationCenter.default.publisher(for: .favoriteAdded)) { _ in
             triggerHeartAnimation()
@@ -250,12 +220,11 @@ struct ContentView: View {
     }
     
     private func triggerHeartAnimation() {
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.3, blendDuration: 0)) {
-            heartAnimationTrigger.toggle()
-        }
-        
-        // Reset after animation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        // Trigger the animation
+        heartAnimationTrigger = true
+
+        // Reset after animation completes
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             heartAnimationTrigger = false
         }
     }
@@ -334,6 +303,67 @@ struct AnimatedHeartTabIcon: View {
     }
 }
 
+// MARK: - More Menu View
+struct MoreMenuView: View {
+    @State private var selectedDestination: MoreDestination?
+
+    enum MoreDestination: Identifiable {
+        case search
+        case settings
+
+        var id: Self { self }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Button(action: {
+                    selectedDestination = .search
+                }) {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.hitRewindPurple)
+                            .frame(width: 24)
+                        Text("Search")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.hitRewindSecondaryText)
+                            .font(.caption)
+                    }
+                }
+
+                Button(action: {
+                    selectedDestination = .settings
+                }) {
+                    HStack {
+                        Image(systemName: "gearshape")
+                            .foregroundColor(.hitRewindPurple)
+                            .frame(width: 24)
+                        Text("Settings")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.hitRewindSecondaryText)
+                            .font(.caption)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("More")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(item: $selectedDestination) { destination in
+                switch destination {
+                case .search:
+                    SearchView()
+                case .settings:
+                    SettingsView()
+                }
+            }
+        }
+    }
+}
+
 // Epic Shows view is now implemented in its own file
 
 // MusicVideosView and FanCamsView are now implemented in their own files
@@ -356,8 +386,10 @@ struct FavoritesView: View {
     @State private var showingSortOptions = false
     @State private var selectedFavoriteVideoId: String?
 
-    // Simplified 2-column grid
+    // 4-column grid (app is landscape-only)
     private let gridColumns = [
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
     ]
@@ -410,47 +442,48 @@ struct FavoritesView: View {
             // iPad only: Custom header row (Row 2)
             if UIDevice.current.userInterfaceIdiom == .pad {
                 HStack {
-                    // Sort button (left aligned) - only show when authenticated and has favorites
-                    if authService.isAuthenticated && !favoritesService.favoriteVideos.isEmpty {
-                        Button(action: {
-                            showingSortOptions = true
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "arrow.up.arrow.down")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.hitRewindPurple)
-                                Text("Sort")
-                                    .font(.custom(AppFont.ticketingName(), size: 16))
-                                    .foregroundColor(.hitRewindPurple)
+                    // Left side - Sort button or invisible spacer to balance right side
+                    HStack(spacing: 8) {
+                        if authService.isAuthenticated && !favoritesService.favoriteVideos.isEmpty {
+                            Button(action: {
+                                showingSortOptions = true
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.up.arrow.down")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(.hitRewindPurple)
+                                    Text("Sort")
+                                        .font(.custom(AppFont.ticketingName(), size: 16))
+                                        .foregroundColor(.hitRewindPurple)
+                                }
+                            }
+                        } else {
+                            // Invisible spacer when Sort button not shown
+                            HStack(spacing: 16) {
+                                Color.clear
+                                    .frame(width: 22, height: 22)
+                                Color.clear
+                                    .frame(width: 22, height: 22)
                             }
                         }
                     }
-                    
+
                     Spacer()
-                    
+
                     // Logo centered
                     Image("logo")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 28)
-                    
+
                     Spacer()
-                    
-                    // Search and settings on right
-                    HStack(spacing: 16) {
-                        NavigationLink(destination: SearchView()) {
-                            Text("🔍")
-                        }
-                        NavigationLink(destination: SettingsView()) {
-                            Text("⚙️")
-                        }
-                    }
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
                 .background(Color.hitRewindBackground)
             }
-            
+
             Group {
                 if !authService.isAuthenticated {
                     signInPromptView
@@ -489,16 +522,6 @@ struct FavoritesView: View {
                             .frame(width: 44, height: 44)
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
-                        NavigationLink(destination: SearchView()) {
-                            Text("🔍")
-                        }
-                        NavigationLink(destination: SettingsView()) {
-                            Text("⚙️")
-                        }
-                    }
-                }
             }
         }
         .confirmationDialog("Sort favorites by", isPresented: $showingSortOptions) {
@@ -517,18 +540,15 @@ struct FavoritesView: View {
             Image(systemName: "heart.circle")
                 .font(.system(size: 64))
                 .foregroundColor(.hitRewindPurple)
-            
-            Text("Sign In to Save Favorites")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.hitRewindPrimaryText)
-            
-            Text("Sign in with Apple to save your favorite music videos and sync them across all your devices.")
-                .font(.body)
-                .foregroundColor(.hitRewindSecondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            
+
+            VStack(spacing: 4) {
+                Text("Sign in with Apple to save your favorite")
+                Text("music videos and sync across all your devices.")
+            }
+            .font(.body)
+            .foregroundColor(.hitRewindSecondaryText)
+            .multilineTextAlignment(.center)
+
             Button(action: {
                 authService.signInWithApple()
             }) {
@@ -621,7 +641,7 @@ struct FavoritesView: View {
             } else {
                 // User not subscribed - show paywall
                 print("🔒 User not subscribed - showing paywall")
-                Superwall.shared.register(placement: "MainPlacement") {
+                PaywallService.shared.presentPaywallWithOrientation {
                     // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
                     self.selectedFavoriteVideoId = favorite.videoId
@@ -630,7 +650,7 @@ struct FavoritesView: View {
         }
     }
 
-    private func createVideoView(from favorite: FavoriteVideo) -> SingleVideoView {
+    private func createVideoView(from favorite: FavoriteVideo) -> VJModeView {
         // Build playlist context for autoplay (all favorites in current sort order)
         let playlistVideos = sortedFavorites.map { fav in
             PlaylistVideo(
@@ -645,11 +665,17 @@ struct FavoritesView: View {
         // Find current video index
         guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == favorite.videoId }) else {
             print("⚠️ Could not find video index for autoplay")
-            return SingleVideoView(
+            let fallbackVideo = PlaylistVideo(
+                id: favorite.videoId,
                 youtubeURL: "https://www.youtube.com/watch?v=\(favorite.videoId)",
-                videoTitle: favorite.title,
-                artistName: favorite.artist,
-                year: favorite.year,
+                title: favorite.title,
+                artist: favorite.artist,
+                year: favorite.year
+            )
+            return VJModeView(
+                playerCoordinator: YouTubePlayerCoordinator(),
+                initialVideo: fallbackVideo,
+                videos: [],
                 playlistContext: nil
             )
         }
@@ -659,11 +685,12 @@ struct FavoritesView: View {
             currentIndex: currentIndex
         )
 
-        return SingleVideoView(
-            youtubeURL: "https://www.youtube.com/watch?v=\(favorite.videoId)",
-            videoTitle: favorite.title,
-            artistName: favorite.artist,
-            year: favorite.year,
+        let initialVideo = playlistVideos[currentIndex]
+
+        return VJModeView(
+            playerCoordinator: YouTubePlayerCoordinator(),
+            initialVideo: initialVideo,
+            videos: playlistVideos,
             playlistContext: playlistContext
         )
     }
@@ -717,150 +744,6 @@ class AirPlayHelper: NSObject, ObservableObject {
         }
     }
 }
-
-// MARK: - AirPlay Service
-class AirPlayService: ObservableObject {
-    static let shared = AirPlayService()
-    
-    @Published var isConnected = false
-    @Published var connectedDeviceName: String?
-    
-    private init() {
-        setupRouteChangeNotification()
-        checkInitialRoute()
-    }
-    
-    private func setupRouteChangeNotification() {
-        NotificationCenter.default.addObserver(
-            forName: AVAudioSession.routeChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.handleRouteChange(notification)
-        }
-    }
-    
-    private func handleRouteChange(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
-              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else {
-            return
-        }
-        
-        switch reason {
-        case .newDeviceAvailable, .oldDeviceUnavailable, .routeConfigurationChange:
-            checkCurrentRoute()
-        default:
-            break
-        }
-    }
-    
-    private func checkInitialRoute() {
-        checkCurrentRoute()
-    }
-    
-    private func checkCurrentRoute() {
-        let session = AVAudioSession.sharedInstance()
-        let outputs = session.currentRoute.outputs
-        
-        // Check for AirPlay devices
-        let airPlayOutput = outputs.first { output in
-            output.portType == .airPlay
-        }
-        
-        DispatchQueue.main.async {
-            self.isConnected = airPlayOutput != nil
-            self.connectedDeviceName = airPlayOutput?.portName
-        }
-    }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-}
-
-// MARK: - AirPlay Tab Button
-struct AirPlayTabButton: UIViewRepresentable {
-    @StateObject private var airPlayService = AirPlayService.shared
-    
-    func makeUIView(context: Context) -> UIView {
-        let containerView = UIView()
-        containerView.backgroundColor = .clear
-        
-        let routePickerView = AVRoutePickerView()
-        // Set colors based on connection status
-        let yellowColor = UIColor(red: 1.0, green: 0.96, blue: 0.11, alpha: 1.0) // #FFF61D
-        let purpleColor = UIColor(red: 0.82, green: 0.76, blue: 1.0, alpha: 1.0)
-        
-        routePickerView.tintColor = airPlayService.isConnected ? yellowColor : purpleColor
-        routePickerView.activeTintColor = airPlayService.isConnected ? yellowColor : purpleColor
-        routePickerView.backgroundColor = .clear
-        routePickerView.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Make the icon smaller for tab bar
-        routePickerView.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
-        
-        containerView.addSubview(routePickerView)
-        context.coordinator.routePickerView = routePickerView
-        
-        // Center the AirPlay button in the container
-        NSLayoutConstraint.activate([
-            routePickerView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            routePickerView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            routePickerView.widthAnchor.constraint(equalTo: containerView.widthAnchor),
-            routePickerView.heightAnchor.constraint(equalTo: containerView.heightAnchor)
-        ])
-        
-        // Add haptic feedback when AirPlay button is tapped
-        let gesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.airPlayTapped))
-        containerView.addGestureRecognizer(gesture)
-        
-        return containerView
-    }
-    
-    func updateUIView(_ uiView: UIView, context: Context) {
-        // Update colors when connection status changes
-        if let routePickerView = context.coordinator.routePickerView {
-            let yellowColor = UIColor(red: 1.0, green: 0.96, blue: 0.11, alpha: 1.0) // #FFF61D
-            let purpleColor = UIColor(red: 0.82, green: 0.76, blue: 1.0, alpha: 1.0)
-            
-            routePickerView.tintColor = airPlayService.isConnected ? yellowColor : purpleColor
-            routePickerView.activeTintColor = airPlayService.isConnected ? yellowColor : purpleColor
-        }
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-    
-    class Coordinator: NSObject {
-        var routePickerView: AVRoutePickerView?
-        
-        @objc func airPlayTapped() {
-            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-            impactFeedback.impactOccurred()
-        }
-    }
-}
-
-
-// MARK: - Custom AirPlay Tab Item
-struct AirPlayTabItem: View {
-    @StateObject private var airPlayService = AirPlayService.shared
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Image(systemName: "music.note.tv.fill")
-                .font(.system(size: 20))
-                .foregroundColor(airPlayService.isConnected ? Color(hex: "FFF61D") : .primary)
-
-            Text("Send To TV")
-                .font(.caption2)
-                .foregroundColor(airPlayService.isConnected ? Color(hex: "FFF61D") : .primary)
-        }
-    }
-}
-
 
 #Preview {
     ContentView(shouldRestartOnboarding: .constant(false))

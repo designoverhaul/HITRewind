@@ -19,53 +19,26 @@ struct SignInSheetView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 32) {
+            VStack(spacing: 24) {
                 Spacer()
-                
-                // Post2 image - responsive sizing
-                Image("post2")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: isIPhonePortrait ? .infinity : 500)
-                    .clipped()
-                    .padding(.horizontal, isIPhonePortrait ? 0 : 16)
-                
-                VStack(spacing: 4) {
-                    Text("Save your faves")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.hitRewindPrimaryText)
-                    
-                    Text("Sign in to save your favorite music videos and sync them across all your devices with iCloud.")
-                        .font(.body)
-                        .foregroundColor(.hitRewindSecondaryText)
-                        .multilineTextAlignment(.center)
+
+                // Description text
+                Text("Sign in to save and sync your favorites across devices.")
+                    .font(.body)
+                    .foregroundColor(.hitRewindSecondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+
+                // Standard Apple Sign In button
+                SignInWithAppleButton(.signIn) { request in
+                    authService.prepareSignInRequest(request)
+                } onCompletion: { result in
+                    authService.handleSignInCompletion(result)
                 }
-                .padding(.horizontal, 40)
-                
-                Spacer()
-                
-                // Sign in button
-                Button(action: {
-                    authService.signInWithApple()
-                }) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "applelogo")
-                            .font(.system(size: 18))
-                            .foregroundColor(.hitRewindPurple)
-                        Text("Sign in with Apple")
-                            .font(.body)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.black)
-                    .clipShape(RoundedRectangle(cornerRadius: 25))
-                }
+                .signInWithAppleButtonStyle(.white)
+                .frame(width: 280, height: 50)
                 .disabled(authService.isLoading)
-                .padding(.horizontal, 40)
-                
+
                 Spacer()
             }
             .navigationTitle("")

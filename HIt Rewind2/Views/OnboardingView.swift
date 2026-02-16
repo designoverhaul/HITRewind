@@ -10,7 +10,6 @@ import SwiftUI
 struct OnboardingView: View {
     @State private var currentPage = 0
     @Binding var isOnboardingComplete: Bool
-    @StateObject private var audioService = OnboardingAudioService.shared
     @StateObject private var imagePreloader = ImagePreloader.shared
     @State private var isLoading = true
 
@@ -33,6 +32,10 @@ struct OnboardingView: View {
         .task {
             // Preload all images before showing content
             await preloadAssets()
+        }
+        .onAppear {
+            // Switch to portrait for onboarding
+            OrientationManager.shared.switchToPortraitForOnboarding()
         }
     }
 
@@ -86,10 +89,17 @@ struct OnboardingView: View {
         // Preload all carousel images and onboarding images
         let allImages = [
             "tv1", "tv2", "tv3", "tv4", "tv5", "tv6", // TV carousel
-            "onboarding2", "onboarding4", "onboarding5" // Static onboarding images
+            "onboarding2", "Onboarding4", "Onboarding4.5", "onboarding5" // Static onboarding images
         ]
 
         await imagePreloader.preloadImages(allImages)
+
+        // Start fetching Top 100 videos in background
+        // By the time user finishes onboarding, data will be cached and ready
+        // This preloads the DirectVideoService which powers the Top 100 tab
+        Task {
+            await DirectVideoService.shared.fetchVideos()
+        }
 
         // Small delay to ensure everything is settled
         try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
@@ -97,15 +107,11 @@ struct OnboardingView: View {
         await MainActor.run {
             isLoading = false
         }
-
-        // Start music after all images are loaded
-        // Audio service handles its own threading for smooth playback
-        // audioService.startMusic() // COMMENTED OUT - Music disabled
     }
 
     private func completeOnboarding() {
-        // Start fade-out immediately
-        // audioService.fadeOut(duration: 8.0) // COMMENTED OUT - Music disabled
+        // Switch to landscape before showing main app
+        OrientationManager.shared.lockToLandscape()
 
         // Complete onboarding right away (music continues fading in background)
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")

@@ -29,6 +29,7 @@ struct ArtistVideo: Identifiable {
 struct ArtistSongsView: View {
     let artistName: String
     @StateObject private var airtableService = AirtableService()
+    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
     @State private var videos: [ArtistVideo] = []
     
     // Device and orientation detection for grid layout
@@ -69,16 +70,6 @@ struct ArtistSongsView: View {
                 }
             }
             
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 16) {
-                    NavigationLink(destination: SearchView()) {
-                        Text("🔍")
-                    }
-                    NavigationLink(destination: SettingsView()) {
-                        Text("⚙️")
-                    }
-                }
-            }
         } else {
             // iPhone: Keep existing toolbar structure
             ToolbarItem(placement: .principal) {
@@ -89,23 +80,12 @@ struct ArtistSongsView: View {
                         .frame(height: 28)
                 }
             }
-            
+
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.hitRewindPurple)
-                }
-            }
-            
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 16) {
-                    NavigationLink(destination: SearchView()) {
-                        Text("🔍")
-                    }
-                    NavigationLink(destination: SettingsView()) {
-                        Text("⚙️")
-                    }
                 }
             }
         }
@@ -127,10 +107,11 @@ struct ArtistSongsView: View {
             Spacer()
         }
         .padding(.horizontal, 24)
-        .padding(.vertical, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 16)
         .background(Color.hitRewindBackground)
     }
-    
+
     private var mainContentView: some View {
         Group {
             if videos.isEmpty {
@@ -180,7 +161,7 @@ struct ArtistSongsView: View {
     }
 
     // Create video view with playlist context for autoplay
-    private func createVideoView(for video: ArtistVideo) -> SingleVideoView {
+    private func createVideoView(for video: ArtistVideo) -> VJModeView {
         // Build playlist context from all videos
         let playlistVideos = videos.map { v in
             PlaylistVideo(
@@ -200,11 +181,12 @@ struct ArtistSongsView: View {
             currentIndex: currentIndex
         )
 
-        return SingleVideoView(
-            youtubeURL: "https://www.youtube.com/watch?v=\(video.videoId)",
-            videoTitle: video.title,
-            artistName: artistName,
-            year: video.year,
+        let initialVideo = playlistVideos[currentIndex]
+
+        return VJModeView(
+            playerCoordinator: playerCoordinator,
+            initialVideo: initialVideo,
+            videos: playlistVideos,
             playlistContext: playlistContext
         )
     }

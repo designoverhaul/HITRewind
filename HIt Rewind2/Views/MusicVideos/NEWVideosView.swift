@@ -7,13 +7,20 @@
 //
 
 import SwiftUI
-import SuperwallKit
 
 struct NEWVideosView: View {
-    @StateObject private var videoService = DirectVideoService()
+    @ObservedObject private var videoService = DirectVideoService.shared
 
     @State private var selectedYear: Int?
     @State private var selectedVideoId: String?
+
+    // YouTube player coordinator for VJModeView (landscape video player)
+    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
+
+    // Header hide/show offset and scroll tracking (iPhone only)
+    @State private var headerOffset: CGFloat = 0
+    @State private var lastScrollOffset: CGFloat = 0
+    private var headerHeight: CGFloat { 56 }
 
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -78,58 +85,130 @@ struct NEWVideosView: View {
                 videoGridView
             }
         }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedVideoId != nil },
+            set: { if !$0 { selectedVideoId = nil } }
+        )) {
+            if let videoId = selectedVideoId,
+               let video = currentYearVideos.first(where: { $0.fields.youtubeVideoId == videoId }) {
+                createVideoView(from: video)
+            }
+        }
         .navigationTitle("")
         .navigationBarHidden(true)
     }
 
-    // MARK: - iPhone Layout
+    // MARK: - iPhone Layout (with headroom effect) - Landscape only
     private var iPhoneLayout: some View {
         GeometryReader { geometry in
+            let sidebarWidth: CGFloat = 80 // Fixed width for year sidebar
+            let gridWidth = geometry.size.width - sidebarWidth
+
             HStack(spacing: 0) {
-                // Years sidebar (1/4 width)
+                // Video grid (3 columns) with headroom scroll tracking
+                videoGridContent
+                    .frame(width: gridWidth)
+
+                // Years sidebar (fixed width, on right side)
                 YearSidebarView(
                     years: availableYears,
                     selectedYear: $selectedYear,
                     onYearSelected: handleYearSelection
                 )
-                .frame(width: geometry.size.width * 0.25)
+                .frame(width: sidebarWidth)
                 .background(Color.hitRewindBackground)
-
-                // Video grid (3/4 width)
-                videoGridView
-                    .frame(width: geometry.size.width * 0.75)
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            HeadroomHeader(height: headerHeight)
+                .offset(y: headerOffset)
+                .animation(.spring(response: 0.35, dampingFraction: 0.9), value: headerOffset)
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedVideoId != nil },
+            set: { if !$0 { selectedVideoId = nil } }
+        )) {
+            if let videoId = selectedVideoId,
+               let video = currentYearVideos.first(where: { $0.fields.youtubeVideoId == videoId }) {
+                createVideoView(from: video)
             }
         }
         .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 8) {
-                    Image("logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 28)
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 16) {
-                    NavigationLink(destination: SearchView()) {
-                        Text("🔍")
-                    }
-                    NavigationLink(destination: SettingsView()) {
-                        Text("⚙️")
+        .navigationBarHidden(true)
+    }
+
+    // MARK: - Video Grid Content
+    private var videoGridContent: some View {
+        Group {
+            if videoService.isLoading {
+                LoadingView()
+            } else if let errorMessage = videoService.errorMessage {
+                ErrorView(message: errorMessage) {
+                    Task {
+                        await videoService.fetchVideos()
                     }
                 }
+            } else if selectedYear != nil && !currentYearVideos.isEmpty {
+                videoGridScrollView
+            } else {
+                ContentUnavailableView(
+                    "No Videos Available",
+                    systemImage: "music.note.list",
+                    description: Text("Select a year to view music videos")
+                )
             }
         }
-        .background(
-            NavigationConfigurator { nc in
-                nc.hidesBarsOnSwipe = true
+    }
+
+    private var videoGridScrollView: some View {
+        ScrollView {
+            VStack(spacing: 8) {
+                // Show subtitle for Today (TopToday) section
+                if isShowingTopToday {
+                    Text("Most streamed songs globally 🌎")
+                        .font(.system(size: 17))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 4)
+                }
+
+                LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
+                    ForEach(currentYearVideos) { video in
+                        Button(action: {
+                            handleVideoTap(video: video)
+                        }) {
+                            if let videoId = video.fields.youtubeVideoId {
+                                VideoThumbnailView(
+                                    videoId: videoId,
+                                    title: video.fields.title ?? "Unknown",
+                                    artist: video.fields.artistName ?? "Unknown Artist",
+                                    year: video.fields.year ?? "",
+                                    onTap: {},
+                                    rank: video.fields.rank,
+                                    hideDuration: true
+                                )
+                            } else {
+                                Text(video.fields.title ?? "Unknown Video")
+                                    .foregroundColor(.hitRewindPrimaryText)
+                                    .frame(height: 200)
+                                    .background(Color.hitRewindBackground)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(gridPadding)
             }
+        }
+        .id(selectedYear) // Reset scroll position when year changes
+        .headroomScrollTracking(
+            headerOffset: $headerOffset,
+            lastScrollOffset: $lastScrollOffset,
+            headerHeight: headerHeight
         )
     }
 
-    // MARK: - Video Grid View
+    // MARK: - Video Grid View (iPad)
     private var videoGridView: some View {
         Group {
             if videoService.isLoading {
@@ -154,86 +233,80 @@ struct NEWVideosView: View {
 
     private var videoGrid: some View {
         ScrollView {
-            VStack(alignment: .center, spacing: 16) {
-                Text("Top Hits \(String(selectedYear ?? 2025))")
-                    .font(.custom(AppFont.ticketingName(), size: 28))
-                    .fontWeight(.bold)
-                    .foregroundColor(.hitRewindPrimaryText)
-                    .frame(maxWidth: .infinity)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, gridPadding)
-            }
-            .padding(.top, gridPadding)
+            VStack(spacing: 8) {
+                // Show subtitle for Today (TopToday) section
+                if isShowingTopToday {
+                    Text("Most streamed songs globally 🌎")
+                        .font(.system(size: 17))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 4)
+                }
 
-            LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
-                ForEach(currentYearVideos) { video in
-                    Button(action: {
-                        handleVideoTap(video: video)
-                    }) {
-                        if let videoId = video.fields.youtubeVideoId {
-                            VideoThumbnailView(
-                                videoId: videoId,
-                                title: video.fields.title ?? "Unknown",
-                                artist: video.fields.artistName ?? "Unknown Artist",
-                                year: video.fields.year ?? "",
-                                onTap: {},
-                                rank: video.fields.rank,
-                                hideDuration: true
-                            )
-                        } else {
-                            // Fallback if video ID can't be extracted
-                            Text(video.fields.title ?? "Unknown Video")
-                                .foregroundColor(.hitRewindPrimaryText)
-                                .frame(height: 200)
-                                .background(Color.hitRewindBackground)
+                LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
+                    ForEach(currentYearVideos) { video in
+                        Button(action: {
+                            handleVideoTap(video: video)
+                        }) {
+                            if let videoId = video.fields.youtubeVideoId {
+                                VideoThumbnailView(
+                                    videoId: videoId,
+                                    title: video.fields.title ?? "Unknown",
+                                    artist: video.fields.artistName ?? "Unknown Artist",
+                                    year: video.fields.year ?? "",
+                                    onTap: {},
+                                    rank: video.fields.rank,
+                                    hideDuration: true
+                                )
+                            } else {
+                                Text(video.fields.title ?? "Unknown Video")
+                                    .foregroundColor(.hitRewindPrimaryText)
+                                    .frame(height: 200)
+                                    .background(Color.hitRewindBackground)
+                            }
                         }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
-            }
-            .padding(gridPadding)
-            .navigationDestination(isPresented: Binding(
-                get: { selectedVideoId != nil },
-                set: { if !$0 { selectedVideoId = nil } }
-            )) {
-                if let videoId = selectedVideoId,
-                   let video = currentYearVideos.first(where: { $0.fields.youtubeVideoId == videoId }) {
-                    createVideoView(from: video)
-                }
+                .padding(gridPadding)
             }
         }
+        .id(selectedYear) // Reset scroll position when year changes
     }
 
     // MARK: - Computed Properties
+
+    // Check if showing TopToday
+    private var isShowingTopToday: Bool {
+        selectedYear == kSpotifyTop50Year
+    }
+
     private var availableYears: [Int] {
-        videoService.availableYears
+        // Add "Today" (kSpotifyTop50Year = 9999) at the top of the list
+        [kSpotifyTop50Year] + videoService.availableYears
     }
 
     private var currentYearVideos: [DirectVideoRecord] {
         guard let year = selectedYear else { return [] }
+        // Return TopToday videos if that's selected
+        if year == kSpotifyTop50Year {
+            return videoService.topTodayVideos
+        }
         return videoService.videos(forYear: year)
     }
 
     private var gridColumns: [GridItem] {
-        let count = columnCount
-        return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: count)
+        // Always 3 columns - iPhone landscape only
+        [
+            GridItem(.flexible(), spacing: 8),
+            GridItem(.flexible(), spacing: 8),
+            GridItem(.flexible(), spacing: 8)
+        ]
     }
 
-    private var columnCount: Int {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return 3
-        } else {
-            return verticalSizeClass == .regular ? 1 : 2
-        }
-    }
+    private var gridSpacing: CGFloat { 8 }
 
-    private var gridSpacing: CGFloat {
-        UIDevice.current.userInterfaceIdiom == .pad ? 20 : 16
-    }
-
-    private var gridPadding: CGFloat {
-        UIDevice.current.userInterfaceIdiom == .pad ? 20 : 16
-    }
+    private var gridPadding: CGFloat { 8 }
 
     // MARK: - Helper Methods
     private func selectFirstAvailableYear() {
@@ -255,9 +328,9 @@ struct NEWVideosView: View {
                 print("✅ User subscribed - playing video")
                 self.selectedVideoId = videoId
             } else {
-                // User not subscribed - show paywall
+                // User not subscribed - show paywall with orientation handling
                 print("🔒 User not subscribed - showing paywall")
-                Superwall.shared.register(placement: "MainPlacement") {
+                PaywallService.shared.presentPaywallWithOrientation {
                     // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
                     self.selectedVideoId = videoId
@@ -266,7 +339,7 @@ struct NEWVideosView: View {
         }
     }
 
-    private func createVideoView(from video: DirectVideoRecord) -> SingleVideoView {
+    private func createVideoView(from video: DirectVideoRecord) -> VJModeView {
         // Build playlist context for autoplay
         let playlistVideos = currentYearVideos.compactMap { record -> PlaylistVideo? in
             guard let videoId = record.fields.youtubeVideoId,
@@ -276,34 +349,42 @@ struct NEWVideosView: View {
                 youtubeURL: url,
                 title: record.fields.title ?? "Unknown",
                 artist: record.fields.artistName ?? "Unknown Artist",
-                year: record.fields.year ?? ""
+                year: record.fields.year ?? "",
+                rank: record.fields.rank
             )
         }
 
         // Find current video index
         guard let videoId = video.fields.youtubeVideoId,
-              let url = video.fields.url,
               let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else {
             print("⚠️ Could not find video index for autoplay")
-            return SingleVideoView(
-                youtubeURL: video.fields.url ?? "https://www.youtube.com",
-                videoTitle: video.fields.title ?? "Unknown",
-                artistName: video.fields.artistName ?? "Unknown Artist",
+            let fallbackVideo = PlaylistVideo(
+                id: extractYouTubeVideoID(from: video.fields.url ?? "") ?? "",
+                youtubeURL: video.fields.url ?? "",
+                title: video.fields.title ?? "Unknown",
+                artist: video.fields.artistName ?? "Unknown Artist",
                 year: video.fields.year ?? "",
+                rank: video.fields.rank
+            )
+            return VJModeView(
+                playerCoordinator: playerCoordinator,
+                initialVideo: fallbackVideo,
+                videos: playlistVideos,
                 playlistContext: nil
             )
         }
+
+        let currentVideo = playlistVideos[currentIndex]
 
         let playlistContext = PlaylistContext(
             videos: playlistVideos,
             currentIndex: currentIndex
         )
 
-        return SingleVideoView(
-            youtubeURL: video.fields.url ?? "",
-            videoTitle: video.fields.title ?? "Unknown",
-            artistName: video.fields.artistName ?? "Unknown Artist",
-            year: video.fields.year ?? "",
+        return VJModeView(
+            playerCoordinator: playerCoordinator,
+            initialVideo: currentVideo,
+            videos: playlistVideos,
             playlistContext: playlistContext
         )
     }
@@ -311,8 +392,18 @@ struct NEWVideosView: View {
     private func handleYearSelection(_ year: Int) {
         print("📅 NEW - Year selected: \(String(year))")
         selectedYear = year
-        let videos = videoService.videos(forYear: year)
-        print("🎵 Found \(videos.count) videos for year \(year) in MTvVideosNEW")
+
+        if year == kSpotifyTop50Year {
+            // Fetch TopToday videos
+            print("🎵 Loading TopToday chart")
+            Task {
+                await videoService.fetchTopTodayVideos()
+                print("🎵 Found \(videoService.topTodayVideos.count) videos in TopToday")
+            }
+        } else {
+            let videos = videoService.videos(forYear: year)
+            print("🎵 Found \(videos.count) videos for year \(year) in MTvVideosNEW")
+        }
     }
 }
 
