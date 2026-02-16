@@ -13,11 +13,9 @@ struct SearchView: View {
     let autoSearch: Bool
 
     @StateObject private var searchService = SearchService.shared
-    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
     @State private var searchText = ""
     @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
-    @State private var selectedSearchResult: SearchResult?
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isSearchFieldFocused: Bool
 
@@ -251,14 +249,6 @@ struct SearchView: View {
             .padding(.horizontal, 16)
             .padding(.top, 12)
             .padding(.bottom, 32)
-            .navigationDestination(isPresented: Binding(
-                get: { selectedSearchResult != nil },
-                set: { if !$0 { selectedSearchResult = nil } }
-            )) {
-                if let result = selectedSearchResult {
-                    createVideoView(from: result)
-                }
-            }
         }
         .scrollDismissesKeyboard(.immediately)
     }
@@ -268,35 +258,29 @@ struct SearchView: View {
     private func handleSearchResultTap(result: SearchResult) {
         print("🔍 Search result tapped: \(result.title) by \(result.artistName)")
 
-        // Check test subscriber mode first (for development testing)
         if PaywallService.shared.testSubscriberMode {
             print("🧪 Test subscriber mode enabled - playing video")
-            self.selectedSearchResult = result
+            openSearchResultInMiniPlayer(result: result)
             return
         }
 
         Task { @MainActor in
-            // Check StoreKit directly for active subscription
             let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
 
             if isSubscribed {
-                // User is subscribed - play video immediately
                 print("✅ User subscribed - playing video")
-                self.selectedSearchResult = result
+                openSearchResultInMiniPlayer(result: result)
             } else {
-                // User not subscribed - show paywall
                 print("🔒 User not subscribed - showing paywall")
                 PaywallService.shared.presentPaywallWithOrientation {
-                    // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
-                    self.selectedSearchResult = result
+                    openSearchResultInMiniPlayer(result: result)
                 }
             }
         }
     }
 
-    private func createVideoView(from result: SearchResult) -> VJModeView {
-        // Build playlist context from all search results
+    private func openSearchResultInMiniPlayer(result: SearchResult) {
         let playlistVideos = searchService.searchResults.map { searchResult in
             PlaylistVideo(
                 id: searchResult.videoId,
@@ -308,54 +292,25 @@ struct SearchView: View {
             )
         }
 
-        // Find current video index
-        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == result.videoId }) else {
-            print("⚠️ Could not find video index for autoplay")
-            let fallbackVideo = PlaylistVideo(
-                id: result.videoId,
-                youtubeURL: result.url,
-                title: result.title,
-                artist: result.artistName,
-                year: result.year
-            )
-            return VJModeView(
-                playerCoordinator: playerCoordinator,
-                initialVideo: fallbackVideo,
-                videos: [],
-                playlistContext: nil
-            )
-        }
+        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == result.videoId }) else { return }
 
         let initialVideo = playlistVideos[currentIndex]
 
-        // Determine sourceType based on result type
         let sourceType: VideoSourceType
         if result.type == .top100Video {
-            // Top 100 video - show year picker
             sourceType = .musicVideos
         } else {
-            // LIVE/Videos table - show artist picker
-            // Build artist data for the picker
             let liveResults = searchService.searchResults.filter { $0.type == .video }
             let artistNames = Array(Set(liveResults.map { $0.artistName })).sorted()
-
-            // Build dictionary of artist -> videos
             var allArtistVideos: [String: [PlaylistVideo]] = [:]
             for liveResult in liveResults {
                 let video = PlaylistVideo(
-                    id: liveResult.videoId,
-                    youtubeURL: liveResult.url,
-                    title: liveResult.title,
-                    artist: liveResult.artistName,
+                    id: liveResult.videoId, youtubeURL: liveResult.url,
+                    title: liveResult.title, artist: liveResult.artistName,
                     year: liveResult.year
                 )
-                if allArtistVideos[liveResult.artistName] != nil {
-                    allArtistVideos[liveResult.artistName]?.append(video)
-                } else {
-                    allArtistVideos[liveResult.artistName] = [video]
-                }
+                allArtistVideos[liveResult.artistName, default: []].append(video)
             }
-
             sourceType = .live(
                 artistName: result.artistName,
                 categoryArtists: artistNames,
@@ -369,9 +324,8 @@ struct SearchView: View {
             sourceType: sourceType
         )
 
-        return VJModeView(
-            playerCoordinator: playerCoordinator,
-            initialVideo: initialVideo,
+        MiniPlayerManager.shared.openVJMode(
+            video: initialVideo,
             videos: playlistVideos,
             playlistContext: playlistContext
         )

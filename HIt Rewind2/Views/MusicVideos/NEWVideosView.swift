@@ -12,10 +12,6 @@ struct NEWVideosView: View {
     @ObservedObject private var videoService = DirectVideoService.shared
 
     @State private var selectedYear: Int?
-    @State private var selectedVideoId: String?
-
-    // YouTube player coordinator for VJModeView (landscape video player)
-    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
 
     // Header hide/show offset and scroll tracking (iPhone only)
     @State private var headerOffset: CGFloat = 0
@@ -85,15 +81,6 @@ struct NEWVideosView: View {
                 videoGridView
             }
         }
-        .navigationDestination(isPresented: Binding(
-            get: { selectedVideoId != nil },
-            set: { if !$0 { selectedVideoId = nil } }
-        )) {
-            if let videoId = selectedVideoId,
-               let video = currentYearVideos.first(where: { $0.fields.youtubeVideoId == videoId }) {
-                createVideoView(from: video)
-            }
-        }
         .navigationTitle("")
         .navigationBarHidden(true)
     }
@@ -123,15 +110,6 @@ struct NEWVideosView: View {
             HeadroomHeader(height: headerHeight)
                 .offset(y: headerOffset)
                 .animation(.spring(response: 0.35, dampingFraction: 0.9), value: headerOffset)
-        }
-        .navigationDestination(isPresented: Binding(
-            get: { selectedVideoId != nil },
-            set: { if !$0 { selectedVideoId = nil } }
-        )) {
-            if let videoId = selectedVideoId,
-               let video = currentYearVideos.first(where: { $0.fields.youtubeVideoId == videoId }) {
-                createVideoView(from: video)
-            }
         }
         .navigationTitle("")
         .navigationBarHidden(true)
@@ -320,27 +298,22 @@ struct NEWVideosView: View {
         print("🎥 NEW Video \(videoId) tapped - \(video.fields.title)")
 
         Task { @MainActor in
-            // Check StoreKit directly for active subscription
             let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
 
             if isSubscribed {
-                // User is subscribed - play video immediately
                 print("✅ User subscribed - playing video")
-                self.selectedVideoId = videoId
+                openVideoInMiniPlayer(video: video)
             } else {
-                // User not subscribed - show paywall with orientation handling
                 print("🔒 User not subscribed - showing paywall")
                 PaywallService.shared.presentPaywallWithOrientation {
-                    // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
-                    self.selectedVideoId = videoId
+                    openVideoInMiniPlayer(video: video)
                 }
             }
         }
     }
 
-    private func createVideoView(from video: DirectVideoRecord) -> VJModeView {
-        // Build playlist context for autoplay
+    private func openVideoInMiniPlayer(video: DirectVideoRecord) {
         let playlistVideos = currentYearVideos.compactMap { record -> PlaylistVideo? in
             guard let videoId = record.fields.youtubeVideoId,
                   let url = record.fields.url else { return nil }
@@ -354,36 +327,19 @@ struct NEWVideosView: View {
             )
         }
 
-        // Find current video index
         guard let videoId = video.fields.youtubeVideoId,
               let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else {
-            print("⚠️ Could not find video index for autoplay")
-            let fallbackVideo = PlaylistVideo(
-                id: extractYouTubeVideoID(from: video.fields.url ?? "") ?? "",
-                youtubeURL: video.fields.url ?? "",
-                title: video.fields.title ?? "Unknown",
-                artist: video.fields.artistName ?? "Unknown Artist",
-                year: video.fields.year ?? "",
-                rank: video.fields.rank
-            )
-            return VJModeView(
-                playerCoordinator: playerCoordinator,
-                initialVideo: fallbackVideo,
-                videos: playlistVideos,
-                playlistContext: nil
-            )
+            return
         }
 
         let currentVideo = playlistVideos[currentIndex]
-
         let playlistContext = PlaylistContext(
             videos: playlistVideos,
             currentIndex: currentIndex
         )
 
-        return VJModeView(
-            playerCoordinator: playerCoordinator,
-            initialVideo: currentVideo,
+        MiniPlayerManager.shared.openVJMode(
+            video: currentVideo,
             videos: playlistVideos,
             playlistContext: playlistContext
         )

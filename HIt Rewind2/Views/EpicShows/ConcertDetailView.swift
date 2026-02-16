@@ -14,13 +14,9 @@ struct ConcertDetailView: View {
     @StateObject private var favoritesService = FavoritesService.shared
     @ObservedObject private var directVideoService = DirectVideoService.shared
 
-    // YouTube player coordinator for VJModeView (landscape video player)
-    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
     @State private var concertVideos: [ConcertVideo] = []
     @State private var isLoadingVideos = true
     @State private var errorMessage: String?
-    @State private var selectedVideoId: String?
-    @State private var selectedVideoInfo: ConcertVideo?
 
     // Header hide/show offset and scroll tracking
     @State private var headerOffset: CGFloat = 0
@@ -55,14 +51,6 @@ struct ConcertDetailView: View {
         .task {
             print("🎪 ConcertDetailView loaded for: \(concert.fields.artistName) - \(concert.fields.venueName ?? "Unknown Venue")")
             await loadConcertVideos()
-        }
-        .navigationDestination(isPresented: Binding(
-            get: { selectedVideoId != nil },
-            set: { if !$0 { selectedVideoId = nil; selectedVideoInfo = nil } }
-        )) {
-            if let video = selectedVideoInfo {
-                createVideoView(from: video)
-            }
         }
     }
 
@@ -378,54 +366,29 @@ struct ConcertDetailView: View {
     
     // MARK: - Helper Methods
 
-    private func createVideoView(from video: ConcertVideo) -> VJModeView {
-        // Build playlist context for autoplay (all videos in this concert)
+    private func openVideoInMiniPlayer(video: ConcertVideo) {
         let playlistVideos = concertVideos.compactMap { concertVideo -> PlaylistVideo? in
-            guard let id = extractYouTubeVideoID(from: concertVideo.fields.youtubeUrl) else {
-                return nil
-            }
-            // Use video's artist if available, otherwise fall back to concert artist
+            guard let id = extractYouTubeVideoID(from: concertVideo.fields.youtubeUrl) else { return nil }
             let videoArtist = concertVideo.fields.artistName ?? concert.fields.artistName
             return PlaylistVideo(
-                id: id,
-                youtubeURL: concertVideo.fields.youtubeUrl,
-                title: concertVideo.fields.videoTitle,
-                artist: videoArtist,
+                id: id, youtubeURL: concertVideo.fields.youtubeUrl,
+                title: concertVideo.fields.videoTitle, artist: videoArtist,
                 year: concert.fields.eventYear.map { "\($0)" } ?? ""
             )
         }
 
-        // Find current video index
         guard let videoId = extractYouTubeVideoID(from: video.fields.youtubeUrl),
-              let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else {
-            print("⚠️ Could not find video index for autoplay")
-            let videoArtist = video.fields.artistName ?? concert.fields.artistName
-            let fallbackVideo = PlaylistVideo(
-                id: extractYouTubeVideoID(from: video.fields.youtubeUrl) ?? "",
-                youtubeURL: video.fields.youtubeUrl,
-                title: video.fields.videoTitle,
-                artist: videoArtist,
-                year: concert.fields.eventYear.map { "\($0)" } ?? ""
-            )
-            return VJModeView(
-                playerCoordinator: playerCoordinator,
-                initialVideo: fallbackVideo,
-                videos: playlistVideos,
-                playlistContext: nil
-            )
-        }
+              let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else { return }
 
         let currentVideo = playlistVideos[currentIndex]
-
         let playlistContext = PlaylistContext(
             videos: playlistVideos,
             currentIndex: currentIndex,
-            sourceType: .concert  // Concert mode: shows concert videos in sidebar, hides year picker
+            sourceType: .concert
         )
 
-        return VJModeView(
-            playerCoordinator: playerCoordinator,
-            initialVideo: currentVideo,
+        MiniPlayerManager.shared.openVJMode(
+            video: currentVideo,
             videos: playlistVideos,
             playlistContext: playlistContext
         )
@@ -435,22 +398,16 @@ struct ConcertDetailView: View {
         print("🎥 Concert video \(videoId) tapped")
 
         Task { @MainActor in
-            // Check StoreKit directly for active subscription
             let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
 
             if isSubscribed {
-                // User is subscribed - play video immediately
                 print("✅ User subscribed - playing video")
-                self.selectedVideoId = videoId
-                self.selectedVideoInfo = video
+                openVideoInMiniPlayer(video: video)
             } else {
-                // User not subscribed - show paywall with orientation handling
                 print("🔒 User not subscribed - showing paywall")
                 PaywallService.shared.presentPaywallWithOrientation {
-                    // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
-                    self.selectedVideoId = videoId
-                    self.selectedVideoInfo = video
+                    openVideoInMiniPlayer(video: video)
                 }
             }
         }

@@ -29,7 +29,6 @@ struct ArtistVideo: Identifiable {
 struct ArtistSongsView: View {
     let artistName: String
     @StateObject private var airtableService = AirtableService()
-    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
     @State private var videos: [ArtistVideo] = []
     
     // Device and orientation detection for grid layout
@@ -142,9 +141,9 @@ struct ArtistSongsView: View {
     private var videosGridView: some View {
         LazyVGrid(columns: gridColumns, spacing: gridSpacing) {
             ForEach(videos) { item in
-                NavigationLink(
-                    destination: createVideoView(for: item)
-                ) {
+                Button(action: {
+                    handleVideoTap(video: item)
+                }) {
                     VideoThumbnailView(
                         videoId: item.videoId,
                         title: item.title,
@@ -155,14 +154,31 @@ struct ArtistSongsView: View {
                         hideDuration: true
                     )
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(gridPadding)
     }
 
-    // Create video view with playlist context for autoplay
-    private func createVideoView(for video: ArtistVideo) -> VJModeView {
-        // Build playlist context from all videos
+    private func handleVideoTap(video: ArtistVideo) {
+        if PaywallService.shared.testSubscriberMode {
+            openVideoInMiniPlayer(video: video)
+            return
+        }
+
+        Task { @MainActor in
+            let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
+            if isSubscribed {
+                openVideoInMiniPlayer(video: video)
+            } else {
+                PaywallService.shared.presentPaywallWithOrientation {
+                    openVideoInMiniPlayer(video: video)
+                }
+            }
+        }
+    }
+
+    private func openVideoInMiniPlayer(video: ArtistVideo) {
         let playlistVideos = videos.map { v in
             PlaylistVideo(
                 id: v.videoId,
@@ -173,19 +189,18 @@ struct ArtistSongsView: View {
             )
         }
 
-        // Find current video index
         let currentIndex = videos.firstIndex(where: { $0.id == video.id }) ?? 0
 
         let playlistContext = PlaylistContext(
             videos: playlistVideos,
-            currentIndex: currentIndex
+            currentIndex: currentIndex,
+            sourceType: .musicVideos
         )
 
         let initialVideo = playlistVideos[currentIndex]
 
-        return VJModeView(
-            playerCoordinator: playerCoordinator,
-            initialVideo: initialVideo,
+        MiniPlayerManager.shared.openVJMode(
+            video: initialVideo,
             videos: playlistVideos,
             playlistContext: playlistContext
         )

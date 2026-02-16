@@ -11,12 +11,10 @@ import SuperwallKit
 struct FanCamsView: View {
     @StateObject private var airtableService = AirtableService()
     @StateObject private var youtubeService = YouTubeService()
-    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
 
     @State private var selectedCategory: FanCamCategory?
     @State private var selectedArtist: Playlist?
     @State private var visibleVideoIndices: [Int] = []
-    @State private var selectedVideoId: String?
     @State private var isLoadingVideos: Bool = false
 
     // Device and orientation detection
@@ -238,15 +236,6 @@ struct FanCamsView: View {
                     .padding(.horizontal, 8)
                     .padding(.top, 12)
                     .padding(.bottom, 16)
-                    .navigationDestination(isPresented: Binding(
-                        get: { selectedVideoId != nil },
-                        set: { if !$0 { selectedVideoId = nil } }
-                    )) {
-                        if let videoId = selectedVideoId,
-                           let video = visibleVideos.first(where: { $0.id == videoId }) {
-                            createVideoView(from: video)
-                        }
-                    }
                 }
             } else {
                 VStack {
@@ -352,10 +341,9 @@ struct FanCamsView: View {
     private func handleVideoTap(item: VisibleVideo) {
         print("🎥 Fan Cam video \(item.id) tapped")
 
-        // Check test subscriber mode first (for development testing)
         if PaywallService.shared.testSubscriberMode {
             print("🧪 Test subscriber mode enabled - playing video")
-            self.selectedVideoId = item.id
+            openVideoInMiniPlayer(item: item)
             return
         }
 
@@ -364,18 +352,18 @@ struct FanCamsView: View {
 
             if isSubscribed {
                 print("✅ User subscribed - playing video")
-                self.selectedVideoId = item.id
+                openVideoInMiniPlayer(item: item)
             } else {
                 print("🔒 User not subscribed - showing paywall")
                 PaywallService.shared.presentPaywallWithOrientation {
                     print("✅ Purchase complete - playing video")
-                    self.selectedVideoId = item.id
+                    openVideoInMiniPlayer(item: item)
                 }
             }
         }
     }
 
-    private func createVideoView(from video: VisibleVideo) -> VJModeView {
+    private func openVideoInMiniPlayer(item: VisibleVideo) {
         let playlistVideos = visibleVideos.map { video in
             PlaylistVideo(
                 id: video.id,
@@ -386,25 +374,10 @@ struct FanCamsView: View {
             )
         }
 
-        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == video.id }) else {
-            print("⚠️ Could not find video index for autoplay")
-            let fallbackVideo = PlaylistVideo(
-                id: video.id,
-                youtubeURL: video.originalURL,
-                title: video.title,
-                artist: video.artist,
-                year: video.year
-            )
-            return VJModeView(
-                playerCoordinator: playerCoordinator,
-                initialVideo: fallbackVideo,
-                videos: [],
-                playlistContext: nil
-            )
-        }
+        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == item.id }) else { return }
 
         let categoryArtists = selectedCategory?.artists ?? []
-        let artistName = selectedArtist?.fields.title ?? video.artist
+        let artistName = selectedArtist?.fields.title ?? item.artist
         var allArtistVideos: [String: [PlaylistVideo]] = [:]
         allArtistVideos[artistName] = playlistVideos
 
@@ -416,9 +389,8 @@ struct FanCamsView: View {
 
         let initialVideo = playlistVideos[currentIndex]
 
-        return VJModeView(
-            playerCoordinator: playerCoordinator,
-            initialVideo: initialVideo,
+        MiniPlayerManager.shared.openVJMode(
+            video: initialVideo,
             videos: playlistVideos,
             playlistContext: playlistContext
         )

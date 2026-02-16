@@ -11,7 +11,6 @@ import SuperwallKit
 struct EpicShowsView: View {
     @StateObject private var airtableService = AirtableService()
     @StateObject private var youtubeService = YouTubeService()
-    @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
     @State private var lastDataLoadDate: Date?
 
     // Cached shuffled data for performance
@@ -21,9 +20,6 @@ struct EpicShowsView: View {
 
     // Cached YouTube data for batch loading
     @State private var cachedVideoData: [String: YouTubeVideo] = [:]
-
-    // Navigation state
-    @State private var selectedShowInfo: (show: LegendaryShow, videoId: String)?
 
     // Header hide/show offset and scroll tracking
     @State private var headerOffset: CGFloat = 0
@@ -85,14 +81,6 @@ struct EpicShowsView: View {
         .task {
             await loadEpicShowsDataIfNeeded()
         }
-        .navigationDestination(isPresented: Binding(
-            get: { selectedShowInfo != nil },
-            set: { if !$0 { selectedShowInfo = nil } }
-        )) {
-            if let showInfo = selectedShowInfo {
-                createVideoView(from: showInfo.show, videoId: showInfo.videoId)
-            }
-        }
     }
 
     // MARK: - iPhone Layout (with headroom effect)
@@ -123,14 +111,6 @@ struct EpicShowsView: View {
         .navigationBarHidden(true)
         .task {
             await loadEpicShowsDataIfNeeded()
-        }
-        .navigationDestination(isPresented: Binding(
-            get: { selectedShowInfo != nil },
-            set: { if !$0 { selectedShowInfo = nil } }
-        )) {
-            if let showInfo = selectedShowInfo {
-                createVideoView(from: showInfo.show, videoId: showInfo.videoId)
-            }
         }
     }
 
@@ -377,75 +357,38 @@ struct EpicShowsView: View {
         return shuffled
     }
 
-    private func createVideoView(from show: LegendaryShow, videoId: String) -> VJModeView {
-        // Build playlist context - only from the same category
-        // Find which category this show belongs to
+    private func openVideoInMiniPlayer(show: LegendaryShow, videoId: String) {
         guard let category = cachedSortedLegendaryCategories.first(where: { cat in
             cat.shows.contains(where: { $0.id == show.id })
         }) else {
-            print("⚠️ Could not find category for show")
             let fallbackVideo = PlaylistVideo(
-                id: videoId,
-                youtubeURL: show.fields.youtubeUrl,
-                title: show.fields.title,
-                artist: show.fields.artist,
+                id: videoId, youtubeURL: show.fields.youtubeUrl,
+                title: show.fields.title, artist: show.fields.artist,
                 year: "\(show.fields.year)"
             )
-            return VJModeView(
-                playerCoordinator: playerCoordinator,
-                initialVideo: fallbackVideo,
-                videos: [fallbackVideo],
-                playlistContext: nil
-            )
+            MiniPlayerManager.shared.openVJMode(video: fallbackVideo, videos: [fallbackVideo], playlistContext: nil)
+            return
         }
 
-        // Get the same shuffled shows used in the UI
         let categoryShows = getShuffledShows(for: category)
-
-        // Build playlist videos
         let playlistVideos = categoryShows.compactMap { legendaryShow -> PlaylistVideo? in
-            guard let id = extractYouTubeVideoID(from: legendaryShow.fields.youtubeUrl) else {
-                return nil
-            }
+            guard let id = extractYouTubeVideoID(from: legendaryShow.fields.youtubeUrl) else { return nil }
             return PlaylistVideo(
-                id: id,
-                youtubeURL: legendaryShow.fields.youtubeUrl,
-                title: legendaryShow.fields.title,
-                artist: legendaryShow.fields.artist,
+                id: id, youtubeURL: legendaryShow.fields.youtubeUrl,
+                title: legendaryShow.fields.title, artist: legendaryShow.fields.artist,
                 year: "\(legendaryShow.fields.year)"
             )
         }
 
-        // Find current video index
-        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else {
-            print("⚠️ Could not find video index for autoplay")
-            let fallbackVideo = PlaylistVideo(
-                id: videoId,
-                youtubeURL: show.fields.youtubeUrl,
-                title: show.fields.title,
-                artist: show.fields.artist,
-                year: "\(show.fields.year)"
-            )
-            return VJModeView(
-                playerCoordinator: playerCoordinator,
-                initialVideo: fallbackVideo,
-                videos: playlistVideos,
-                playlistContext: nil
-            )
-        }
+        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == videoId }) else { return }
 
         let currentVideo = playlistVideos[currentIndex]
 
-        // Build all category videos for epic shows mode (not just the displayed 8)
         let allCategoryVideos = category.shows.compactMap { legendaryShow -> PlaylistVideo? in
-            guard let id = extractYouTubeVideoID(from: legendaryShow.fields.youtubeUrl) else {
-                return nil
-            }
+            guard let id = extractYouTubeVideoID(from: legendaryShow.fields.youtubeUrl) else { return nil }
             return PlaylistVideo(
-                id: id,
-                youtubeURL: legendaryShow.fields.youtubeUrl,
-                title: legendaryShow.fields.title,
-                artist: legendaryShow.fields.artist,
+                id: id, youtubeURL: legendaryShow.fields.youtubeUrl,
+                title: legendaryShow.fields.title, artist: legendaryShow.fields.artist,
                 year: "\(legendaryShow.fields.year)"
             )
         }
@@ -456,9 +399,8 @@ struct EpicShowsView: View {
             sourceType: .epicShows(categoryName: category.name, allCategoryVideos: allCategoryVideos)
         )
 
-        return VJModeView(
-            playerCoordinator: playerCoordinator,
-            initialVideo: currentVideo,
+        MiniPlayerManager.shared.openVJMode(
+            video: currentVideo,
             videos: playlistVideos,
             playlistContext: playlistContext
         )
@@ -468,20 +410,16 @@ struct EpicShowsView: View {
         print("🎥 Epic Shows video \(videoId) tapped")
 
         Task { @MainActor in
-            // Check StoreKit directly for active subscription
             let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
 
             if isSubscribed {
-                // User is subscribed - play video immediately
                 print("✅ User subscribed - playing video")
-                self.selectedShowInfo = (show, videoId)
+                openVideoInMiniPlayer(show: show, videoId: videoId)
             } else {
-                // User not subscribed - show paywall with orientation handling
                 print("🔒 User not subscribed - showing paywall")
                 PaywallService.shared.presentPaywallWithOrientation {
-                    // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
-                    self.selectedShowInfo = (show, videoId)
+                    openVideoInMiniPlayer(show: show, videoId: videoId)
                 }
             }
         }

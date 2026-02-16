@@ -33,6 +33,7 @@ struct ContentView: View {
     @State private var currentVideoInfo: (id: String, title: String, artist: String, year: String)?
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
+    @StateObject private var miniPlayerManager = MiniPlayerManager.shared
     @State private var isVideoPlaying = false
     @State private var navigateToSearch = false
     @State private var searchArtistName = ""
@@ -130,6 +131,7 @@ struct ContentView: View {
     }
     
     var body: some View {
+        ZStack {
         TabView(selection: $selectedTab) {
             Tab("Collections", systemImage: "music.mic", value: 0) {
                 EpicShowsView()
@@ -153,6 +155,7 @@ struct ContentView: View {
             .accessibilityLabel("More")
         }
         .tabViewStyle(.tabBarOnly)
+        .toolbar(miniPlayerManager.state == .vjMode ? .hidden : .visible, for: .tabBar)
         .environment(\.onboardingRestart, $shouldRestartOnboarding)
         .overlay(videoPlayerControlsOverlay)
         .overlay(alignment: .bottom) {
@@ -217,6 +220,12 @@ struct ContentView: View {
         .sheet(isPresented: $showingSignInSheet) {
             SignInSheetView()
         }
+
+            // PlayerOverlay sits above the TabView
+            if miniPlayerManager.state != .hidden {
+                PlayerOverlay(manager: miniPlayerManager)
+            }
+        } // end ZStack
     }
     
     private func triggerHeartAnimation() {
@@ -384,7 +393,6 @@ struct FavoritesView: View {
     @StateObject private var authService = AuthenticationService.shared
     @State private var sortOption: FavoritesSortOption = .dateAdded
     @State private var showingSortOptions = false
-    @State private var selectedFavoriteVideoId: String?
 
     // 4-column grid (app is landscape-only)
     private let gridColumns = [
@@ -610,15 +618,6 @@ struct FavoritesView: View {
                 }
             }
             .padding(gridSpacing)
-            .navigationDestination(isPresented: Binding(
-                get: { selectedFavoriteVideoId != nil },
-                set: { if !$0 { selectedFavoriteVideoId = nil } }
-            )) {
-                if let videoId = selectedFavoriteVideoId,
-                   let favorite = sortedFavorites.first(where: { $0.videoId == videoId }) {
-                    createVideoView(from: favorite)
-                }
-            }
         }
         .refreshable {
             favoritesService.syncWithCloud()
@@ -631,27 +630,22 @@ struct FavoritesView: View {
         print("🎥 Favorite video \(favorite.videoId) tapped")
 
         Task { @MainActor in
-            // Check StoreKit directly for active subscription
             let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
 
             if isSubscribed {
-                // User is subscribed - play video immediately
                 print("✅ User subscribed - playing video")
-                self.selectedFavoriteVideoId = favorite.videoId
+                openFavoriteInMiniPlayer(favorite: favorite)
             } else {
-                // User not subscribed - show paywall
                 print("🔒 User not subscribed - showing paywall")
                 PaywallService.shared.presentPaywallWithOrientation {
-                    // After successful purchase, play video
                     print("✅ Purchase complete - playing video")
-                    self.selectedFavoriteVideoId = favorite.videoId
+                    openFavoriteInMiniPlayer(favorite: favorite)
                 }
             }
         }
     }
 
-    private func createVideoView(from favorite: FavoriteVideo) -> VJModeView {
-        // Build playlist context for autoplay (all favorites in current sort order)
+    private func openFavoriteInMiniPlayer(favorite: FavoriteVideo) {
         let playlistVideos = sortedFavorites.map { fav in
             PlaylistVideo(
                 id: fav.videoId,
@@ -662,23 +656,7 @@ struct FavoritesView: View {
             )
         }
 
-        // Find current video index
-        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == favorite.videoId }) else {
-            print("⚠️ Could not find video index for autoplay")
-            let fallbackVideo = PlaylistVideo(
-                id: favorite.videoId,
-                youtubeURL: "https://www.youtube.com/watch?v=\(favorite.videoId)",
-                title: favorite.title,
-                artist: favorite.artist,
-                year: favorite.year
-            )
-            return VJModeView(
-                playerCoordinator: YouTubePlayerCoordinator(),
-                initialVideo: fallbackVideo,
-                videos: [],
-                playlistContext: nil
-            )
-        }
+        guard let currentIndex = playlistVideos.firstIndex(where: { $0.id == favorite.videoId }) else { return }
 
         let playlistContext = PlaylistContext(
             videos: playlistVideos,
@@ -687,9 +665,8 @@ struct FavoritesView: View {
 
         let initialVideo = playlistVideos[currentIndex]
 
-        return VJModeView(
-            playerCoordinator: YouTubePlayerCoordinator(),
-            initialVideo: initialVideo,
+        MiniPlayerManager.shared.openVJMode(
+            video: initialVideo,
             videos: playlistVideos,
             playlistContext: playlistContext
         )
