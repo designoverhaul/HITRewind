@@ -26,9 +26,16 @@ struct PlayerOverlay: View {
     private var rightPanelWidth: CGFloat { controlStripWidth + 12 + videoStackWidth }
 
     // Bottom bar
-    private var progressBarHeight: CGFloat { 20 }
-    private var pickerHeight: CGFloat { 50 }
+    private var progressBarHeight: CGFloat { 36 }
+    private var pickerHeight: CGFloat { 28 }
     private var bottomBarHeight: CGFloat { manager.showPicker ? progressBarHeight + pickerHeight : progressBarHeight }
+
+    // Bottom safe area (home indicator in landscape)
+    private var bottomSafeArea: CGFloat {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first else { return 0 }
+        return window.safeAreaInsets.bottom
+    }
 
     // Mini player size (~10% larger than 192×108)
     private let miniWidth: CGFloat = 211
@@ -44,7 +51,7 @@ struct PlayerOverlay: View {
                 let h = max(1, geo.size.height)
 
                 let vjW = manager.controlsVisible ? max(1, w - rightPanelWidth) : w
-                let vjH = manager.controlsVisible ? max(1, h - bottomBarHeight) : h
+                let vjH = manager.controlsVisible ? max(1, h - bottomBarHeight - bottomSafeArea) : h
 
                 let videoW = isVJ ? vjW : miniWidth
                 let videoH = isVJ ? vjH : miniHeight
@@ -64,8 +71,8 @@ struct PlayerOverlay: View {
                         .clipped()
                         .background(Color.black)
                         .position(
-                            x: isMini ? miniWidth / 2 : vjW / 2,
-                            y: isMini ? h - miniHeight / 2 : vjH / 2
+                            x: isMini ? miniWidth / 2 - 13 : vjW / 2,
+                            y: isMini ? h - miniHeight / 2 + 20 : vjH / 2
                         )
 
                     // ── VJ BOTTOM BAR ──
@@ -73,6 +80,7 @@ struct PlayerOverlay: View {
                         VStack {
                             Spacer()
                             vjBottomBar(screenWidth: w)
+                                .padding(.bottom, bottomSafeArea)
                         }
                     }
 
@@ -135,13 +143,24 @@ struct PlayerOverlay: View {
                                     .background(Circle().fill(Color.black.opacity(0.5)))
                             }
                         }
-                        .position(x: 6 + 16, y: h - miniHeight + 40)
+                        .position(x: 6 + 16, y: h - miniHeight + 20 + 40)
                     }
                 }
                 .animation(.easeInOut(duration: 0.35), value: manager.controlsVisible)
             }
             .ignoresSafeArea()
             .statusBar(hidden: isVJ)
+            .onAppear {
+                // Timer must start here — .onChange won't fire if state is already .vjMode
+                // when this view first renders
+                if manager.state == .vjMode {
+                    startTimeUpdateTimer()
+                    detectAirPlayState()
+                }
+            }
+            .onDisappear {
+                stopTimeUpdateTimer()
+            }
             .onChange(of: manager.state) { oldValue, newValue in
                 if newValue == .vjMode {
                     startTimeUpdateTimer()
@@ -262,8 +281,10 @@ struct PlayerOverlay: View {
 
     private func startTimeUpdateTimer() {
         stopTimeUpdateTimer()
+        print("⏱️ PlayerOverlay: Starting time update timer")
         timeUpdateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             manager.playerCoordinator.getCurrentTime()
+            manager.playerCoordinator.getDuration()
         }
     }
 

@@ -211,12 +211,14 @@ struct VideoThumbnailView: View {
             // Artist name or year below
             if !hideArtistAndYear {
                 if hideArtistName {
-                    // Artist-specific view: show year below title with ticketing font
-                    Text(year)
-                        .font(.custom(AppFont.ticketingName(), size: 15))
-                        .fontWeight(.medium)
-                        .foregroundColor(.hitRewindPurple)
-                        .lineLimit(1)
+                    // Artist-specific view: show year below title if available
+                    if !year.isEmpty {
+                        Text(year)
+                            .font(.custom(AppFont.ticketingName(), size: 15))
+                            .fontWeight(.medium)
+                            .foregroundColor(.hitRewindPurple)
+                            .lineLimit(1)
+                    }
                 } else if shouldShowArtistName {
                     // Normal view: show artist name below title
                     Text(artist)

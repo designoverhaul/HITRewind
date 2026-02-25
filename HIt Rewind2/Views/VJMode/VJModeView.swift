@@ -99,8 +99,8 @@ struct VJModeView: View {
     }
 
     // Bottom bar height constants
-    private var progressBarHeight: CGFloat { 20 }
-    private var pickerHeight: CGFloat { 50 }
+    private var progressBarHeight: CGFloat { 36 }
+    private var pickerHeight: CGFloat { 34 }
     private var bottomBarHeight: CGFloat { showPicker ? progressBarHeight + pickerHeight : progressBarHeight }
 
     // Get actual window safe area (works even with .ignoresSafeArea())
@@ -140,7 +140,7 @@ struct VJModeView: View {
                     // Inset from left to make room for button column
                     if controlsVisible {
                         VStack(spacing: 0) {
-                            // Progress bar
+                            // Progress bar with breathing room
                             VJModeProgressBar(
                                 currentTime: playerCoordinator.currentTime,
                                 duration: playerCoordinator.duration,
@@ -150,8 +150,9 @@ struct VJModeView: View {
                             )
                             .frame(height: progressBarHeight)
                             .padding(.trailing, 8)
+                            .zIndex(10) // Ensure progress bar is above other layers for touch
 
-                            // Year/Artist picker
+                            // Year/Artist picker - pushed to bottom edge
                             if showPicker {
                                 VJModePicker(
                                     sourceType: sourceType,
@@ -170,104 +171,119 @@ struct VJModeView: View {
                         .transition(.opacity)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .ignoresSafeArea()
 
                 // Right side panels - slide in/out from right
-                HStack(spacing: 0) {
-                    Spacer()
+                // Constrained to video area height so it doesn't block bottom bar touches
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        Spacer()
+                            .allowsHitTesting(false)
 
-                    // Controls strip
-                    VJModeControlStrip(
-                        playerCoordinator: playerCoordinator,
-                        isFavorited: $isFavorited,
-                        artistName: currentVideo.artist,
-                        showArtistButton: !isLiveMode,
-                        onFavoriteToggle: toggleFavorite,
-                        onArtistTap: loadArtistVideos,
-                        onNextVideo: playNextVideo
-                    )
-                    .frame(width: controlStripWidth)
-                    .padding(.horizontal, 6)
+                        // Controls strip
+                        VJModeControlStrip(
+                            playerCoordinator: playerCoordinator,
+                            isFavorited: $isFavorited,
+                            artistName: currentVideo.artist,
+                            showArtistButton: !isLiveMode,
+                            onFavoriteToggle: toggleFavorite,
+                            onArtistTap: loadArtistVideos,
+                            onNextVideo: playNextVideo
+                        )
+                        .frame(width: controlStripWidth)
+                        .padding(.horizontal, 6)
 
-                    // Video stack
-                    VJModeVideoStack(
-                        videos: displayedVideos,
-                        currentVideoId: currentVideo.id,
-                        onVideoSelect: playVideo
-                    )
-                    .frame(width: videoStackWidth)
+                        // Video stack
+                        VJModeVideoStack(
+                            videos: displayedVideos,
+                            currentVideoId: currentVideo.id,
+                            onVideoSelect: playVideo
+                        )
+                        .frame(width: videoStackWidth)
+                    }
+                    .frame(height: max(1, safeHeight - (controlsVisible ? bottomBarHeight : 0)))
+
+                    Spacer(minLength: 0)
+                        .allowsHitTesting(false)
                 }
                 .offset(x: controlsVisible ? 0 : rightPanelWidth + 20)
                 .animation(.easeInOut(duration: 0.35), value: controlsVisible)
 
                 // Left-side buttons - vertically centered around Dynamic Island
-                HStack(spacing: 0) {
-                    VStack(spacing: 0) {
-                        Spacer()
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        VStack(spacing: 0) {
+                            Spacer()
 
-                        // Top buttons - just above Dynamic Island
-                        VStack(spacing: 6) {
-                            // Exit VJ Mode button - back chevron
-                            Button(action: exitVJMode) {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 38, height: 38)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
-                            }
-
-                            // Fullscreen / Hide controls button
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.35)) {
-                                    controlsVisible.toggle()
+                            // Top buttons - just above Dynamic Island
+                            VStack(spacing: 6) {
+                                // Exit VJ Mode button - back chevron
+                                Button(action: exitVJMode) {
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 38, height: 38)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
                                 }
-                            }) {
-                                Image(systemName: controlsVisible ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .frame(width: 38, height: 38)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
+
+                                // Fullscreen / Hide controls button
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.35)) {
+                                        controlsVisible.toggle()
+                                    }
+                                }) {
+                                    Image(systemName: controlsVisible ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .frame(width: 38, height: 38)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
+                                }
                             }
+
+                            // Fixed spacer for Dynamic Island area
+                            Spacer()
+                                .frame(height: 135)
+
+                            // Bottom buttons - just below Dynamic Island
+                            VStack(spacing: 6) {
+                                // AirPlay button
+                                Button(action: {
+                                    AirPlayHelper.shared.showAirPlayPicker()
+                                }) {
+                                    Image(systemName: isAirPlayActive ? "airplayvideo.circle.fill" : "airplayvideo")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(isAirPlayActive ? .hitRewindPurple : .white)
+                                        .frame(width: 38, height: 38)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
+                                }
+
+                                // Screen Share info button
+                                Button(action: {
+                                    showScreenShareTutorial = true
+                                }) {
+                                    Image(systemName: "music.note.tv")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .frame(width: 38, height: 38)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
+                                }
+                            }
+
+                            Spacer()
                         }
-
-                        // Fixed spacer for Dynamic Island area
-                        Spacer()
-                            .frame(height: 135)
-
-                        // Bottom buttons - just below Dynamic Island
-                        VStack(spacing: 6) {
-                            // AirPlay button
-                            Button(action: {
-                                AirPlayHelper.shared.showAirPlayPicker()
-                            }) {
-                                Image(systemName: isAirPlayActive ? "airplayvideo.circle.fill" : "airplayvideo")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(isAirPlayActive ? .hitRewindPurple : .white)
-                                    .frame(width: 38, height: 38)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
-                            }
-
-                            // Screen Share info button
-                            Button(action: {
-                                showScreenShareTutorial = true
-                            }) {
-                                Image(systemName: "music.note.tv")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .frame(width: 38, height: 38)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
-                            }
-                        }
+                        .padding(.leading, 8)
 
                         Spacer()
                     }
-                    .padding(.leading, 8)
+                    // Only cover the video area, not the bottom bar
+                    .frame(height: max(1, geometry.size.height - bottomBarHeight))
 
-                    Spacer()
+                    Spacer(minLength: 0)
                 }
                 .offset(x: controlsVisible ? 0 : -80)
                 .animation(.easeInOut(duration: 0.35), value: controlsVisible)
@@ -659,34 +675,28 @@ struct VJModeProgressBar: View {
             let barWidth = geometry.size.width * widthMultiplier
             let horizontalInset = (geometry.size.width - barWidth) / 2
 
-            VStack(spacing: 0) {
-                // 4px spacer above
-                Spacer()
-                    .frame(height: 4)
+            ZStack(alignment: .leading) {
+                // Background track
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: barWidth, height: 6)
 
-                ZStack(alignment: .leading) {
-                    // Background track
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.2))
-                        .frame(width: barWidth, height: 6)
+                // Progress fill (from left)
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.hitRewindPurple)
+                    .frame(width: progressWidth(for: barWidth), height: 6)
 
-                    // Progress fill (from left)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.hitRewindPurple)
-                        .frame(width: progressWidth(for: barWidth), height: 6)
-
-                    // Diamond playhead marker
-                    Diamond()
-                        .fill(Color.white)
-                        .frame(width: 14, height: 14)
-                        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
-                        .offset(x: playheadPosition(for: barWidth) - 7) // Center the diamond
-                }
-                .frame(width: barWidth, height: 14) // Height to accommodate diamond
-                .frame(maxWidth: .infinity) // Center within container
+                // Diamond playhead marker
+                Diamond()
+                    .fill(Color.white)
+                    .frame(width: 14, height: 14)
+                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                    .offset(x: playheadPosition(for: barWidth) - 7) // Center the diamond
             }
+            .frame(width: barWidth, height: geometry.size.height) // Fill full height for bigger touch target
+            .frame(maxWidth: .infinity) // Center within container
             .contentShape(Rectangle())
-            .gesture(
+            .highPriorityGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         // Adjust for centered bar position

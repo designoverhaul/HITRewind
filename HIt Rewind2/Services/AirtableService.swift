@@ -74,7 +74,9 @@ class AirtableService: ObservableObject {
         let videoYear: [String]?
         let videoThumbnail: [String]?
         let videoDuration: [String]?
-        
+        let youtubeChannelId: String?
+        let youtubeChannelIcon: String?
+
         // Handle both possible field name variations from Airtable
         enum CodingKeys: String, CodingKey {
             case artistName = "artistName"
@@ -83,6 +85,8 @@ class AirtableService: ObservableObject {
             case videoYear = "VideoYear"   // Match exact Airtable field name
             case videoThumbnail = "VideoThumbnail"  // Match exact Airtable field name
             case videoDuration = "VideoDuration"    // Match exact Airtable field name
+            case youtubeChannelId = "youtubeChannelId"
+            case youtubeChannelIcon = "youtubeChannelIcon"
         }
     }
     
@@ -476,6 +480,8 @@ class AirtableService: ObservableObject {
         items.append(URLQueryItem(name: "fields[]", value: "VideoURLs"))
         items.append(URLQueryItem(name: "fields[]", value: "VideoTitle"))
         items.append(URLQueryItem(name: "fields[]", value: "VideoYear"))
+        items.append(URLQueryItem(name: "fields[]", value: "youtubeChannelId"))
+        items.append(URLQueryItem(name: "fields[]", value: "youtubeChannelIcon"))
 
         components.queryItems = items
         guard let url = components.url else { throw PlaylistError.invalidURL }
@@ -569,7 +575,9 @@ class AirtableService: ObservableObject {
             videoYears: videoYears,
             isVisible: isVisible,
             isLocked: false,
-            isPlaylist: false
+            isPlaylist: false,
+            youtubeChannelId: fields.youtubeChannelId,
+            youtubeChannelIcon: fields.youtubeChannelIcon
         )
         
         print("✅ Created playlist for \(artistName): \(videoURLs.count) videos, recent year \(String(mostRecentYear))")

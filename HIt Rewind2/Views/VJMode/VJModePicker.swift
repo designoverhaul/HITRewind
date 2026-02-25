@@ -40,7 +40,8 @@ struct VJModePicker: View {
             }
             .padding(.leading, 0)
             .padding(.trailing, 8)
-            .frame(maxHeight: .infinity, alignment: .center)
+            .padding(.bottom, 3)
+            .frame(maxHeight: .infinity, alignment: .bottom)
         }
         .mask(
             HStack(spacing: 0) {
@@ -128,6 +129,11 @@ struct HorizontalOnlyScrollView<Content: View>: UIViewRepresentable {
         let hostingController = UIHostingController(rootView: content)
         hostingController.view.backgroundColor = .clear
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        hostingController.view.insetsLayoutMarginsFromSafeArea = false
+        // Disable safe area insets so buttons aren't pushed up from screen edge
+        if #available(iOS 16.4, *) {
+            hostingController.safeAreaRegions = []
+        }
 
         scrollView.addSubview(hostingController.view)
 

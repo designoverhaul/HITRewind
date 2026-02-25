@@ -66,8 +66,10 @@ struct ConcertDetailView: View {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.hitRewindPurple)
-                            .frame(width: 44, height: 44)
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.black.opacity(0.5))
+                            .clipShape(Circle())
                     }
 
                     Spacer()

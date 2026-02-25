@@ -16,6 +16,7 @@ class DirectVideoService: ObservableObject {
     @Published var videos: [DirectVideoRecord] = []
     @Published var topTodayVideos: [DirectVideoRecord] = []
     @Published var isLoading = false
+    @Published var isLoadingCatalog = false
     @Published var errorMessage: String?
 
     private let baseURL = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/tblNwqwVyflL8hNDy"
@@ -95,7 +96,12 @@ class DirectVideoService: ObservableObject {
     }
 
     private func fetchVideosFromNetwork(year: String? = nil) async {
-        isLoading = true
+        // Only show full-screen loading spinner if we have nothing to show yet
+        let showMainSpinner = topTodayVideos.isEmpty && videos.isEmpty
+        if showMainSpinner {
+            isLoading = true
+        }
+        isLoadingCatalog = true
         errorMessage = nil
 
         do {
@@ -188,6 +194,7 @@ class DirectVideoService: ObservableObject {
         }
 
         isLoading = false
+        isLoadingCatalog = false
     }
 
     // Get available years from loaded videos

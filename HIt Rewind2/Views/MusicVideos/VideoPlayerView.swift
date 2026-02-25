@@ -186,19 +186,38 @@ class YouTubePlayerCoordinator: NSObject, ObservableObject, YTPlayerViewDelegate
     }
 
     func getCurrentTime() {
-        playerView?.currentTime { [weak self] time, error in
-            // Use Task to defer state updates until after the current view update cycle
+        guard let pv = playerView else {
+            print("⏱️ getCurrentTime: playerView is NIL")
+            return
+        }
+        pv.currentTime { [weak self] time, error in
+            if let error = error {
+                print("⏱️ getCurrentTime callback ERROR: \(error)")
+            }
             Task { @MainActor in
+                if time != self?.currentTime {
+                    print("⏱️ getCurrentTime: \(time) (was \(self?.currentTime ?? -1))")
+                }
                 self?.currentTime = time
             }
         }
     }
 
     func getDuration() {
-        playerView?.duration { [weak self] duration, error in
-            // Use Task to defer state updates until after the current view update cycle
+        guard let pv = playerView else {
+            print("⏱️ getDuration: playerView is NIL")
+            return
+        }
+        pv.duration { [weak self] duration, error in
+            if let error = error {
+                print("⏱️ getDuration callback ERROR: \(error)")
+            }
             Task { @MainActor in
-                self?.duration = Float(duration)
+                let floatDuration = Float(duration)
+                if floatDuration != self?.duration {
+                    print("⏱️ getDuration: \(floatDuration) (was \(self?.duration ?? -1))")
+                }
+                self?.duration = floatDuration
             }
         }
     }

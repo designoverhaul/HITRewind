@@ -26,6 +26,8 @@ struct PlaylistFields: Codable {
     var isVisible: [Bool?]
     var isLocked: Bool?
     var isPlaylist: Bool?
+    var youtubeChannelId: String?
+    var youtubeChannelIcon: String?
 
     enum CodingKeys: String, CodingKey {
         case thumbnail
@@ -40,6 +42,8 @@ struct PlaylistFields: Codable {
         case isPlaylist
         case artistNames
         case artistName // alias used by Airtable
+        case youtubeChannelId
+        case youtubeChannelIcon
     }
 
     init(from decoder: Decoder) throws {
@@ -60,6 +64,8 @@ struct PlaylistFields: Codable {
         if artistNames == nil {
             artistNames = try container.decodeIfPresent([String].self, forKey: .artistName)
         }
+        youtubeChannelId = try container.decodeIfPresent(String.self, forKey: .youtubeChannelId)
+        youtubeChannelIcon = try container.decodeIfPresent(String.self, forKey: .youtubeChannelIcon)
     }
 
     init(
@@ -73,7 +79,9 @@ struct PlaylistFields: Codable {
         videoYears: [String]? = nil,
         isVisible: [Bool?] = [],
         isLocked: Bool? = nil,
-        isPlaylist: Bool? = nil
+        isPlaylist: Bool? = nil,
+        youtubeChannelId: String? = nil,
+        youtubeChannelIcon: String? = nil
     ) {
         self.thumbnail = thumbnail
         self.year = year
@@ -86,6 +94,8 @@ struct PlaylistFields: Codable {
         self.isVisible = isVisible
         self.isLocked = isLocked
         self.isPlaylist = isPlaylist
+        self.youtubeChannelId = youtubeChannelId
+        self.youtubeChannelIcon = youtubeChannelIcon
     }
 
     func encode(to encoder: Encoder) throws {
@@ -101,6 +111,8 @@ struct PlaylistFields: Codable {
         try container.encodeIfPresent(isLocked, forKey: .isLocked)
         try container.encodeIfPresent(isPlaylist, forKey: .isPlaylist)
         try container.encodeIfPresent(artistNames, forKey: .artistNames)
+        try container.encodeIfPresent(youtubeChannelId, forKey: .youtubeChannelId)
+        try container.encodeIfPresent(youtubeChannelIcon, forKey: .youtubeChannelIcon)
     }
 }
 

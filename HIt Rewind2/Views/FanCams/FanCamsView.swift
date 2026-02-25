@@ -16,6 +16,46 @@ struct FanCamsView: View {
     @State private var selectedArtist: Playlist?
     @State private var visibleVideoIndices: [Int] = []
     @State private var isLoadingVideos: Bool = false
+    @State private var selectedTab: VideoSource = .liveLibrary
+    @State private var officialChannelVideos: [YouTubeChannelVideo] = []
+    @State private var isLoadingOfficialVideos: Bool = false
+    @State private var officialNextPageToken: String?
+    @State private var isLoadingMoreOfficialVideos: Bool = false
+    @State private var officialQuotaReached: Bool = false
+
+    private enum VideoSource {
+        case liveLibrary
+        case official
+    }
+
+    // MARK: - Official Video Daily Rate Limit
+    private static let officialDailyLimit = 10
+    private static let officialCountKey = "officialVideoFetchCount"
+    private static let officialDateKey = "officialVideoFetchDate"
+
+    private func canFetchOfficialVideos() -> Bool {
+        let today = Calendar.current.startOfDay(for: Date())
+        let lastDate = UserDefaults.standard.object(forKey: Self.officialDateKey) as? Date ?? .distantPast
+        if Calendar.current.startOfDay(for: lastDate) != today {
+            // New day, reset counter
+            UserDefaults.standard.set(0, forKey: Self.officialCountKey)
+            UserDefaults.standard.set(today, forKey: Self.officialDateKey)
+        }
+        let count = UserDefaults.standard.integer(forKey: Self.officialCountKey)
+        return count < Self.officialDailyLimit
+    }
+
+    private func incrementOfficialFetchCount() {
+        let today = Calendar.current.startOfDay(for: Date())
+        let lastDate = UserDefaults.standard.object(forKey: Self.officialDateKey) as? Date ?? .distantPast
+        if Calendar.current.startOfDay(for: lastDate) != today {
+            UserDefaults.standard.set(1, forKey: Self.officialCountKey)
+            UserDefaults.standard.set(today, forKey: Self.officialDateKey)
+        } else {
+            let count = UserDefaults.standard.integer(forKey: Self.officialCountKey)
+            UserDefaults.standard.set(count + 1, forKey: Self.officialCountKey)
+        }
+    }
 
     // Device and orientation detection
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -109,7 +149,7 @@ struct FanCamsView: View {
 
                 // Column 2: Artists list for selected category
                 artistsColumn
-                    .frame(width: geometry.size.width * 0.28 - 1)
+                    .frame(width: max(1, geometry.size.width * 0.28 - 1))
                     .background(Color.hitRewindBackground.opacity(0.7))
 
                 // Divider
@@ -119,9 +159,11 @@ struct FanCamsView: View {
 
                 // Column 3: Videos for selected artist
                 videosColumn
-                    .frame(width: geometry.size.width * 0.50 - 1)
+                    .padding(.leading, 6)
+                    .frame(maxWidth: .infinity)
                     .background(Color.hitRewindBackground.opacity(0.5))
             }
+            .ignoresSafeArea(.container, edges: .trailing)
         }
     }
 
@@ -214,8 +256,92 @@ struct FanCamsView: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity)
-            } else if selectedArtist != nil && !visibleVideos.isEmpty {
+            } else if selectedArtist != nil {
+                if selectedTab == .liveLibrary || selectedArtist?.fields.youtubeChannelId == nil {
+                    liveLibraryGrid
+                } else {
+                    officialChannelGrid
+                }
+            } else {
+                VStack {
+                    Spacer()
+                    Image(systemName: "music.mic")
+                        .font(.system(size: 36))
+                        .foregroundColor(.hitRewindSecondaryText.opacity(0.5))
+                    Text("Select an artist")
+                        .font(.system(size: 16))
+                        .foregroundColor(.hitRewindSecondaryText)
+                        .padding(.top, 8)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .onChange(of: selectedTab) { _, newValue in
+            if newValue == .official && officialChannelVideos.isEmpty && !isLoadingOfficialVideos {
+                Task {
+                    await loadOfficialChannelVideos()
+                }
+            }
+        }
+    }
+
+    // MARK: - Channel Header
+    private var channelHeader: some View {
+        HStack(spacing: 10) {
+            if let iconUrl = selectedArtist?.fields.youtubeChannelIcon,
+               let url = URL(string: iconUrl) {
+                AsyncImage(url: url) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                }
+                .frame(width: 119, height: 119)
+                .clipShape(Circle())
+            }
+
+            Text(selectedArtist?.fields.title ?? "")
+                .font(.custom(AppFont.ticketingName(), size: 20))
+                .foregroundColor(.hitRewindPurple)
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Video Source Picker
+    private var videoPicker: some View {
+        Picker("Source", selection: $selectedTab) {
+            Text("Live Library").tag(VideoSource.liveLibrary)
+            Text("Official").tag(VideoSource.official)
+        }
+        .pickerStyle(.segmented)
+    }
+
+    // MARK: - Scrollable Channel Header
+    @ViewBuilder
+    private var scrollableChannelHeader: some View {
+        if let channelId = selectedArtist?.fields.youtubeChannelId, !channelId.isEmpty {
+            channelHeader
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
+                .padding(.bottom, 6)
+
+            videoPicker
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+        }
+    }
+
+    // MARK: - Live Library Grid
+    private var liveLibraryGrid: some View {
+        Group {
+            if !visibleVideos.isEmpty {
                 ScrollView {
+                    scrollableChannelHeader
+
                     LazyVGrid(columns: videoGridColumns, spacing: 12) {
                         ForEach(visibleVideos) { item in
                             Button(action: {
@@ -238,18 +364,131 @@ struct FanCamsView: View {
                     .padding(.bottom, 16)
                 }
             } else {
-                VStack {
-                    Spacer()
-                    Image(systemName: "music.mic")
-                        .font(.system(size: 36))
-                        .foregroundColor(.hitRewindSecondaryText.opacity(0.5))
-                    Text("Select an artist")
-                        .font(.system(size: 16))
-                        .foregroundColor(.hitRewindSecondaryText)
-                        .padding(.top, 8)
-                    Spacer()
+                ScrollView {
+                    scrollableChannelHeader
+
+                    VStack {
+                        Spacer().frame(height: 40)
+                        Text("No videos")
+                            .font(.system(size: 16))
+                            .foregroundColor(.hitRewindSecondaryText)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    // MARK: - Official Channel Grid
+    private var officialChannelGrid: some View {
+        Group {
+            if officialQuotaReached {
+                ScrollView {
+                    scrollableChannelHeader
+
+                    VStack(spacing: 8) {
+                        Spacer().frame(height: 40)
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 36))
+                            .foregroundColor(.hitRewindSecondaryText.opacity(0.5))
+                        Text("Daily limit reached")
+                            .font(.system(size: 16))
+                            .foregroundColor(.hitRewindSecondaryText)
+                        Text("Check back tomorrow")
+                            .font(.system(size: 13))
+                            .foregroundColor(.hitRewindSecondaryText.opacity(0.7))
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            } else if isLoadingOfficialVideos {
+                ScrollView {
+                    scrollableChannelHeader
+
+                    VStack {
+                        Spacer().frame(height: 40)
+                        ProgressView()
+                            .scaleEffect(1.2)
+                        Text("Loading...")
+                            .font(.system(size: 14))
+                            .foregroundColor(.hitRewindSecondaryText)
+                            .padding(.top, 8)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            } else if officialChannelVideos.isEmpty {
+                ScrollView {
+                    scrollableChannelHeader
+
+                    VStack {
+                        Spacer().frame(height: 40)
+                        Image(systemName: "video.slash")
+                            .font(.system(size: 36))
+                            .foregroundColor(.hitRewindSecondaryText.opacity(0.5))
+                        Text("No videos found")
+                            .font(.system(size: 16))
+                            .foregroundColor(.hitRewindSecondaryText)
+                            .padding(.top, 8)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            } else {
+                ScrollView {
+                    scrollableChannelHeader
+
+                    LazyVGrid(columns: videoGridColumns, spacing: 12) {
+                        ForEach(officialChannelVideos) { video in
+                            Button(action: {
+                                handleOfficialVideoTap(video: video)
+                            }) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    VideoThumbnailView(
+                                        videoId: video.videoId,
+                                        title: video.title,
+                                        artist: selectedArtist?.fields.title ?? "",
+                                        year: "",
+                                        onTap: {},
+                                        hideArtistName: true
+                                    )
+
+                                    Text(video.formattedPublishDate)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.hitRewindSecondaryText)
+                                        .padding(.leading, 2)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.top, 12)
+
+                    // Load More button
+                    if officialNextPageToken != nil {
+                        Button(action: {
+                            Task {
+                                await loadMoreOfficialVideos()
+                            }
+                        }) {
+                            if isLoadingMoreOfficialVideos {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                            } else {
+                                Text("Load More")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.hitRewindPurple)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Color.hitRewindPurple.opacity(0.15))
+                                    .cornerRadius(8)
+                            }
+                        }
+                        .disabled(isLoadingMoreOfficialVideos)
+                        .padding(.horizontal, 8)
+                    }
+
+                    Spacer().frame(height: 16)
+                }
             }
         }
     }
@@ -281,10 +520,10 @@ struct FanCamsView: View {
     }
 
     private var videoGridColumns: [GridItem] {
-        // 2 columns in the video area
+        // 2 columns in the video area, top-aligned so thumbnails stay in line
         return [
-            GridItem(.flexible(), spacing: 12),
-            GridItem(.flexible(), spacing: 12)
+            GridItem(.flexible(), spacing: 12, alignment: .top),
+            GridItem(.flexible(), spacing: 12, alignment: .top)
         ]
     }
 
@@ -401,6 +640,9 @@ struct FanCamsView: View {
         selectedCategory = category
         selectedArtist = nil
         visibleVideoIndices = []
+        selectedTab = .liveLibrary
+        officialChannelVideos = []
+        officialNextPageToken = nil
 
         Task {
             await airtableService.fetchVideoCounts(for: category.artists)
@@ -410,6 +652,10 @@ struct FanCamsView: View {
     private func handleArtistSelection(_ artist: Playlist) {
         print("👤 Artist selected: \(artist.fields.title)")
         isLoadingVideos = true
+        selectedTab = .liveLibrary
+        officialChannelVideos = []
+        officialNextPageToken = nil
+        officialQuotaReached = false
 
         Task {
             print("🔎 Loading videos for artist: \(artist.fields.title)")
@@ -429,6 +675,98 @@ struct FanCamsView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Official Channel Video Loading
+    @MainActor
+    private func loadOfficialChannelVideos() async {
+        guard let channelId = selectedArtist?.fields.youtubeChannelId, !channelId.isEmpty else { return }
+
+        if !canFetchOfficialVideos() {
+            officialQuotaReached = true
+            return
+        }
+
+        isLoadingOfficialVideos = true
+        officialQuotaReached = false
+        incrementOfficialFetchCount()
+        do {
+            let result = try await youtubeService.fetchChannelVideos(channelId: channelId)
+            officialChannelVideos = result.videos
+            officialNextPageToken = result.nextPageToken
+        } catch {
+            print("❌ Error loading official channel videos: \(error)")
+            officialChannelVideos = []
+            officialNextPageToken = nil
+        }
+        isLoadingOfficialVideos = false
+    }
+
+    @MainActor
+    private func loadMoreOfficialVideos() async {
+        guard let channelId = selectedArtist?.fields.youtubeChannelId,
+              let pageToken = officialNextPageToken else { return }
+
+        isLoadingMoreOfficialVideos = true
+        do {
+            let result = try await youtubeService.fetchChannelVideos(channelId: channelId, pageToken: pageToken)
+            officialChannelVideos.append(contentsOf: result.videos)
+            officialNextPageToken = result.nextPageToken
+        } catch {
+            print("❌ Error loading more official videos: \(error)")
+        }
+        isLoadingMoreOfficialVideos = false
+    }
+
+    private func handleOfficialVideoTap(video: YouTubeChannelVideo) {
+        print("🎥 Official video \(video.videoId) tapped")
+
+        if PaywallService.shared.testSubscriberMode {
+            openOfficialVideoInMiniPlayer(video: video)
+            return
+        }
+
+        Task { @MainActor in
+            let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
+            if isSubscribed {
+                openOfficialVideoInMiniPlayer(video: video)
+            } else {
+                PaywallService.shared.presentPaywallWithOrientation {
+                    openOfficialVideoInMiniPlayer(video: video)
+                }
+            }
+        }
+    }
+
+    private func openOfficialVideoInMiniPlayer(video: YouTubeChannelVideo) {
+        let allVideos = officialChannelVideos.map { v in
+            PlaylistVideo(
+                id: v.videoId,
+                youtubeURL: "https://www.youtube.com/watch?v=\(v.videoId)",
+                title: v.title,
+                artist: selectedArtist?.fields.title ?? "",
+                year: v.publishedAt.count >= 4 ? String(v.publishedAt.prefix(4)) : ""
+            )
+        }
+
+        guard let currentIndex = allVideos.firstIndex(where: { $0.id == video.videoId }) else { return }
+
+        let categoryArtists = selectedCategory?.artists ?? []
+        let artistName = selectedArtist?.fields.title ?? ""
+        var allArtistVideos: [String: [PlaylistVideo]] = [:]
+        allArtistVideos[artistName] = allVideos
+
+        let playlistContext = PlaylistContext(
+            videos: allVideos,
+            currentIndex: currentIndex,
+            sourceType: .live(artistName: artistName, categoryArtists: categoryArtists, allArtistVideos: allArtistVideos)
+        )
+
+        MiniPlayerManager.shared.openVJMode(
+            video: allVideos[currentIndex],
+            videos: allVideos,
+            playlistContext: playlistContext
+        )
     }
 
     private func updateVisibleVideoIndices() {

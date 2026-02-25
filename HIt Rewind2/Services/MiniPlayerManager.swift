@@ -47,9 +47,17 @@ final class MiniPlayerManager: ObservableObject {
 
     var onClose: (() -> Void)?
 
+    // Forward coordinator's objectWillChange so PlayerOverlay re-renders
+    // when currentTime/duration change
+    private var coordinatorCancellable: AnyCancellable?
+
     // MARK: - Init
 
-    private init() {}
+    private init() {
+        coordinatorCancellable = playerCoordinator.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+    }
 
     // MARK: - Source Type Helpers
 

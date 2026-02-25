@@ -67,6 +67,62 @@ struct YouTubeStatus: Codable {
     let embeddable: Bool?
 }
 
+// MARK: - YouTube Search Models (for channel video fetching)
+struct YouTubeSearchResponse: Codable {
+    let items: [YouTubeSearchItem]
+    let nextPageToken: String?
+}
+
+struct YouTubeSearchItem: Codable {
+    let id: YouTubeSearchVideoId
+    let snippet: YouTubeVideoSnippet
+}
+
+struct YouTubeSearchVideoId: Codable {
+    let videoId: String?
+}
+
+struct YouTubeChannelVideo: Identifiable {
+    let id: String
+    let videoId: String
+    let title: String
+    let thumbnailUrl: String
+    let publishedAt: String
+    let duration: String
+
+    init(videoId: String, title: String, thumbnailUrl: String, publishedAt: String, duration: String) {
+        self.id = videoId
+        self.videoId = videoId
+        self.title = title
+        self.thumbnailUrl = thumbnailUrl
+        self.publishedAt = publishedAt
+        self.duration = duration
+    }
+
+    var formattedPublishDate: String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        // Try with fractional seconds first, then without
+        if let date = formatter.date(from: publishedAt) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "MMM d, yyyy"
+            return displayFormatter.string(from: date)
+        }
+        formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: publishedAt) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "MMM d, yyyy"
+            return displayFormatter.string(from: date)
+        }
+        return String(publishedAt.prefix(10))
+    }
+}
+
+struct YouTubeChannelResult {
+    let videos: [YouTubeChannelVideo]
+    let nextPageToken: String?
+}
+
 // MARK: - YouTube Service
 class YouTubeService: ObservableObject {
     @Published var isLoading = false
@@ -423,6 +479,144 @@ class YouTubeService: ObservableObject {
         let regex = try? NSRegularExpression(pattern: videoIdPattern)
         let range = NSRange(location: 0, length: videoId.utf16.count)
         return regex?.firstMatch(in: videoId, range: range) != nil
+    }
+
+    // MARK: - Channel Video Fetching
+    private var channelVideoCache: [String: YouTubeChannelResult] = [:]
+
+    /// Extracts a raw YouTube channel ID from various formats:
+    /// - Raw ID: "UCqECaJ8Gagnn7YCbPEzWH6g"
+    /// - Channel URL: "https://www.youtube.com/channel/UCqECaJ8Gagnn7YCbPEzWH6g"
+    /// - Handle URL: "https://www.youtube.com/@ArtistName" (requires API resolve)
+    private func resolveChannelId(_ input: String) async throws -> String {
+        // Already a raw channel ID
+        if input.hasPrefix("UC") && !input.contains("/") {
+            return input
+        }
+
+        // Channel URL format: extract ID after /channel/
+        if let range = input.range(of: "/channel/") {
+            return String(input[range.upperBound...])
+        }
+
+        // Handle URL format: extract handle and resolve via API
+        if let range = input.range(of: "/@") {
+            let handle = String(input[range.upperBound...])
+
+            // Check handle resolve cache
+            if let cached = handleToChannelIdCache[handle] {
+                return cached
+            }
+
+            let apiKey = YouTubeConfig.apiKey
+            let urlString = "\(YouTubeConfig.baseURL)/channels?part=id&forHandle=\(handle)&key=\(apiKey)"
+            guard let url = URL(string: urlString) else {
+                throw YouTubeError.invalidURL
+            }
+
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let items = json["items"] as? [[String: Any]],
+               let channelId = items.first?["id"] as? String {
+                handleToChannelIdCache[handle] = channelId
+                return channelId
+            }
+
+            throw YouTubeError.videoNotFound
+        }
+
+        // Fallback: treat as raw ID
+        return input
+    }
+
+    private var handleToChannelIdCache: [String: String] = [:]
+
+    func fetchChannelVideos(channelId: String, maxResults: Int = 40, pageToken: String? = nil) async throws -> YouTubeChannelResult {
+        // Resolve the channel ID from URL/handle format
+        let resolvedId = try await resolveChannelId(channelId)
+
+        // Check cache for first page only (no pageToken)
+        if pageToken == nil, let cached = channelVideoCache[resolvedId] {
+            print("📦 Using cached videos for channel: \(resolvedId)")
+            return cached
+        }
+
+        let apiKey = YouTubeConfig.apiKey
+        guard !apiKey.isEmpty && apiKey != "YOUR_YOUTUBE_API_KEY_HERE" else {
+            throw YouTubeError.missingAPIKey
+        }
+
+        var urlString = "\(YouTubeConfig.baseURL)/search?part=snippet&channelId=\(resolvedId)&type=video&order=viewCount&maxResults=\(maxResults)&key=\(apiKey)"
+        if let pageToken = pageToken {
+            urlString += "&pageToken=\(pageToken)"
+        }
+
+        guard let url = URL(string: urlString) else {
+            throw YouTubeError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 15.0
+
+        let (data, response) = try await session.data(for: request)
+
+        if let httpResponse = response as? HTTPURLResponse {
+            guard 200...299 ~= httpResponse.statusCode else {
+                print("🎬 YouTube Search API HTTP error: \(httpResponse.statusCode)")
+                throw YouTubeError.networkError(NSError(domain: "HTTPError", code: httpResponse.statusCode))
+            }
+        }
+
+        let searchResponse = try JSONDecoder().decode(YouTubeSearchResponse.self, from: data)
+        let videoIds = searchResponse.items.compactMap { $0.id.videoId }
+
+        guard !videoIds.isEmpty else {
+            return YouTubeChannelResult(videos: [], nextPageToken: nil)
+        }
+
+        // Batch fetch video details (duration, etc.) - gracefully degrade if this fails
+        let videoInfoMap: [String: YouTubeVideo]
+        do {
+            videoInfoMap = try await getBatchVideoInfo(videoIds: videoIds)
+        } catch {
+            print("⚠️ Failed to fetch video details, using search snippet data: \(error)")
+            // Fall back to search snippet data only (no duration)
+            let fallbackVideos: [YouTubeChannelVideo] = searchResponse.items.compactMap { item in
+                guard let videoId = item.id.videoId else { return nil }
+                return YouTubeChannelVideo(
+                    videoId: videoId,
+                    title: item.snippet.title,
+                    thumbnailUrl: item.snippet.thumbnails.high?.url ?? item.snippet.thumbnails.medium?.url ?? "",
+                    publishedAt: item.snippet.publishedAt,
+                    duration: ""
+                )
+            }
+            let fallbackResult = YouTubeChannelResult(videos: fallbackVideos, nextPageToken: searchResponse.nextPageToken)
+            if pageToken == nil { channelVideoCache[resolvedId] = fallbackResult }
+            return fallbackResult
+        }
+
+        let videos: [YouTubeChannelVideo] = searchResponse.items.compactMap { item in
+            guard let videoId = item.id.videoId else { return nil }
+            let videoInfo = videoInfoMap[videoId]
+            return YouTubeChannelVideo(
+                videoId: videoId,
+                title: videoInfo?.snippet.title ?? item.snippet.title,
+                thumbnailUrl: videoInfo?.snippet.thumbnails.high?.url ?? item.snippet.thumbnails.high?.url ?? item.snippet.thumbnails.medium?.url ?? "",
+                publishedAt: videoInfo?.snippet.publishedAt ?? item.snippet.publishedAt,
+                duration: videoInfo?.contentDetails?.duration ?? ""
+            )
+        }
+
+        let result = YouTubeChannelResult(videos: videos, nextPageToken: searchResponse.nextPageToken)
+
+        // Cache first page results
+        if pageToken == nil {
+            channelVideoCache[resolvedId] = result
+        }
+
+        print("✅ Loaded \(videos.count) official channel videos (nextPage: \(searchResponse.nextPageToken ?? "none"))")
+        return result
     }
 
     // MARK: - Duration Formatting

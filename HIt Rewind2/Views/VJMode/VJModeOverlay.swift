@@ -74,8 +74,8 @@ struct VJModeOverlay: View {
     }
 
     // Bottom bar height constants
-    private var progressBarHeight: CGFloat { 20 }
-    private var pickerHeight: CGFloat { 50 }
+    private var progressBarHeight: CGFloat { 36 }
+    private var pickerHeight: CGFloat { 34 }
     private var bottomBarHeight: CGFloat { showPicker ? progressBarHeight + pickerHeight : progressBarHeight }
 
     var body: some View {
@@ -129,99 +129,114 @@ struct VJModeOverlay: View {
                         .transition(.opacity)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                 // Right side panels - slide in/out from right
-                HStack(spacing: 0) {
-                    Spacer()
+                // Constrained to video area height so bottom bar stays touchable
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        Spacer()
+                            .allowsHitTesting(false)
 
-                    VJModeControlStrip(
-                        playerCoordinator: playerCoordinator,
-                        isFavorited: $isFavorited,
-                        artistName: currentVideo.artist,
-                        showArtistButton: !isLiveMode,
-                        onFavoriteToggle: toggleFavorite,
-                        onArtistTap: loadArtistVideos,
-                        onNextVideo: playNextVideo
-                    )
-                    .frame(width: controlStripWidth)
-                    .padding(.horizontal, 6)
+                        VJModeControlStrip(
+                            playerCoordinator: playerCoordinator,
+                            isFavorited: $isFavorited,
+                            artistName: currentVideo.artist,
+                            showArtistButton: !isLiveMode,
+                            onFavoriteToggle: toggleFavorite,
+                            onArtistTap: loadArtistVideos,
+                            onNextVideo: playNextVideo
+                        )
+                        .frame(width: controlStripWidth)
+                        .padding(.horizontal, 6)
 
-                    VJModeVideoStack(
-                        videos: displayedVideos,
-                        currentVideoId: currentVideo.id,
-                        onVideoSelect: playVideo
-                    )
-                    .frame(width: videoStackWidth)
+                        VJModeVideoStack(
+                            videos: displayedVideos,
+                            currentVideoId: currentVideo.id,
+                            onVideoSelect: playVideo
+                        )
+                        .frame(width: videoStackWidth)
+                    }
+                    .frame(height: controlsVisible ? geometry.size.height - bottomBarHeight : geometry.size.height)
+
+                    Spacer(minLength: 0)
+                        .allowsHitTesting(false)
                 }
                 .offset(x: controlsVisible ? 0 : rightPanelWidth + 20)
                 .animation(.easeInOut(duration: 0.35), value: controlsVisible)
 
                 // Left-side buttons (always visible) - top and bottom aligned closer to dynamic island
-                HStack {
-                    VStack {
-                        // Top buttons (above camera/island) - moved down 10px
-                        VStack(spacing: 10) {
-                            // Exit VJ Mode button - back chevron
-                            Button(action: exitVJMode) {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 40, height: 40)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
-                            }
-
-                            // Fullscreen toggle button
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.35)) {
-                                    controlsVisible.toggle()
+                // Only covers video area height so it doesn't block bottom bar touches
+                VStack(spacing: 0) {
+                    HStack {
+                        VStack {
+                            // Top buttons (above camera/island) - moved down 10px
+                            VStack(spacing: 10) {
+                                // Exit VJ Mode button - back chevron
+                                Button(action: exitVJMode) {
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 40, height: 40)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
                                 }
-                            }) {
-                                Image(systemName: controlsVisible ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .frame(width: 40, height: 40)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
+
+                                // Fullscreen toggle button
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.35)) {
+                                        controlsVisible.toggle()
+                                    }
+                                }) {
+                                    Image(systemName: controlsVisible ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .frame(width: 40, height: 40)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
+                                }
                             }
+                            .padding(12)
+                            .padding(.top, 10)
+
+                            Spacer()
+
+                            // Bottom buttons (below camera/island) - moved up 10px
+                            VStack(spacing: 10) {
+                                // AirPlay button
+                                Button(action: {
+                                    AirPlayHelper.shared.showAirPlayPicker()
+                                }) {
+                                    Image(systemName: isAirPlayActive ? "airplayvideo.circle.fill" : "airplayvideo")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(isAirPlayActive ? .hitRewindPurple : .white)
+                                        .frame(width: 40, height: 40)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
+                                }
+
+                                // Screen Share info button
+                                Button(action: {
+                                    showScreenShareTutorial = true
+                                }) {
+                                    Image(systemName: "music.note.tv")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .frame(width: 40, height: 40)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
+                                }
+                            }
+                            .padding(12)
+                            .padding(.bottom, 10)
                         }
-                        .padding(12)
-                        .padding(.top, 10)
 
                         Spacer()
-
-                        // Bottom buttons (below camera/island) - moved up 10px
-                        VStack(spacing: 10) {
-                            // AirPlay button
-                            Button(action: {
-                                AirPlayHelper.shared.showAirPlayPicker()
-                            }) {
-                                Image(systemName: isAirPlayActive ? "airplayvideo.circle.fill" : "airplayvideo")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundColor(isAirPlayActive ? .hitRewindPurple : .white)
-                                    .frame(width: 40, height: 40)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
-                            }
-
-                            // Screen Share info button
-                            Button(action: {
-                                showScreenShareTutorial = true
-                            }) {
-                                Image(systemName: "music.note.tv")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .frame(width: 40, height: 40)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
-                            }
-                        }
-                        .padding(12)
-                        .padding(.bottom, 10)
                     }
+                    .frame(height: controlsVisible ? geometry.size.height - bottomBarHeight : geometry.size.height)
 
-                    Spacer()
+                    Spacer(minLength: 0)
+                        .allowsHitTesting(false)
                 }
 
                 // Tap to show controls when hidden

@@ -23,7 +23,7 @@ struct AirtableConfig {
 
 // MARK: - YouTube Configuration
 struct YouTubeConfig {
-    static let apiKey = "AIzaSyChKL0fUHEfc1AlKe0ks53Y2wT78gxLiJE"
+    static let apiKey = "AIzaSyBiNw2RoGEbxTMGNiApi3TBZ-EH8oQXy24"
     static let baseURL = "https://www.googleapis.com/youtube/v3"
 }
 

@@ -33,8 +33,12 @@ struct NEWVideosView: View {
             }
         }
         .task {
+            // Load TopToday first (small, fast) so user sees content immediately
+            selectedYear = kSpotifyTop50Year
+            await videoService.fetchTopTodayVideos()
+
+            // Then load the full catalog in the background
             await videoService.fetchVideos()
-            selectFirstAvailableYear()
         }
     }
 
@@ -118,7 +122,7 @@ struct NEWVideosView: View {
     // MARK: - Video Grid Content
     private var videoGridContent: some View {
         Group {
-            if videoService.isLoading {
+            if videoService.isLoading && currentYearVideos.isEmpty {
                 LoadingView()
             } else if let errorMessage = videoService.errorMessage {
                 ErrorView(message: errorMessage) {
@@ -189,7 +193,7 @@ struct NEWVideosView: View {
     // MARK: - Video Grid View (iPad)
     private var videoGridView: some View {
         Group {
-            if videoService.isLoading {
+            if videoService.isLoading && currentYearVideos.isEmpty {
                 LoadingView()
             } else if let errorMessage = videoService.errorMessage {
                 ErrorView(message: errorMessage) {
