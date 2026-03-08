@@ -10,7 +10,7 @@ import SuperwallKit
 
 struct MusicVideosView: View {
     @ObservedObject private var airtableService = AirtableService.shared
-    @StateObject private var youtubeService = YouTubeService()
+    @StateObject private var youtubeService = YouTubeService.shared
     @StateObject private var playerCoordinator = YouTubePlayerCoordinator()
 
     @State private var selectedYear: Int?
@@ -526,9 +526,7 @@ private extension MusicVideosView {
 struct LoadingView: View {
     var body: some View {
         VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.5)
-                .tint(.hitRewindPurple)
+            SpinningRecordView(size: 50)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

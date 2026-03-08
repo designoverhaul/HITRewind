@@ -125,6 +125,8 @@ struct YouTubeChannelResult {
 
 // MARK: - YouTube Service
 class YouTubeService: ObservableObject {
+    static let shared = YouTubeService()
+
     @Published var isLoading = false
     @Published var errorMessage: String?
 

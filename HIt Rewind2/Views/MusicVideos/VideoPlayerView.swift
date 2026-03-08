@@ -595,8 +595,7 @@ extension SingleVideoView {
                             if isLoadingLiveArtist {
                                 HStack {
                                     Spacer()
-                                    ProgressView()
-                                        .tint(.hitRewindPurple)
+                                    SpinningRecordView(size: 30)
                                     Spacer()
                                 }
                                 .padding(.vertical, 12)
@@ -609,8 +608,7 @@ extension SingleVideoView {
                             if isLoadingArtistMode {
                                 HStack {
                                     Spacer()
-                                    ProgressView()
-                                        .tint(.hitRewindPurple)
+                                    SpinningRecordView(size: 30)
                                     Spacer()
                                 }
                                 .padding(.vertical, 12)

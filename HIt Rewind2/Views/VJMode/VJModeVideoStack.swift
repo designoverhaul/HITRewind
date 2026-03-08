@@ -13,6 +13,7 @@ struct VJModeVideoStack: View {
     let videos: [PlaylistVideo]
     let currentVideoId: String
     let onVideoSelect: (PlaylistVideo) -> Void
+    var showYearSubtitle: Bool = false
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -21,8 +22,9 @@ struct VJModeVideoStack: View {
                     ForEach(videos) { video in
                         VJModeVideoThumbnail(
                             video: video,
-                            rank: video.rank, // Only show rank if video has actual Billboard rank
+                            rank: video.rank,
                             isCurrentlyPlaying: video.id == currentVideoId,
+                            showYearSubtitle: showYearSubtitle,
                             onTap: { onVideoSelect(video) }
                         )
                         .id(video.id)
@@ -38,11 +40,9 @@ struct VJModeVideoStack: View {
                 }
             }
             .onChange(of: videos.map { $0.id }) { _, _ in
-                // Scroll to top (#1 video) when video list changes (e.g., year selection)
-                if let firstVideo = videos.first {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        proxy.scrollTo(firstVideo.id, anchor: .top)
-                    }
+                // Scroll to current video when video list changes
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    proxy.scrollTo(currentVideoId, anchor: .center)
                 }
             }
             .onAppear {
@@ -58,8 +58,9 @@ struct VJModeVideoStack: View {
 /// Compact video thumbnail for VJ Mode stack
 struct VJModeVideoThumbnail: View {
     let video: PlaylistVideo
-    let rank: Int? // Optional - only show badge if video has actual Billboard rank
+    let rank: Int?
     let isCurrentlyPlaying: Bool
+    var showYearSubtitle: Bool = false
     let onTap: () -> Void
 
     var body: some View {
@@ -115,19 +116,26 @@ struct VJModeVideoThumbnail: View {
                 }
                 .frame(height: 56)
 
-                // Title (compact, 1 line)
+                // Title
                 Text(video.title)
                     .font(.system(size: 11, weight: isCurrentlyPlaying ? .semibold : .regular))
                     .foregroundColor(isCurrentlyPlaying ? .white : .white.opacity(0.8))
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Artist name
-                Text(video.artist)
-                    .font(.system(size: 11))
-                    .foregroundColor(.hitRewindPurple)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                // Subtitle
+                HStack {
+                    Text(showYearSubtitle && !video.year.isEmpty ? video.year : video.artist)
+                        .font(.system(size: 11))
+                        .foregroundColor(.hitRewindPurple)
+                        .lineLimit(1)
+                    Spacer()
+                    if let duration = video.duration, !duration.isEmpty {
+                        Text(duration)
+                            .font(.system(size: 10))
+                            .foregroundColor(.hitRewindSecondaryText)
+                    }
+                }
             }
             .padding(.horizontal, 4)
             .padding(.vertical, 3)

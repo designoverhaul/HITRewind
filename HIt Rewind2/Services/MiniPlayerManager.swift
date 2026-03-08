@@ -102,6 +102,16 @@ final class MiniPlayerManager: ObservableObject {
     /// Called by tab views when a video is tapped (after paywall check)
     func openVJMode(video: PlaylistVideo, videos: [PlaylistVideo], playlistContext: PlaylistContext?) {
         print("🎬 MiniPlayerManager: openVJMode - \(video.title)")
+        let sourceName: String
+        switch playlistContext?.sourceType {
+        case .musicVideos: sourceName = "Top 100"
+        case .live: sourceName = "Artists"
+        case .concert: sourceName = "Concert"
+        case .epicShows: sourceName = "Collections"
+        case .none: sourceName = "Unknown"
+        }
+        AnalyticsService.logVideoPlayed(title: video.title, artist: video.artist, year: video.year, source: sourceName)
+        AnalyticsService.logVJModeOpened(source: sourceName)
         self.playlistContext = playlistContext
         self.displayedVideos = videos
         self.controlsVisible = true
@@ -154,6 +164,7 @@ final class MiniPlayerManager: ObservableObject {
     /// Close the mini player entirely
     func close() {
         print("🎬 MiniPlayerManager: close")
+        AnalyticsService.logVJModeClosed()
         playerCoordinator.stopVideo()
         playerCoordinator.onVideoEnd = nil
         withAnimation(.easeInOut(duration: 0.25)) {
@@ -199,6 +210,7 @@ final class MiniPlayerManager: ObservableObject {
     func toggleFavorite() {
         guard let video = currentVideo else { return }
         if AuthenticationService.shared.isAuthenticated {
+            let willBeFavorited = !isFavorited
             FavoritesService.shared.toggleFavorite(
                 videoId: video.id,
                 title: video.title,
@@ -206,6 +218,7 @@ final class MiniPlayerManager: ObservableObject {
                 year: video.year
             )
             isFavorited.toggle()
+            AnalyticsService.logFavoriteToggled(title: video.title, artist: video.artist, isFavorited: willBeFavorited)
         } else {
             NotificationCenter.default.post(name: .showSignInSheet, object: nil)
         }
@@ -222,7 +235,8 @@ final class MiniPlayerManager: ObservableObject {
 
         case .live(let artistName, _, _):
             selectedArtist = artistName
-            fetchVideosForArtist(artistName)
+            // displayedVideos already set from openVJMode (Live Library/Official/Charts)
+            break
 
         case .concert:
             // displayedVideos already set from openVJMode
@@ -234,7 +248,10 @@ final class MiniPlayerManager: ObservableObject {
         }
     }
 
-    func fetchVideosForYear(_ year: Int) {
+    func fetchVideosForYear(_ year: Int, fromPicker: Bool = false) {
+        if fromPicker {
+            NotificationCenter.default.post(name: .vjPickerYearChanged, object: nil, userInfo: ["year": year])
+        }
         let directVideos = DirectVideoService.shared.videos(forYear: year)
 
         if directVideos.isEmpty {
@@ -267,7 +284,10 @@ final class MiniPlayerManager: ObservableObject {
         }
     }
 
-    func fetchVideosForArtist(_ artist: String) {
+    func fetchVideosForArtist(_ artist: String, fromPicker: Bool = false) {
+        if fromPicker {
+            NotificationCenter.default.post(name: .vjPickerArtistChanged, object: nil, userInfo: ["artistName": artist])
+        }
         if isLiveMode {
             Task { @MainActor in
                 let airtableService = AirtableService.shared

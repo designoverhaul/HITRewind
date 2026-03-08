@@ -19,6 +19,7 @@ struct AirtableConfig {
     static let videosUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/Videos"
     static let mtvVideosNewUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/tblNwqwVyflL8hNDy"
     static let spotifyChartVideosUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/TopToday"
+    static let officialVideosUrl = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/tblSq6zqj4c6aXDhB"
 }
 
 // MARK: - YouTube Configuration

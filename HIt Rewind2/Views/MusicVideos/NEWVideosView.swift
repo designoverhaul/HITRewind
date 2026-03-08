@@ -40,6 +40,11 @@ struct NEWVideosView: View {
             // Then load the full catalog in the background
             await videoService.fetchVideos()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .vjPickerYearChanged)) { notification in
+            guard let year = notification.userInfo?["year"] as? Int else { return }
+            print("📡 NEWVideosView received vjPickerYearChanged: \(year)")
+            selectedYear = year
+        }
     }
 
     // MARK: - iPad Layout
@@ -352,6 +357,7 @@ struct NEWVideosView: View {
     private func handleYearSelection(_ year: Int) {
         print("📅 NEW - Year selected: \(String(year))")
         selectedYear = year
+        AnalyticsService.logYearSelected(year: year)
 
         if year == kSpotifyTop50Year {
             // Fetch TopToday videos

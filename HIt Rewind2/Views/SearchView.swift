@@ -139,6 +139,7 @@ struct SearchView: View {
                 .focused($isSearchFieldFocused)
                 .onSubmit {
                     searchService.searchContent(query: searchText)
+                    AnalyticsService.logSearchPerformed(query: searchText, resultCount: searchService.searchResults.count)
                 }
                 .toolbar {
                     ToolbarItemGroup(placement: .keyboard) {
@@ -178,9 +179,7 @@ struct SearchView: View {
 
     private var loadingView: some View {
         VStack(spacing: 12) {
-            ProgressView()
-                .scaleEffect(1.2)
-                .tint(.hitRewindPurple)
+            SpinningRecordView()
 
             Text("Searching...")
                 .font(.subheadline)
@@ -337,7 +336,7 @@ struct SearchView: View {
 struct SearchResultCard: View {
     let result: SearchResult
     @StateObject private var favoritesService = FavoritesService.shared
-    @StateObject private var youTubeService = YouTubeService()
+    @StateObject private var youTubeService = YouTubeService.shared
     @State private var duration: String?
     
     var body: some View {

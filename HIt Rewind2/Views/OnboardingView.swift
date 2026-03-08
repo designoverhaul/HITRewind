@@ -22,9 +22,7 @@ struct OnboardingView: View {
 
             if isLoading {
                 // Simple loading indicator
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
+                SpinningRecordView(size: 50)
             } else {
                 contentView
             }
@@ -86,11 +84,8 @@ struct OnboardingView: View {
     }
 
     private func preloadAssets() async {
-        // Preload all carousel images and onboarding images
-        let allImages = [
-            "tv1", "tv2", "tv3", "tv4", "tv5", "tv6", // TV carousel
-            "onboarding2", "Onboarding4", "Onboarding4.5", "onboarding5" // Static onboarding images
-        ]
+        // Preload onboarding images (only screen 4 uses an image now)
+        let allImages = ["Onboarding4"]
 
         await imagePreloader.preloadImages(allImages)
 
@@ -118,6 +113,7 @@ struct OnboardingView: View {
         withAnimation {
             isOnboardingComplete = true
         }
+
     }
 }
 

@@ -15,15 +15,17 @@ struct PlaylistVideo: Identifiable, Equatable, Hashable {
     let artist: String
     let year: String
     let rank: Int? // Billboard rank from Airtable (nil if not applicable)
+    let duration: String? // Formatted duration (e.g. "4:13") - nil if not available
 
-    /// Initialize with optional rank (defaults to nil for backward compatibility)
-    init(id: String, youtubeURL: String, title: String, artist: String, year: String, rank: Int? = nil) {
+    /// Initialize with optional rank and duration (defaults to nil for backward compatibility)
+    init(id: String, youtubeURL: String, title: String, artist: String, year: String, rank: Int? = nil, duration: String? = nil) {
         self.id = id
         self.youtubeURL = youtubeURL
         self.title = title
         self.artist = artist
         self.year = year
         self.rank = rank
+        self.duration = duration
     }
 }
 

@@ -36,6 +36,7 @@ struct VideoThumbnailView: View {
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
     @State private var thumbnailImage: Image?
+    @State private var thumbnailLoadFailed: Bool = false
     @State private var duration: String = ""
     @State private var viewCount: String = ""
     @State private var showingRemoveFavoriteConfirmation = false
@@ -93,8 +94,13 @@ struct VideoThumbnailView: View {
                     thumbnailImage
                         .resizable()
                         .scaledToFill()
+                } else if thumbnailLoadFailed {
+                    // Failed placeholder
+                    Image("TooFamous")
+                        .resizable()
+                        .scaledToFill()
                 } else {
-                    // Simple placeholder - no spinner to avoid flash on navigation
+                    // Loading state - plain background, no spinner to avoid flash
                     Rectangle()
                         .fill(Color.hitRewindDarkGray)
                 }
@@ -268,6 +274,10 @@ struct VideoThumbnailView: View {
             await MainActor.run {
                 thumbnailImage = Image(uiImage: uiImage)
             }
+        } else {
+            await MainActor.run {
+                thumbnailLoadFailed = true
+            }
         }
     }
 
@@ -292,7 +302,7 @@ struct VideoThumbnailView: View {
     }
 
     private func fetchVideoInfoFromAPI() async {
-        let youtubeService = YouTubeService()
+        let youtubeService = YouTubeService.shared
         do {
             let video = try await youtubeService.getVideoInfo(videoId: videoId)
             var fetchedDuration = ""

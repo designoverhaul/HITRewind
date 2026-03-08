@@ -10,7 +10,7 @@ import SuperwallKit
 
 struct FanCamsView: View {
     @StateObject private var airtableService = AirtableService()
-    @StateObject private var youtubeService = YouTubeService()
+    @StateObject private var youtubeService = YouTubeService.shared
 
     @State private var selectedCategory: FanCamCategory?
     @State private var selectedArtist: Playlist?
@@ -19,42 +19,13 @@ struct FanCamsView: View {
     @State private var selectedTab: VideoSource = .liveLibrary
     @State private var officialChannelVideos: [YouTubeChannelVideo] = []
     @State private var isLoadingOfficialVideos: Bool = false
-    @State private var officialNextPageToken: String?
-    @State private var isLoadingMoreOfficialVideos: Bool = false
-    @State private var officialQuotaReached: Bool = false
+    @State private var chartVideos: [DirectVideoRecord] = []
+    @State private var isLoadingChartVideos: Bool = false
 
     private enum VideoSource {
         case liveLibrary
         case official
-    }
-
-    // MARK: - Official Video Daily Rate Limit
-    private static let officialDailyLimit = 10
-    private static let officialCountKey = "officialVideoFetchCount"
-    private static let officialDateKey = "officialVideoFetchDate"
-
-    private func canFetchOfficialVideos() -> Bool {
-        let today = Calendar.current.startOfDay(for: Date())
-        let lastDate = UserDefaults.standard.object(forKey: Self.officialDateKey) as? Date ?? .distantPast
-        if Calendar.current.startOfDay(for: lastDate) != today {
-            // New day, reset counter
-            UserDefaults.standard.set(0, forKey: Self.officialCountKey)
-            UserDefaults.standard.set(today, forKey: Self.officialDateKey)
-        }
-        let count = UserDefaults.standard.integer(forKey: Self.officialCountKey)
-        return count < Self.officialDailyLimit
-    }
-
-    private func incrementOfficialFetchCount() {
-        let today = Calendar.current.startOfDay(for: Date())
-        let lastDate = UserDefaults.standard.object(forKey: Self.officialDateKey) as? Date ?? .distantPast
-        if Calendar.current.startOfDay(for: lastDate) != today {
-            UserDefaults.standard.set(1, forKey: Self.officialCountKey)
-            UserDefaults.standard.set(today, forKey: Self.officialDateKey)
-        } else {
-            let count = UserDefaults.standard.integer(forKey: Self.officialCountKey)
-            UserDefaults.standard.set(count + 1, forKey: Self.officialCountKey)
-        }
+        case charts
     }
 
     // Device and orientation detection
@@ -77,6 +48,43 @@ struct FanCamsView: View {
                 selectedCategory = popCategory
                 await airtableService.fetchVideoCounts(for: popCategory.artists)
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .vjPickerArtistChanged)) { notification in
+            guard let artistName = notification.userInfo?["artistName"] as? String else { return }
+            print("📡 FanCamsView received vjPickerArtistChanged: \(artistName)")
+
+            // Search current category first
+            if let currentCategory = selectedCategory,
+               currentCategory.artists.contains(where: { $0.localizedCaseInsensitiveCompare(artistName) == .orderedSame }) {
+                let placeholder = URL(string: "https://via.placeholder.com/300x200")!
+                let artist = Playlist(
+                    id: artistName,
+                    fields: PlaylistFields(
+                        thumbnail: placeholder, year: 0, title: artistName,
+                        videoUrls: [], artistNames: [], videoTitles: [], isVisible: []
+                    )
+                )
+                handleArtistSelection(artist)
+                return
+            }
+
+            // Search all categories
+            for category in airtableService.categories {
+                if category.artists.contains(where: { $0.localizedCaseInsensitiveCompare(artistName) == .orderedSame }) {
+                    handleCategorySelection(category)
+                    let placeholder = URL(string: "https://via.placeholder.com/300x200")!
+                    let artist = Playlist(
+                        id: artistName,
+                        fields: PlaylistFields(
+                            thumbnail: placeholder, year: 0, title: artistName,
+                            videoUrls: [], artistNames: [], videoTitles: [], isVisible: []
+                        )
+                    )
+                    handleArtistSelection(artist)
+                    return
+                }
+            }
+            print("⚠️ Artist '\(artistName)' not found in any category")
         }
     }
 
@@ -149,7 +157,7 @@ struct FanCamsView: View {
 
                 // Column 2: Artists list for selected category
                 artistsColumn
-                    .frame(width: max(1, geometry.size.width * 0.28 - 1))
+                    .frame(width: max(1, geometry.size.width * 0.23 - 1))
                     .background(Color.hitRewindBackground.opacity(0.7))
 
                 // Divider
@@ -215,9 +223,6 @@ struct FanCamsView: View {
                                         .foregroundColor(isSelected ? .hitRewindPurple : .hitRewindPrimaryText)
                                         .lineLimit(1)
                                     Spacer()
-                                    Text("\(airtableService.artistVideoCounts[artist.fields.title] ?? 0)")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(isSelected ? .hitRewindPurple.opacity(0.7) : .hitRewindSecondaryText)
                                 }
                                 .padding(.leading, 8)
                                 .padding(.trailing, 4)
@@ -247,8 +252,7 @@ struct FanCamsView: View {
             if isLoadingVideos {
                 VStack {
                     Spacer()
-                    ProgressView()
-                        .scaleEffect(1.2)
+                    SpinningRecordView()
                     Text("Loading...")
                         .font(.system(size: 14))
                         .foregroundColor(.hitRewindSecondaryText)
@@ -257,11 +261,16 @@ struct FanCamsView: View {
                 }
                 .frame(maxWidth: .infinity)
             } else if selectedArtist != nil {
-                if selectedTab == .liveLibrary || selectedArtist?.fields.youtubeChannelId == nil {
-                    liveLibraryGrid
-                } else {
-                    officialChannelGrid
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        scrollableChannelHeader
+
+                        Section(header: stickyVideoPicker) {
+                            tabContent
+                        }
+                    }
                 }
+                .id(selectedArtist?.fields.title ?? "")
             } else {
                 VStack {
                     Spacer()
@@ -283,6 +292,7 @@ struct FanCamsView: View {
                     await loadOfficialChannelVideos()
                 }
             }
+            // Charts are preloaded during artist selection
         }
     }
 
@@ -315,12 +325,42 @@ struct FanCamsView: View {
     private var videoPicker: some View {
         Picker("Source", selection: $selectedTab) {
             Text("Live Library").tag(VideoSource.liveLibrary)
-            Text("Official").tag(VideoSource.official)
+            if selectedArtist?.fields.youtubeChannelId != nil {
+                Text("New Releases").tag(VideoSource.official)
+            }
+            if !chartVideos.isEmpty {
+                Text("Charts").tag(VideoSource.charts)
+            }
         }
         .pickerStyle(.segmented)
     }
 
-    // MARK: - Scrollable Channel Header
+    // MARK: - Sticky Video Picker (pinned section header)
+    private var stickyVideoPicker: some View {
+        videoPicker
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.hitRewindBackground)
+    }
+
+    // MARK: - Tab Content (switches content without rebuilding scroll view)
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .charts:
+            chartsGridContent
+        case .official:
+            if selectedArtist?.fields.youtubeChannelId != nil {
+                officialChannelGridContent
+            } else {
+                liveLibraryGridContent
+            }
+        case .liveLibrary:
+            liveLibraryGridContent
+        }
+    }
+
+    // MARK: - Scrollable Channel Header (avatar + name, scrolls normally)
     @ViewBuilder
     private var scrollableChannelHeader: some View {
         if let channelId = selectedArtist?.fields.youtubeChannelId, !channelId.isEmpty {
@@ -328,168 +368,97 @@ struct FanCamsView: View {
                 .padding(.horizontal, 12)
                 .padding(.top, 8)
                 .padding(.bottom, 6)
-
-            videoPicker
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
         }
     }
 
-    // MARK: - Live Library Grid
-    private var liveLibraryGrid: some View {
-        Group {
-            if !visibleVideos.isEmpty {
-                ScrollView {
-                    scrollableChannelHeader
-
-                    LazyVGrid(columns: videoGridColumns, spacing: 12) {
-                        ForEach(visibleVideos) { item in
-                            Button(action: {
-                                handleVideoTap(item: item)
-                            }) {
-                                VideoThumbnailView(
-                                    videoId: item.id,
-                                    title: item.title,
-                                    artist: item.artist,
-                                    year: item.year,
-                                    onTap: {},
-                                    hideArtistName: true
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
+    // MARK: - Live Library Grid Content
+    @ViewBuilder
+    private var liveLibraryGridContent: some View {
+        if !visibleVideos.isEmpty {
+            LazyVGrid(columns: videoGridColumns, spacing: 12) {
+                ForEach(visibleVideos) { item in
+                    Button(action: {
+                        handleVideoTap(item: item)
+                    }) {
+                        VideoThumbnailView(
+                            videoId: item.id,
+                            title: item.title,
+                            artist: item.artist,
+                            year: item.year,
+                            onTap: {},
+                            hideArtistName: true
+                        )
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.top, 12)
-                    .padding(.bottom, 16)
-                }
-            } else {
-                ScrollView {
-                    scrollableChannelHeader
-
-                    VStack {
-                        Spacer().frame(height: 40)
-                        Text("No videos")
-                            .font(.system(size: 16))
-                            .foregroundColor(.hitRewindSecondaryText)
-                    }
-                    .frame(maxWidth: .infinity)
+                    .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, 8)
+            .padding(.top, 12)
+            .padding(.bottom, 16)
+        } else {
+            VStack {
+                Spacer().frame(height: 40)
+                Text("No videos")
+                    .font(.system(size: 16))
+                    .foregroundColor(.hitRewindSecondaryText)
+            }
+            .frame(maxWidth: .infinity)
         }
     }
 
-    // MARK: - Official Channel Grid
-    private var officialChannelGrid: some View {
-        Group {
-            if officialQuotaReached {
-                ScrollView {
-                    scrollableChannelHeader
+    // MARK: - Official Channel Grid Content
+    @ViewBuilder
+    private var officialChannelGridContent: some View {
+        if isLoadingOfficialVideos {
+            VStack {
+                Spacer().frame(height: 40)
+                SpinningRecordView()
+                Text("Loading...")
+                    .font(.system(size: 14))
+                    .foregroundColor(.hitRewindSecondaryText)
+                    .padding(.top, 8)
+            }
+            .frame(maxWidth: .infinity)
+        } else if officialChannelVideos.isEmpty {
+            VStack(spacing: 8) {
+                Spacer().frame(height: 40)
+                Image(systemName: "video.slash")
+                    .font(.system(size: 36))
+                    .foregroundColor(.hitRewindSecondaryText.opacity(0.5))
+                Text("No videos found")
+                    .font(.system(size: 16))
+                    .foregroundColor(.hitRewindSecondaryText)
+            }
+            .frame(maxWidth: .infinity)
+        } else {
+            LazyVGrid(columns: videoGridColumns, spacing: 12) {
+                ForEach(officialChannelVideos) { video in
+                    Button(action: {
+                        handleOfficialVideoTap(video: video)
+                    }) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            VideoThumbnailView(
+                                videoId: video.videoId,
+                                title: video.title,
+                                artist: selectedArtist?.fields.title ?? "",
+                                year: "",
+                                onTap: {},
+                                hideArtistName: true
+                            )
 
-                    VStack(spacing: 8) {
-                        Spacer().frame(height: 40)
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 36))
-                            .foregroundColor(.hitRewindSecondaryText.opacity(0.5))
-                        Text("Daily limit reached")
-                            .font(.system(size: 16))
-                            .foregroundColor(.hitRewindSecondaryText)
-                        Text("Check back tomorrow")
-                            .font(.system(size: 13))
-                            .foregroundColor(.hitRewindSecondaryText.opacity(0.7))
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            } else if isLoadingOfficialVideos {
-                ScrollView {
-                    scrollableChannelHeader
-
-                    VStack {
-                        Spacer().frame(height: 40)
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text("Loading...")
-                            .font(.system(size: 14))
-                            .foregroundColor(.hitRewindSecondaryText)
-                            .padding(.top, 8)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            } else if officialChannelVideos.isEmpty {
-                ScrollView {
-                    scrollableChannelHeader
-
-                    VStack {
-                        Spacer().frame(height: 40)
-                        Image(systemName: "video.slash")
-                            .font(.system(size: 36))
-                            .foregroundColor(.hitRewindSecondaryText.opacity(0.5))
-                        Text("No videos found")
-                            .font(.system(size: 16))
-                            .foregroundColor(.hitRewindSecondaryText)
-                            .padding(.top, 8)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            } else {
-                ScrollView {
-                    scrollableChannelHeader
-
-                    LazyVGrid(columns: videoGridColumns, spacing: 12) {
-                        ForEach(officialChannelVideos) { video in
-                            Button(action: {
-                                handleOfficialVideoTap(video: video)
-                            }) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    VideoThumbnailView(
-                                        videoId: video.videoId,
-                                        title: video.title,
-                                        artist: selectedArtist?.fields.title ?? "",
-                                        year: "",
-                                        onTap: {},
-                                        hideArtistName: true
-                                    )
-
-                                    Text(video.formattedPublishDate)
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.hitRewindSecondaryText)
-                                        .padding(.leading, 2)
-                                }
-                            }
-                            .buttonStyle(.plain)
+                            Text(video.formattedPublishDate)
+                                .font(.system(size: 11))
+                                .foregroundColor(.hitRewindSecondaryText)
+                                .padding(.leading, 2)
                         }
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.top, 12)
-
-                    // Load More button
-                    if officialNextPageToken != nil {
-                        Button(action: {
-                            Task {
-                                await loadMoreOfficialVideos()
-                            }
-                        }) {
-                            if isLoadingMoreOfficialVideos {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                            } else {
-                                Text("Load More")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.hitRewindPurple)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(Color.hitRewindPurple.opacity(0.15))
-                                    .cornerRadius(8)
-                            }
-                        }
-                        .disabled(isLoadingMoreOfficialVideos)
-                        .padding(.horizontal, 8)
-                    }
-
-                    Spacer().frame(height: 16)
+                    .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, 8)
+            .padding(.top, 12)
+
+            Spacer().frame(height: 16)
         }
     }
 
@@ -609,7 +578,8 @@ struct FanCamsView: View {
                 youtubeURL: video.originalURL,
                 title: video.title,
                 artist: video.artist,
-                year: video.year
+                year: video.year,
+                duration: video.duration
             )
         }
 
@@ -642,7 +612,7 @@ struct FanCamsView: View {
         visibleVideoIndices = []
         selectedTab = .liveLibrary
         officialChannelVideos = []
-        officialNextPageToken = nil
+        chartVideos = []
 
         Task {
             await airtableService.fetchVideoCounts(for: category.artists)
@@ -651,71 +621,57 @@ struct FanCamsView: View {
 
     private func handleArtistSelection(_ artist: Playlist) {
         print("👤 Artist selected: \(artist.fields.title)")
+        AnalyticsService.logArtistViewed(artist: artist.fields.title)
         isLoadingVideos = true
         selectedTab = .liveLibrary
         officialChannelVideos = []
-        officialNextPageToken = nil
-        officialQuotaReached = false
+        chartVideos = []
 
         Task {
             print("🔎 Loading videos for artist: \(artist.fields.title)")
-            if let loaded = try? await airtableService.fetchArtist(byName: artist.fields.title) {
-                await MainActor.run {
-                    selectedArtist = loaded
-                    updateVisibleVideoIndices()
-                    isLoadingVideos = false
-                    print("🎵 Loaded artist: \(loaded.fields.title) with \(visibleVideoIndices.count) videos")
+            do {
+                if let loaded = try await airtableService.fetchArtist(byName: artist.fields.title) {
+                    await MainActor.run {
+                        selectedArtist = loaded
+                        updateVisibleVideoIndices()
+                        isLoadingVideos = false
+                        print("🎵 Loaded artist: \(loaded.fields.title) with \(visibleVideoIndices.count) videos, videoUrls: \(loaded.fields.videoUrls?.count ?? 0)")
+                    }
+                } else {
+                    print("⚠️ fetchArtist returned nil for: \(artist.fields.title)")
+                    await MainActor.run {
+                        selectedArtist = artist
+                        visibleVideoIndices = []
+                        isLoadingVideos = false
+                    }
                 }
-            } else {
-                print("⚠️ Failed to load artist: \(artist.fields.title)")
+            } catch {
+                print("❌ Error loading artist \(artist.fields.title): \(error)")
                 await MainActor.run {
                     selectedArtist = artist
                     visibleVideoIndices = []
                     isLoadingVideos = false
                 }
             }
+
+            // Preload chart videos to determine if Charts tab should show
+            await loadChartVideos()
         }
     }
 
-    // MARK: - Official Channel Video Loading
+    // MARK: - Official Channel Video Loading (from Airtable)
     @MainActor
     private func loadOfficialChannelVideos() async {
-        guard let channelId = selectedArtist?.fields.youtubeChannelId, !channelId.isEmpty else { return }
-
-        if !canFetchOfficialVideos() {
-            officialQuotaReached = true
-            return
-        }
+        guard let artistName = selectedArtist?.fields.title else { return }
 
         isLoadingOfficialVideos = true
-        officialQuotaReached = false
-        incrementOfficialFetchCount()
         do {
-            let result = try await youtubeService.fetchChannelVideos(channelId: channelId)
-            officialChannelVideos = result.videos
-            officialNextPageToken = result.nextPageToken
+            officialChannelVideos = try await AirtableService.shared.fetchOfficialVideos(artistName: artistName)
         } catch {
-            print("❌ Error loading official channel videos: \(error)")
+            print("❌ Error loading official videos from Airtable: \(error)")
             officialChannelVideos = []
-            officialNextPageToken = nil
         }
         isLoadingOfficialVideos = false
-    }
-
-    @MainActor
-    private func loadMoreOfficialVideos() async {
-        guard let channelId = selectedArtist?.fields.youtubeChannelId,
-              let pageToken = officialNextPageToken else { return }
-
-        isLoadingMoreOfficialVideos = true
-        do {
-            let result = try await youtubeService.fetchChannelVideos(channelId: channelId, pageToken: pageToken)
-            officialChannelVideos.append(contentsOf: result.videos)
-            officialNextPageToken = result.nextPageToken
-        } catch {
-            print("❌ Error loading more official videos: \(error)")
-        }
-        isLoadingMoreOfficialVideos = false
     }
 
     private func handleOfficialVideoTap(video: YouTubeChannelVideo) {
@@ -745,7 +701,8 @@ struct FanCamsView: View {
                 youtubeURL: "https://www.youtube.com/watch?v=\(v.videoId)",
                 title: v.title,
                 artist: selectedArtist?.fields.title ?? "",
-                year: v.publishedAt.count >= 4 ? String(v.publishedAt.prefix(4)) : ""
+                year: v.publishedAt.count >= 4 ? String(v.publishedAt.prefix(4)) : "",
+                duration: v.duration.isEmpty ? nil : v.duration
             )
         }
 
@@ -767,6 +724,190 @@ struct FanCamsView: View {
             videos: allVideos,
             playlistContext: playlistContext
         )
+    }
+
+    // MARK: - Charts Tab
+
+    @MainActor
+    private func loadChartVideos() async {
+        guard let artistName = selectedArtist?.fields.title else { return }
+        isLoadingChartVideos = true
+
+        // Ensure DirectVideoService has data loaded
+        if DirectVideoService.shared.videos.isEmpty {
+            await DirectVideoService.shared.fetchVideos()
+        }
+
+        let allVideos = DirectVideoService.shared.videos
+        var addedVideoIds = Set<String>()
+        var matched: [DirectVideoRecord] = []
+
+        for record in allVideos {
+            guard let recordArtist = record.fields.artistName,
+                  let _ = record.fields.url,
+                  let videoId = record.fields.youtubeVideoId,
+                  record.fields.rank != nil,
+                  record.fields.yearInt != nil else { continue }
+
+            let parsedNames = parseArtistNames(from: recordArtist)
+            let matches = parsedNames.contains { name in
+                name.localizedCaseInsensitiveContains(artistName)
+            }
+
+            if matches && !addedVideoIds.contains(videoId) {
+                addedVideoIds.insert(videoId)
+                matched.append(record)
+            }
+        }
+
+        chartVideos = matched
+        isLoadingChartVideos = false
+    }
+
+    private func parseArtistNames(from artistField: String) -> [String] {
+        let separators = [" & ", " feat. ", " feat ", " featuring ", " and ", ", ", "/"]
+        var names = [artistField]
+        for separator in separators {
+            names = names.flatMap { $0.components(separatedBy: separator) }
+        }
+        return names.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+    }
+
+    private var chartVideosByYear: [(year: Int, videos: [DirectVideoRecord])] {
+        let grouped = Dictionary(grouping: chartVideos) { $0.fields.yearInt ?? 0 }
+        return grouped.sorted { $0.key > $1.key }.map { (year: $0.key, videos: $0.value.sorted { ($0.fields.rank ?? 999) < ($1.fields.rank ?? 999) }) }
+    }
+
+    // MARK: - Charts Grid Content
+    @ViewBuilder
+    private var chartsGridContent: some View {
+        if isLoadingChartVideos {
+            VStack {
+                Spacer().frame(height: 40)
+                SpinningRecordView()
+                Text("Loading...")
+                    .font(.system(size: 14))
+                    .foregroundColor(.hitRewindSecondaryText)
+                    .padding(.top, 8)
+            }
+            .frame(maxWidth: .infinity)
+        } else if chartVideos.isEmpty {
+            VStack(spacing: 8) {
+                Spacer().frame(height: 40)
+                Image(systemName: "chart.bar")
+                    .font(.system(size: 36))
+                    .foregroundColor(.hitRewindSecondaryText.opacity(0.5))
+                Text("No chart hits found")
+                    .font(.system(size: 16))
+                    .foregroundColor(.hitRewindSecondaryText)
+            }
+            .frame(maxWidth: .infinity)
+        } else {
+            LazyVStack(alignment: .leading, spacing: 16) {
+                ForEach(chartVideosByYear, id: \.year) { group in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(String(group.year))
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.hitRewindPrimaryText)
+                            .padding(.horizontal, 8)
+
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(height: 1)
+                            .padding(.horizontal, 8)
+
+                        LazyVGrid(columns: videoGridColumns, spacing: 12) {
+                            ForEach(group.videos) { record in
+                                if let videoId = record.fields.youtubeVideoId {
+                                    Button(action: {
+                                        handleChartVideoTap(record: record)
+                                    }) {
+                                        VideoThumbnailView(
+                                            videoId: videoId,
+                                            title: record.fields.title ?? "Unknown",
+                                            artist: record.fields.artistName ?? "",
+                                            year: record.fields.year ?? "",
+                                            onTap: {},
+                                            hideArtistAndYear: true,
+                                            rank: record.fields.rank,
+                                            hideDuration: true
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                    }
+                }
+            }
+            .padding(.top, 12)
+            .padding(.bottom, 16)
+        }
+    }
+
+    private func handleChartVideoTap(record: DirectVideoRecord) {
+        guard let videoId = record.fields.youtubeVideoId,
+              let url = record.fields.url else { return }
+
+        print("🎥 Chart video \(videoId) tapped")
+
+        let playAction = {
+            let allPlaylistVideos = self.chartVideos
+                .sorted { a, b in
+                    let yearA = a.fields.yearInt ?? 0
+                    let yearB = b.fields.yearInt ?? 0
+                    if yearA != yearB { return yearA > yearB }
+                    return (a.fields.rank ?? 999) < (b.fields.rank ?? 999)
+                }
+                .compactMap { rec -> PlaylistVideo? in
+                    guard let vid = rec.fields.youtubeVideoId,
+                          let vidUrl = rec.fields.url else { return nil }
+                    return PlaylistVideo(
+                        id: vid,
+                        youtubeURL: vidUrl,
+                        title: rec.fields.title ?? "Unknown",
+                        artist: rec.fields.artistName ?? "",
+                        year: rec.fields.year ?? "",
+                        rank: rec.fields.rank
+                    )
+                }
+
+            guard let currentIndex = allPlaylistVideos.firstIndex(where: { $0.id == videoId }) else { return }
+
+            let artistName = self.selectedArtist?.fields.title ?? ""
+            let categoryArtists = self.selectedCategory?.artists ?? []
+            var allArtistVideos: [String: [PlaylistVideo]] = [:]
+            allArtistVideos[artistName] = allPlaylistVideos
+
+            let playlistContext = PlaylistContext(
+                videos: allPlaylistVideos,
+                currentIndex: currentIndex,
+                sourceType: .live(artistName: artistName, categoryArtists: categoryArtists, allArtistVideos: allArtistVideos)
+            )
+
+            MiniPlayerManager.shared.openVJMode(
+                video: allPlaylistVideos[currentIndex],
+                videos: allPlaylistVideos,
+                playlistContext: playlistContext
+            )
+        }
+
+        if PaywallService.shared.testSubscriberMode {
+            playAction()
+            return
+        }
+
+        Task { @MainActor in
+            let isSubscribed = await HIt_Rewind2App.hasActiveSubscription()
+            if isSubscribed {
+                playAction()
+            } else {
+                PaywallService.shared.presentPaywallWithOrientation {
+                    playAction()
+                }
+            }
+        }
     }
 
     private func updateVisibleVideoIndices() {
@@ -792,6 +933,7 @@ private struct VisibleVideo: Identifiable, Hashable {
     let title: String
     let artist: String
     let year: String
+    let duration: String?
 }
 
 private extension FanCamsView {
@@ -804,7 +946,8 @@ private extension FanCamsView {
                 let title = artist.fields.videoTitles?[safe: index] ?? "Unknown Title"
                 let artistName = artist.fields.artistNames?[safe: index] ?? artist.fields.title
                 let videoYear = artist.fields.videoYears?[safe: index] ?? String(artist.fields.year)
-                result.append(VisibleVideo(id: videoId, originalURL: url, title: title, artist: artistName, year: videoYear))
+                let videoDuration = artist.fields.videoDurations?[safe: index]
+                result.append(VisibleVideo(id: videoId, originalURL: url, title: title, artist: artistName, year: videoYear, duration: videoDuration))
             }
         }
         return result.sorted { first, second in

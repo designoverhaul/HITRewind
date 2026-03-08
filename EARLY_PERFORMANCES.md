@@ -70,8 +70,7 @@ A collection of artists' earliest known live footage, first TV appearances, and 
   - 2002 | American Legion Hall - NJ | https://www.youtube.com/watch?v=3aNvtYNF5TQ
 - Nine Inch Nails ✅
   - 1989 | Pipeline - Newark, NJ | https://www.youtube.com/watch?v=MF5Q7uH4gMw
-- Nirvana ✅
-  - 1993 | Great Western Forum - Inglewood | https://www.youtube.com/watch?v=p6N1Utg-gks
+- Nirvana
 - Oasis ✅
   - 1992 | The Boardwalk - Manchester | https://www.youtube.com/watch?v=0RapzKyUKmU
   - 1993 | King Tuts Wah Wah Hut - Glasgow | https://www.youtube.com/watch?v=-XeJz8mZN8w
@@ -124,19 +123,16 @@ done
 done
 - The Police
 done
-- The Smiths ✅
-  - 1983 | Hacienda - Manchester (First Concert) | https://www.youtube.com/watch?v=ciD9x3IDuPU
+- The Smiths
+done
 - The Strokes
-- The White Stripes ✅
-  - 1999 | Gold Dollar | https://www.youtube.com/watch?v=sPwc6l9Ids4
-  - 2000 | Backstage Pass | https://www.youtube.com/watch?v=EetYv8XxR88
-  - 2001 | London | https://www.youtube.com/watch?v=OYcHdf-djDM
-  - 2001 | Late Late Show with Craig Kilborn | https://www.youtube.com/watch?v=kjC8zKByvls
+done
+- The White Stripes
+done
 - The Who ✅
   - 1965 | "I Can't Explain" - Ready Steady Go! | https://www.youtube.com/watch?v=TFWxqKYvy-c
   - 1967 | "My Generation" - Smothers Brothers (Keith Moon blew up his drums) | https://www.youtube.com/watch?v=OiSKu7SbGNQ
-- Tom Petty ✅
-  - 1978 | New Years Eve | https://www.youtube.com/watch?v=_tjB4_ab5xE
+- Tom Petty
 - Van Halen ✅
   - 1976 | Runnin' With The Devil - Pasadena (first known live recording) | https://www.youtube.com/watch?v=HgFjYNPgRwI
   - 1978 | Live in Fresno | https://www.youtube.com/watch?v=98pfx1B5LVQ
@@ -170,15 +166,14 @@ done
   - 1982 | Leave in Silence - Hammersmith | https://www.youtube.com/watch?v=8-lIEcZogD8
   - 1983 | Everything Counts - German TV WWF Club | https://www.youtube.com/watch?v=zLDXspMqgbk
 - Duran Duran
+done
 - Elton John
-- Madonna ✅
-  - 1982 | Danceteria - NYC (First Live Performance) | https://www.youtube.com/watch?v=r-wncZi6A-Q
-  - 1984 | Holiday (First TV Appearance) | https://www.youtube.com/watch?v=lnSPFzPlV2E
-  - 1984 | MTV VMAs - Like A Virgin | https://www.youtube.com/watch?v=gkSxhG4cbPo
-- Michael Jackson ✅
-  - 1969 | Hollywood Palace (First National TV Appearance) | https://www.youtube.com/watch?v=fod4DJFmZC4
-  - 1970 | Ed Sullivan Show - I Want You Back & ABC | https://www.youtube.com/watch?v=ZJMi3m8spJA
-  - 1983 | Motown 25 - Billie Jean (First Moonwalk) | https://www.youtube.com/watch?v=ZXmjhRkPVFc
+done
+
+- Madonna
+done
+- Michael Jackson
+done
 - New Order ✅
   - 1981 | "Ceremony" - Manchester | https://www.youtube.com/watch?v=NAmyMqL1AkI
   - 1981 | Taras Shevchenko - NYC (full concert film) | https://www.youtube.com/watch?v=V-npslDDHP0
@@ -215,12 +210,19 @@ done
   - 1998 | "Touch The Sky" - Kingston, Canada (age 14, folk/country era) | https://www.youtube.com/watch?v=68sCLM9-eQk
   - 1999 | "No One Needs to Know" - with Shania Twain, Ottawa | https://www.youtube.com/watch?v=YP00LYFu410
 - Backstreet Boys
+done
 - Beyonce
+done
 - Billie Eilish
+done
 - Bruno Mars
+done
 - Camila Cabello
+done
 - Celine Dion
+done
 - Chappell Roan
+done
 - Charli XCX ✅
   - 2011 | "Nuclear Seasons" - first video (Wales, age 19) | https://www.youtube.com/watch?v=LTJe_gqGglk
   - 2011 | "Stay Away" - debut single | https://www.youtube.com/watch?v=KBxC5bRbruQ
@@ -294,33 +296,9 @@ done
   - 2012 | Adele "Hometown Glory" Cover (first YouTube upload, age 13) | https://www.youtube.com/watch?v=74oViCkzuKA
   - 2013 | "As Long As You Love Me" Vine | https://www.youtube.com/watch?v=4jLrh8aiOBc
 - SZA
-- Taylor Swift ✅
-  - 1992 | Childhood Singing | https://www.youtube.com/watch?v=OsReZSRv3Tk
-  - 2002 | First Original Song (Age 13) | https://www.youtube.com/watch?v=qWaaf1p2e24
-  - 2005 | Tim McGraw (Age 15 First Performance) | https://www.youtube.com/watch?v=9C36r26mWzc
-  - 2006 | KTLA - First Interview & Performance | https://www.youtube.com/watch?v=KBxlXfNdBSI
-  - 2006 | Megan Mullally Show | https://www.youtube.com/watch?v=jPM-0an74HM
-  - 2006 | Star Spangled Banner (Dolphins vs Lions) | https://www.youtube.com/watch?v=jY2p0ijtWYI
-  - 2007 | Tonight Show Jay Leno - Tim McGraw | https://www.youtube.com/watch?v=EC2WUfCj8UY
-  - 2007 | Americas Got Talent - Teardrops On My Guitar | https://www.youtube.com/watch?v=5VweN5MDLl8
-  - 2007 | Regis & Kelly - Our Song | https://www.youtube.com/watch?v=Ec8KTOfNvDw
-  - 2007 | CMA Awards - Our Song | https://www.youtube.com/watch?v=qkcE8-D-sSw
-  - 2007 | Christmas at Rockefeller Center | https://www.youtube.com/watch?v=8upPX6pVNvk
-  - 2007 | Christmas When You Were Mine | https://www.youtube.com/watch?v=WbMYyU3lPi8
-  - 2007 | Dick Clarks Rockin New Year | https://www.youtube.com/watch?v=alrb84WY_Fo
-  - 2008 | Tim McGraw (In Front of Tim McGraw) | https://www.youtube.com/watch?v=ClZflY3lgok
-  - 2008 | Teardrops On My Guitar - New Years Eve | https://www.youtube.com/watch?v=aBOt0nvmvxM
-  - 2008 | Picture To Burn - CMT Music Awards | https://www.youtube.com/watch?v=dqdp0o75zqM
-  - 2008 | Shouldve Said No - ACM Awards | https://www.youtube.com/watch?v=VRkkLITcT_M
-  - 2008 | National Anthem - World Series | https://www.youtube.com/watch?v=9ttHSFnh-qI
-  - 2008 | Love Story - Good Morning America | https://www.youtube.com/watch?v=QOs36Li8voI
-  - 2008 | Fearless - Letterman | https://www.youtube.com/watch?v=kntWRBQlZnA
-  - 2008 | Love Story - CMA Awards | https://www.youtube.com/watch?v=gJjhwiNesp0
-  - 2008 | White Horse - American Music Awards | https://www.youtube.com/watch?v=n-YkMjCT-9I
-  - 2008 | White Horse & Im Sorry - Grammy Nominations | https://www.youtube.com/watch?v=GcaKG24AFWY
-- The Weeknd ✅
-  - 2011 | Mod Club - Toronto | https://www.youtube.com/watch?v=KgXuHe6yHTI
-  - 2012 | Wicked Games - Orpheum Theater | https://www.youtube.com/watch?v=FKNpUs8vZEs
+- Taylor Swift
+done
+- The Weeknd
 
 ---
 
@@ -334,11 +312,13 @@ done
 - Cardi B
 - Chance the Rapper
 - Drake
+done
 - Eminem
+done
 - Future
 - J. Cole
-- Jay Z ✅
-  - 1991 | First Live Performance | https://www.youtube.com/watch?v=C3XveHCdFXU
+- Jay Z
+done
 - Juice WRLD
 - Kanye West ✅
   - 1996 | 19-Year-Old Freestyle at Fat Beats Record Store, NYC | https://www.youtube.com/watch?v=rd6NS7CIqVU
@@ -347,8 +327,8 @@ done
 - Lil Wayne
 - Megan Three Stallion
 - Nas
-- Nicki Minaj ✅
-  - 2014 | Summer Jam | https://www.youtube.com/watch?v=y9cZjRDsc_k
+- Nicki Minaj
+done
 - OutKast ✅
   - 1995 | Source Awards - "The South Got Somethin' to Say" | https://www.youtube.com/watch?v=dg4A6umDzDQ
 - Run-DMC ✅
@@ -593,11 +573,9 @@ done
 - Wynton Marsalis ✅
   - 1981 | Art Blakey Jazz Messengers - Seventh Avenue South | https://www.youtube.com/watch?v=6Md_c0yAUik
 
----
-
-## K-Pop
 
 - Blackpink
+done
 
 ---
 

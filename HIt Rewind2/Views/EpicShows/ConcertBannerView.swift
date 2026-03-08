@@ -59,8 +59,7 @@ struct ConcertBannerView: View {
             .fill(Color.hitRewindDarkGray)
             .aspectRatio(2108/556, contentMode: .fit)  // Match banner dimensions
             .overlay {
-                ProgressView()
-                    .tint(.hitRewindPurple)
+                SpinningRecordView(size: 30)
             }
             .clipShape(Rectangle())
     }

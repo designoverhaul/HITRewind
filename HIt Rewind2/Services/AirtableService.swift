@@ -47,7 +47,7 @@ class AirtableService: ObservableObject {
         let lastUpdated: Date
         let version: Int
 
-        static let currentVersion = 1
+        static let currentVersion = 2
     }
 
     // MARK: - Request Deduplication
@@ -80,13 +80,34 @@ class AirtableService: ObservableObject {
         // Handle both possible field name variations from Airtable
         enum CodingKeys: String, CodingKey {
             case artistName = "artistName"
-            case videoURLs = "VideoURLs"  // Match exact Airtable field name
-            case videoTitle = "VideoTitle"  // Match exact Airtable field name
-            case videoYear = "VideoYear"   // Match exact Airtable field name
-            case videoThumbnail = "VideoThumbnail"  // Match exact Airtable field name
-            case videoDuration = "VideoDuration"    // Match exact Airtable field name
+            case videoURLs = "VideoURLs"
+            case videoTitle = "VideoTitle"
+            case videoYear = "VideoYear"
+            case videoThumbnail = "VideoThumbnail"
+            case videoDuration = "VideoDuration"
             case youtubeChannelId = "youtubeChannelId"
             case youtubeChannelIcon = "youtubeChannelIcon"
+        }
+
+        // Custom decoding: VideoYear can be [Int] or [String] from Airtable
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            artistName = try container.decodeIfPresent(String.self, forKey: .artistName)
+            videoURLs = try container.decodeIfPresent([String].self, forKey: .videoURLs)
+            videoTitle = try container.decodeIfPresent([String].self, forKey: .videoTitle)
+            videoThumbnail = try container.decodeIfPresent([String].self, forKey: .videoThumbnail)
+            videoDuration = try container.decodeIfPresent([String].self, forKey: .videoDuration)
+            youtubeChannelId = try container.decodeIfPresent(String.self, forKey: .youtubeChannelId)
+            youtubeChannelIcon = try container.decodeIfPresent(String.self, forKey: .youtubeChannelIcon)
+
+            // Try String array first, then Int array (Airtable lookup fields can return either)
+            if let stringYears = try? container.decodeIfPresent([String].self, forKey: .videoYear) {
+                videoYear = stringYears
+            } else if let intYears = try? container.decodeIfPresent([Int].self, forKey: .videoYear) {
+                videoYear = intYears.map { String($0) }
+            } else {
+                videoYear = nil
+            }
         }
     }
     
@@ -340,6 +361,11 @@ class AirtableService: ObservableObject {
         do {
             let data = try Data(contentsOf: metadataFile)
             let metadata = try JSONDecoder().decode(CacheMetadata.self, from: data)
+            // Invalidate cache if version changed
+            if metadata.version != CacheMetadata.currentVersion {
+                print("📦 Cache version mismatch (\(metadata.version) vs \(CacheMetadata.currentVersion)), marking stale")
+                return true
+            }
             let age = Date().timeIntervalSince(metadata.lastUpdated)
             let isStale = age > effectiveMaxAge
             print("📦 Cache age: \(Int(age / 3600)) hours, stale: \(isStale)")
@@ -472,6 +498,7 @@ class AirtableService: ObservableObject {
         guard var components = URLComponents(string: AirtableConfig.artistsUrl) else { throw PlaylistError.invalidURL }
         var items = components.queryItems ?? []
         let escaped = name.replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "'", with: "\\'")
         items.append(URLQueryItem(name: "filterByFormula", value: "{artistName} = '\(escaped)'"))
         items.append(URLQueryItem(name: "pageSize", value: "1"))
 
@@ -545,11 +572,11 @@ class AirtableService: ObservableObject {
         
         guard let videoURLs = fields.videoURLs,
               let videoTitles = fields.videoTitle,
-              let videoYears = fields.videoYear,
               !videoURLs.isEmpty else {
-            print("🚫 Artist \(requestedName) has 0 videos - missing required fields")
+            print("🚫 Artist \(requestedName) has 0 videos - missing required fields (URLs: \(fields.videoURLs?.count ?? 0), Titles: \(fields.videoTitle?.count ?? 0))")
             return nil
         }
+        let videoYears = fields.videoYear ?? Array(repeating: "0", count: videoURLs.count)
         
         let artistName = fields.artistName ?? requestedName
         print("🎵 Processing \(videoURLs.count) videos for \(artistName)")
@@ -576,12 +603,76 @@ class AirtableService: ObservableObject {
             isVisible: isVisible,
             isLocked: false,
             isPlaylist: false,
+            videoDurations: fields.videoDuration,
             youtubeChannelId: fields.youtubeChannelId,
             youtubeChannelIcon: fields.youtubeChannelIcon
         )
         
         print("✅ Created playlist for \(artistName): \(videoURLs.count) videos, recent year \(String(mostRecentYear))")
         return Playlist(id: artistRecord.id, fields: playlistFields)
+    }
+
+    // MARK: - Fetch Official Videos from OfficialVideos table
+    func fetchOfficialVideos(artistName: String) async throws -> [YouTubeChannelVideo] {
+        let escaped = artistName.replacingOccurrences(of: "'", with: "\\'")
+        guard var components = URLComponents(string: AirtableConfig.officialVideosUrl) else { throw PlaylistError.invalidURL }
+        var items = components.queryItems ?? []
+        items.append(URLQueryItem(name: "filterByFormula", value: "{artistName} = '\(escaped)'"))
+        items.append(URLQueryItem(name: "sort[0][field]", value: "publishedDate"))
+        items.append(URLQueryItem(name: "sort[0][direction]", value: "desc"))
+        items.append(URLQueryItem(name: "pageSize", value: "100"))
+        components.queryItems = items
+        guard let url = components.url else { throw PlaylistError.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(AirtableConfig.apiKey)", forHTTPHeaderField: "Authorization")
+        let (data, _) = try await session.data(for: request)
+
+        struct OfficialVideoResponse: Codable { let records: [OfficialVideoRecord] }
+        struct OfficialVideoRecord: Codable { let id: String; let fields: OfficialVideoFields }
+        struct OfficialVideoFields: Codable {
+            let title: String?
+            let artistName: String?
+            let videoId: String?
+            let publishedDate: String?
+            let durration: String?
+        }
+
+        let response = try JSONDecoder().decode(OfficialVideoResponse.self, from: data)
+        print("📺 Fetched \(response.records.count) official videos for \(artistName)")
+
+        return response.records.compactMap { record in
+            guard let rawVideoId = record.fields.videoId, !rawVideoId.isEmpty else { return nil }
+            // videoId field stores full YouTube URL — extract the ID
+            let videoId = extractYouTubeVideoID(from: rawVideoId) ?? rawVideoId
+            let title = record.fields.title ?? "Untitled"
+            let dateStr = record.fields.publishedDate ?? ""
+            // Convert "YYYY-MM-DD" to ISO 8601 for formattedPublishDate compatibility
+            let publishedAt = dateStr.isEmpty ? "" : "\(dateStr)T00:00:00Z"
+            let thumbnailUrl = "https://i.ytimg.com/vi/\(videoId)/mqdefault.jpg"
+
+            // Convert seconds string to formatted duration (e.g. "365" → "6:05")
+            var formattedDuration = ""
+            if let seconds = Int(record.fields.durration ?? "") {
+                let h = seconds / 3600
+                let m = (seconds % 3600) / 60
+                let s = seconds % 60
+                if h > 0 {
+                    formattedDuration = String(format: "%d:%02d:%02d", h, m, s)
+                } else {
+                    formattedDuration = String(format: "%d:%02d", m, s)
+                }
+            }
+
+            return YouTubeChannelVideo(
+                videoId: videoId,
+                title: title,
+                thumbnailUrl: thumbnailUrl,
+                publishedAt: publishedAt,
+                duration: formattedDuration
+            )
+        }
     }
 
     // Try LiveShows table: records include videoUrls/videoTitles/isVisible
@@ -1334,6 +1425,8 @@ class AirtableService: ObservableObject {
         var items = components.queryItems ?? []
         items.append(URLQueryItem(name: "filterByFormula", value: filterFormula))
         items.append(URLQueryItem(name: "pageSize", value: "100"))
+        items.append(URLQueryItem(name: "sort[0][field]", value: "videoTItle"))
+        items.append(URLQueryItem(name: "sort[0][direction]", value: "asc"))
         components.queryItems = items
 
         guard let url = components.url else {

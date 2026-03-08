@@ -30,8 +30,10 @@ class DirectVideoService: ObservableObject {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent(cacheFileName)
     }
 
+    // Hardcoded year list so sidebar appears instantly (no network wait)
+    static let knownYears: [Int] = Array(stride(from: 2025, through: 1973, by: -1))
+
     private init() {
-        // Load from cache on init
         loadFromCache()
     }
 
@@ -72,6 +74,7 @@ class DirectVideoService: ObservableObject {
         } catch {
             print("📦 DirectVideo cache: Failed to save - \(error)")
         }
+
     }
 
     /// Force refresh videos from network (bypasses cache)
@@ -197,10 +200,9 @@ class DirectVideoService: ObservableObject {
         isLoadingCatalog = false
     }
 
-    // Get available years from loaded videos
+    // Always returns the full year list instantly (no network dependency)
     var availableYears: [Int] {
-        let years = videos.compactMap { $0.fields.yearInt }
-        return Array(Set(years)).sorted(by: >)
+        DirectVideoService.knownYears
     }
 
     // Filter videos by year (only return videos with URLs for playback)

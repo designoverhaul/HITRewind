@@ -25,8 +25,8 @@ Hit Rewind is a music video streaming app featuring Billboard Hot 100 songs, con
 | Tab | View | Description |
 |-----|------|-------------|
 | Collections | `EpicShowsView` | Concert banners and featured shows |
-| Top 100 | `NEWVideosView` | Billboard Hot 100 music videos by year |
-| Live | `FanCamsView` | Fan-filmed concert footage by category/artist |
+| Top 100 | `NEWVideosView` | Billboard Hot 100 music videos by year (segmented picker: Top 100 / Charts) |
+| Artists | `FanCamsView` | Artist-based concert footage and fan cams |
 | Favorites | `FavoritesView` | User's favorited videos (requires sign-in) |
 | More | `MoreMenuView` | Search and Settings access |
 
@@ -163,12 +163,12 @@ Color.hitRewindSecondaryText // Secondary/muted text
 ### Base & Tables
 - **Base ID**: `appxCBIOkiJEZiph7`
 - **MTvVideosNEW** (active): `tblNwqwVyflL8hNDy` - All music videos
-- **MTvVideos** (deprecated): `tbl3waFYL7jfER18L` - Do not use
+- **MTvVideos** (**DEPRECATED — DO NOT USE**): `tbl3waFYL7jfER18L` — All music video data lives in **MTvVideosNEW**
 - **Concerts**: `tbl9umYOUTEVUZKnh`
 - **Concert Videos**: `tbloVr52R37ZRNLFS`
 - **Artists**: `tblu9a6MnrdzECJFJ`
 - **Category**: `tblhHeWHex8DXdq3R`
-- **MTvPlaylists**: `tblByi6o9LzE3bkc4`
+- **MTvPlaylists** (**DEPRECATED — DO NOT USE**): `tblByi6o9LzE3bkc4` — All music video data lives in **MTvVideosNEW**
 
 ### MTvVideosNEW Fields
 - `title` - Song title
@@ -185,6 +185,7 @@ The video library is sourced from Billboard Year-End Hot 100 charts.
 ### Reference Data
 - **Source**: `Full_Billboard_year_end_hot_100_USA.csv` (1946-2025)
 - **Format**: `No., Title, Artist(s), Year`
+- **Digital Dream Door**: Use `https://digitaldreamdoor.com/pages/bg_hits/bg_hits_YY.html` (where YY = 2-digit year) as the canonical song list for each year. Cross-reference DB records against this list.
 
 ### Years Completed
 - 1973-1979 (pre-MTV era)
@@ -194,7 +195,7 @@ The video library is sourced from Billboard Year-End Hot 100 charts.
 
 ### Adding New Videos
 1. Extract songs from Billboard CSV
-2. Search YouTube: `"{title} {artist} official music video"`
+2. Search YouTube via **web search** (NOT the YouTube Data API — do not use the app's YouTube API key for video searches, it burns quota needed for the app)
 3. Clean artist name (remove "featuring", etc.)
 4. Add to MTvVideosNEW via Airtable MCP or API
 
@@ -245,6 +246,19 @@ if isSubscribed {
 - Airtable API key
 - YouTube Data API v3 key
 - Superwall API key
+
+## VJ Mode Sidebar Subtitle Rules
+
+The right-hand video stack sidebar (`VJModeVideoStack`) shows a subtitle under each video title. What to display depends on context:
+
+| Page / Tab | Subtitle Shows | Why |
+|------------|---------------|-----|
+| Top 100 (any year) | **Artist name** | User already knows the year from the picker |
+| Artists > Live Library | **Year** | User already knows the artist |
+| Artists > Official | **Year** | User already knows the artist |
+| Epic Shows / Concerts | **Artist name** | Mixed artists in a category |
+
+Controlled by the `showYearSubtitle` parameter on `VJModeVideoStack`. When `true`, shows year; when `false` (default), shows artist.
 
 ## Known Patterns
 
@@ -541,3 +555,123 @@ private init() {
 1. Multitasking may be overriding - ensure `UIRequiresFullScreen`
 2. Check for competing `requestGeometryUpdate` calls
 3. Verify no other VCs are overriding `supportedInterfaceOrientations`
+
+## Figma MCP Design System Rules
+
+Rules for translating Figma designs into SwiftUI code that matches this project's conventions.
+
+### Required Figma-to-Code Workflow
+
+1. Run `get_design_context` for the target node(s)
+2. If response is truncated, run `get_metadata` first, then re-fetch specific nodes
+3. Run `get_screenshot` for visual reference
+4. Download any image/SVG assets from the Figma MCP localhost URLs
+5. Translate the output into SwiftUI using this project's conventions below
+6. Validate against the Figma screenshot for 1:1 visual parity
+
+### Color Tokens
+
+IMPORTANT: Never hardcode hex colors. Use the project's color extensions from `Extensions/Color+Extensions.swift`:
+
+| Figma Color | SwiftUI Token |
+|-------------|---------------|
+| `#A789FD` (purple accent) | `Color.hitRewindPurple` |
+| `#000000` (backgrounds) | `Color.hitRewindBackground` |
+| `#292631` (dark gray) | `Color.hitRewindDarkGray` |
+| `#1C1C1E` (secondary bg) | `Color.hitRewindSecondaryBackground` |
+| `#2C2C2E` (card bg) | `Color.hitRewindCardBackground` |
+| `#FFFFFF` (primary text) | `Color.hitRewindPrimaryText` |
+| Gray (secondary text) | `Color.hitRewindSecondaryText` |
+
+For colors not in the palette, use `Color(hex:)` initializer.
+
+### Typography
+
+Defined in `Extensions/AppFont.swift` and `Extensions/FontLoader.swift`:
+
+- **Display/section titles**: `.font(.custom(AppFont.ticketingName(), size: N))` — custom Ticketing font
+- **Body text**: `.font(.body)` or `.font(.system(size: 13))`
+- **Headings**: `.font(.title2)` or `.font(.system(size: N, weight: .bold))`
+- **Captions/metadata**: `.font(.caption)`, `.font(.caption2)`
+- **Common weights**: `.semibold` for buttons/labels, `.medium` for secondary, `.bold` for emphasis
+
+### Reusable Components
+
+IMPORTANT: Check these existing components before creating new ones:
+
+| Component | Location | Use For |
+|-----------|----------|---------|
+| `VideoThumbnailView` | `Views/MusicVideos/VideoThumbnailView.swift` | Video cards with image, title, rank badge, heart icon |
+| `HeadroomHeader` | `Views/Components/HeadroomHeader.swift` | Scroll-responsive sticky header with logo |
+| `ConcertBannerView` | `Views/EpicShows/ConcertBannerView.swift` | Landscape banners (2108/556 aspect ratio) |
+| `CategoryBannerView` | `Views/FanCams/CategoryBannerView.swift` | Category banners with gradient fallback (990/408 ratio) |
+| `SpinningRecordView` | `Views/Components/SpinningRecordView.swift` | Loading spinner (rotating record) |
+| `PlayerOverlay` | `Views/Components/PlayerOverlay.swift` | Persistent video player (VJ mode + mini player) |
+
+### Icon System (SF Symbols)
+
+Use SF Symbols exclusively. Do not import icon libraries.
+
+**Standard button pattern (control buttons):**
+```swift
+Image(systemName: "chevron.left")
+    .font(.system(size: 16, weight: .semibold))
+    .foregroundColor(.white)
+    .frame(width: 38, height: 38)
+    .background(.ultraThinMaterial)
+    .clipShape(Circle())
+```
+
+**Common icons:**
+- Playback: `play.fill`, `pause.fill`, `goforward.10`, `forward.end.fill`
+- Navigation: `chevron.left`, `arrow.up.left.and.arrow.down.right`, `xmark`
+- Favorites: `heart` / `heart.fill` (red when filled)
+- Media: `music.note`, `music.mic`, `airplayvideo`
+
+### Styling Conventions
+
+**Corner radii:**
+- Small elements (badges, chips): `4pt`
+- Cards, thumbnails: `8pt`
+- Banners, larger containers: `12pt`
+
+**Shadows:**
+```swift
+.shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)  // Cards
+.shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)  // Text readability
+```
+
+**Backgrounds:**
+- Control buttons: `.background(.ultraThinMaterial)`
+- Overlays: `.background(Color.black.opacity(0.5))`
+- Gradient fades: `LinearGradient` with `.hitRewindBackground` opacity stops
+
+**Animations:**
+- Standard transitions: `.easeInOut(duration: 0.35)`
+- Spring: `.spring(response: 0.35, dampingFraction: 0.9)`
+- Icon bounces: `.symbolEffect(.bounce, value: trigger)`
+
+### Layout Rules
+
+- **Dark mode only** — all views use the dark color palette
+- **Landscape-first** — main app is landscape-locked
+- **iPad vs iPhone detection**: `UIDevice.current.userInterfaceIdiom == .pad`
+- **Video thumbnails**: 16:9 aspect ratio (`.aspectRatio(16/9, contentMode: .fit)`)
+- **Safe areas**: Use `window.safeAreaInsets` for landscape home indicator spacing
+- **Responsive positioning**: Use `GeometryReader` for dynamic layouts, not fixed coordinates
+- **Spacing**: No centralized scale — use `4`, `8`, `10`, `12`, `16` as common values
+
+### Asset Handling
+
+- IMPORTANT: If Figma MCP returns localhost URLs for images/SVGs, download and use them directly
+- IMPORTANT: Do not install new icon packages — use SF Symbols
+- Store image assets in `HIt Rewind2/Assets.xcassets/`
+- Use `AsyncImage` with `ImageCache.shared` for remote images
+
+### Architecture Patterns
+
+- **Singletons**: Services use `.shared` pattern (`FavoritesService.shared`, `MiniPlayerManager.shared`, etc.)
+- **State**: `@StateObject` for service singletons, `@State` for local, `@Binding` for parent-child
+- **Cross-view communication**: `NotificationCenter` with typed notification names (`.showSignInSheet`, `.switchToSearch`, etc.)
+- **Navigation**: `NavigationStack` per tab, sheets for modals
+- Place new views in the appropriate `Views/` subdirectory matching feature area

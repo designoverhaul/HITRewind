@@ -9,6 +9,7 @@ import SwiftUI
 import AVFoundation
 import AVKit
 import SuperwallKit
+import StoreKit
 
 // MARK: - Notification Extensions
 extension Notification.Name {
@@ -22,13 +23,15 @@ extension Notification.Name {
     static let  searchArtist = Notification.Name("searchArtist")
     static let switchToSearch = Notification.Name("switchToSearch")
     static let showSignInSheet = Notification.Name("showSignInSheet")
+    static let vjPickerArtistChanged = Notification.Name("vjPickerArtistChanged")
+    static let vjPickerYearChanged = Notification.Name("vjPickerYearChanged")
 }
 
 struct ContentView: View {
     @Binding var shouldRestartOnboarding: Bool
     @State private var heartAnimationTrigger = false
-    @State private var selectedTab = 1  // Start with Top 100 (Music Videos) page
-    @State private var previousTab = 1
+    @State private var selectedTab = 2  // Start with Artists page
+    @State private var previousTab = 2
     @State private var showingVideoPlayer = false
     @State private var currentVideoInfo: (id: String, title: String, artist: String, year: String)?
     @StateObject private var favoritesService = FavoritesService.shared
@@ -141,7 +144,7 @@ struct ContentView: View {
                 NEWVideosView()
             }
 
-            Tab("Live", systemImage: "ticket", value: 2) {
+            Tab("Artists", systemImage: "ticket", value: 2) {
                 FanCamsView()
             }
 
@@ -179,12 +182,15 @@ struct ContentView: View {
         .accentColor(Color.hitRewindPurple)
         .onAppear {
             detectOrientation()
+            requestReviewAfterOnboarding()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
             detectOrientation()
         }
         .onChange(of: selectedTab) { oldValue, newValue in
             previousTab = newValue
+            let tabNames = [0: "Collections", 1: "Top 100", 2: "Artists", 3: "Faves", 4: "More"]
+            AnalyticsService.logTabViewed(tab: tabNames[newValue] ?? "Unknown")
         }
         .onReceive(NotificationCenter.default.publisher(for: .favoriteAdded)) { _ in
             triggerHeartAnimation()
@@ -238,6 +244,30 @@ struct ContentView: View {
         }
     }
     
+    private func requestReviewAfterOnboarding() {
+        print("⭐ requestReviewAfterOnboarding called")
+        let hasRequestedReview = UserDefaults.standard.bool(forKey: "hasRequestedReview")
+        print("⭐ hasRequestedReview = \(hasRequestedReview)")
+        guard !hasRequestedReview else {
+            print("⭐ BLOCKED — already requested, skipping")
+            return
+        }
+
+        UserDefaults.standard.set(true, forKey: "hasRequestedReview")
+        print("⭐ Timer starting — 12 seconds...")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 12.0) {
+            print("⭐ Timer fired!")
+            let scenes = UIApplication.shared.connectedScenes
+            print("⭐ Connected scenes: \(scenes.map { "\($0.activationState.rawValue)" })")
+            if let scene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                print("⭐ Calling SKStoreReviewController.requestReview(in:)")
+                SKStoreReviewController.requestReview(in: scene)
+            } else {
+                print("⭐ ERROR — no foreground-active UIWindowScene found")
+            }
+        }
+    }
+
     private func detectOrientation() {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
         let orientation = windowScene.interfaceOrientation
@@ -419,23 +449,25 @@ struct FavoritesView: View {
             }
         case .year:
             return favorites.sorted {
-                if let year1 = Int($0.year), let year2 = Int($1.year) {
-                    if year1 == year2 {
-                        return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
-                    }
-                    return year1 > year2 // Newest first
-                }
-                return $0.year > $1.year
+                let year1 = Int($0.year)
+                let year2 = Int($1.year)
+                // Push items with no year to the end
+                if year1 == nil && year2 == nil { return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+                if year1 == nil { return false }
+                if year2 == nil { return true }
+                if year1! == year2! { return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+                return year1! > year2! // Newest first
             }
         case .yearReverse:
             return favorites.sorted {
-                if let year1 = Int($0.year), let year2 = Int($1.year) {
-                    if year1 == year2 {
-                        return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
-                    }
-                    return year1 < year2 // Oldest first
-                }
-                return $0.year < $1.year
+                let year1 = Int($0.year)
+                let year2 = Int($1.year)
+                // Push items with no year to the end
+                if year1 == nil && year2 == nil { return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+                if year1 == nil { return false }
+                if year2 == nil { return true }
+                if year1! == year2! { return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+                return year1! < year2! // Oldest first
             }
         case .dateAdded:
             return favorites.sorted { $0.dateAdded > $1.dateAdded } // Most recent first
@@ -504,7 +536,7 @@ struct FavoritesView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-.navigationBarHidden(false)
+        .navigationBarHidden(UIDevice.current.userInterfaceIdiom == .pad)
         .toolbar {
             // iPhone only: Keep existing toolbar structure
             if UIDevice.current.userInterfaceIdiom != .pad {
@@ -516,18 +548,14 @@ struct FavoritesView: View {
                             .frame(height: 28)
                     }
                 }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if authService.isAuthenticated && !favoritesService.favoriteVideos.isEmpty {
+                if authService.isAuthenticated && !favoritesService.favoriteVideos.isEmpty {
+                    ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: {
                             showingSortOptions = true
                         }) {
                             Image(systemName: "arrow.up.arrow.down")
                                 .foregroundColor(.hitRewindPurple)
                         }
-                    } else {
-                        // Empty space to maintain layout
-                        Color.clear
-                            .frame(width: 44, height: 44)
                     }
                 }
             }
@@ -536,6 +564,12 @@ struct FavoritesView: View {
             ForEach(FavoritesSortOption.allCases) { option in
                 Button(option.rawValue) {
                     sortOption = option
+                    print("📊 Sort changed to: \(option.rawValue)")
+                    print("📊 Total favorites: \(favoritesService.favoriteVideos.count)")
+                    let sorted = sortedFavorites
+                    for (i, fav) in sorted.prefix(5).enumerated() {
+                        print("📊 [\(i)] \(fav.title) - \(fav.artist) - year:\(fav.year) - added:\(fav.dateAdded)")
+                    }
                 }
             }
             Button("Cancel", role: .cancel) { }
@@ -545,14 +579,11 @@ struct FavoritesView: View {
     
     private var signInPromptView: some View {
         VStack(spacing: 24) {
-            Image(systemName: "heart.circle")
-                .font(.system(size: 64))
+            Image(systemName: "heart.fill")
+                .font(.system(size: 32))
                 .foregroundColor(.hitRewindPurple)
 
-            VStack(spacing: 4) {
-                Text("Sign in with Apple to save your favorite")
-                Text("music videos and sync across all your devices.")
-            }
+            Text("Collect favorites and sync across devices")
             .font(.body)
             .foregroundColor(.hitRewindSecondaryText)
             .multilineTextAlignment(.center)
@@ -573,6 +604,7 @@ struct FavoritesView: View {
             }
             .disabled(authService.isLoading)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
     }
     
@@ -581,18 +613,19 @@ struct FavoritesView: View {
             Image(systemName: "heart")
                 .font(.system(size: 64))
                 .foregroundColor(.hitRewindSecondaryText)
-            
+
             Text("No Favorites Yet")
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundColor(.hitRewindPrimaryText)
-            
+
             Text("Tap the heart icon on any music video to add it to your favorites.")
                 .font(.body)
                 .foregroundColor(.hitRewindSecondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
     }
     
@@ -619,6 +652,7 @@ struct FavoritesView: View {
             }
             .padding(gridSpacing)
         }
+        .id(sortOption) // Force grid re-render when sort changes
         .refreshable {
             favoritesService.syncWithCloud()
         }

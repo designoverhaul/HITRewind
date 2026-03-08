@@ -7,65 +7,46 @@
 
 import Foundation
 
+enum OnboardingPageType {
+    case textOnly(emoji: String)
+    case checklist(items: [String])
+    case image(name: String)
+    case loopingVideo(name: String)
+}
+
 struct OnboardingPage: Identifiable {
     let id = UUID()
-    let imageName: String
-    let gifName: String?
     let title: String
-    let subtitle: String
-    let useCarousel: Bool
-    let useGIFCarousel: Bool
+    let pageType: OnboardingPageType
 }
 
 extension OnboardingPage {
     static let pages: [OnboardingPage] = [
         OnboardingPage(
-            imageName: "onboarding1",
-            gifName: nil,
-            title: "Remember music\non your TV?",
-            subtitle: "I want that to\nhappen again.",
-            useCarousel: true,
-            useGIFCarousel: false
+            title: "I miss MTV",
+            pageType: .textOnly(emoji: "🥺")
         ),
         OnboardingPage(
-            imageName: "onboarding2",
-            gifName: nil,
-            title: "Music is still here",
-            subtitle: "But Netflix stole the screen\n😢",
-            useCarousel: false,
-            useGIFCarousel: false
+            title: "So I made my\nown version!",
+            pageType: .textOnly(emoji: "👊")
         ),
         OnboardingPage(
-            imageName: "onboarding3",
-            gifName: nil,
-            title: "Let's take it back 🔥",
-            subtitle: "",
-            useCarousel: false,
-            useGIFCarousel: true
+            title: "This one has...",
+            pageType: .checklist(items: [
+                "Top 100 videos 1975-2026",
+                "Live shows from top artists",
+                "Official artist releases",
+                "Ridiculous collections",
+                "No ads"
+            ])
         ),
         OnboardingPage(
-            imageName: "Onboarding4",
-            gifName: nil,
-            title: "VJ Mode",
-            subtitle: "Perfect for screen-sharing {{screenShare}} short music videos on your TV",
-            useCarousel: false,
-            useGIFCarousel: false
+            title: "Try sending to\nyour TV...",
+            pageType: .image(name: "Onboarding4")
         ),
         OnboardingPage(
-            imageName: "Onboarding4.5",
-            gifName: nil,
-            title: "AirPlay {{airplay}}",
-            subtitle: "For playing longer concerts\nor just playing audio",
-            useCarousel: false,
-            useGIFCarousel: false
-        ),
-        OnboardingPage(
-            imageName: "onboarding5",
-            gifName: nil,
-            title: "Pick a Year",
-            subtitle: "You're the VJ",
-            useCarousel: false,
-            useGIFCarousel: false
+            title: "Rock your room 🤘",
+            pageType: .loopingVideo(name: "songs")
         )
     ]
 }

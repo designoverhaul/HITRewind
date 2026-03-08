@@ -198,7 +198,8 @@ struct VJModeView: View {
                         VJModeVideoStack(
                             videos: displayedVideos,
                             currentVideoId: currentVideo.id,
-                            onVideoSelect: playVideo
+                            onVideoSelect: playVideo,
+                            showYearSubtitle: isLiveMode
                         )
                         .frame(width: videoStackWidth)
                     }
@@ -401,8 +402,14 @@ struct VJModeView: View {
         case .live(let artistName, _, _):
             // Initialize with current artist
             selectedArtist = artistName
-            print("🎬 Live mode: fetching videos for artist \(artistName)")
-            fetchVideosForArtist(artistName)
+            // Use passed-in videos directly (from Official/Charts tabs) instead of re-fetching
+            if !videos.isEmpty {
+                displayedVideos = videos
+                print("🎬 Live mode: using \(videos.count) passed-in videos for artist \(artistName)")
+            } else {
+                print("🎬 Live mode: fetching videos for artist \(artistName)")
+                fetchVideosForArtist(artistName)
+            }
 
         case .concert:
             // Use all videos from context
@@ -417,6 +424,7 @@ struct VJModeView: View {
     }
 
     private func fetchVideosForYear(_ year: Int) {
+        NotificationCenter.default.post(name: .vjPickerYearChanged, object: nil, userInfo: ["year": year])
         // Use DirectVideoService (MTvVideosNEW) - same data source as Top 100 page
         let directVideos = DirectVideoService.shared.videos(forYear: year)
 
@@ -464,6 +472,7 @@ struct VJModeView: View {
     }
 
     private func fetchVideosForArtist(_ artist: String) {
+        NotificationCenter.default.post(name: .vjPickerArtistChanged, object: nil, userInfo: ["artistName": artist])
         // For Live mode, fetch videos from Airtable for the selected artist
         if isLiveMode {
             Task {

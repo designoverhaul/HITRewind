@@ -23,9 +23,7 @@ struct CategoryBannerView: View {
                         case .empty:
                             Color.black
                             .overlay(
-                                ProgressView()
-                                    .scaleEffect(1.2)
-                                    .tint(.white)
+                                SpinningRecordView(size: 30)
                             )
                         case .success(let image):
                             image

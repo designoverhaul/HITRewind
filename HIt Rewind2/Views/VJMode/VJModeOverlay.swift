@@ -153,7 +153,8 @@ struct VJModeOverlay: View {
                         VJModeVideoStack(
                             videos: displayedVideos,
                             currentVideoId: currentVideo.id,
-                            onVideoSelect: playVideo
+                            onVideoSelect: playVideo,
+                            showYearSubtitle: isLiveMode
                         )
                         .frame(width: videoStackWidth)
                     }
@@ -197,11 +198,11 @@ struct VJModeOverlay: View {
                                 }
                             }
                             .padding(12)
-                            .padding(.top, 10)
+                            .padding(.top, 25)
 
                             Spacer()
 
-                            // Bottom buttons (below camera/island) - moved up 10px
+                            // Bottom buttons (below camera/island)
                             VStack(spacing: 10) {
                                 // AirPlay button
                                 Button(action: {
@@ -228,7 +229,7 @@ struct VJModeOverlay: View {
                                 }
                             }
                             .padding(12)
-                            .padding(.bottom, 10)
+                            .padding(.bottom, 25)
                         }
 
                         Spacer()
@@ -337,6 +338,7 @@ struct VJModeOverlay: View {
     }
 
     private func fetchVideosForYear(_ year: Int) {
+        NotificationCenter.default.post(name: .vjPickerYearChanged, object: nil, userInfo: ["year": year])
         // Use DirectVideoService (MTvVideosNEW) - same data source as Top 100 page
         let directVideos = DirectVideoService.shared.videos(forYear: year)
 
@@ -356,6 +358,7 @@ struct VJModeOverlay: View {
     }
 
     private func fetchVideosForArtist(_ artist: String) {
+        NotificationCenter.default.post(name: .vjPickerArtistChanged, object: nil, userInfo: ["artistName": artist])
         if let context = playlistContext {
             displayedVideos = context.liveVideosForArtist(artist)
         } else {

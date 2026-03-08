@@ -267,8 +267,7 @@ struct ConcertDetailView: View {
     
     private var loadingView: some View {
         VStack(spacing: 16) {
-            ProgressView()
-                .tint(.hitRewindPurple)
+            SpinningRecordView()
             Text("Loading concert videos...")
                 .font(.body)
                 .foregroundColor(.hitRewindSecondaryText)
@@ -360,9 +359,9 @@ struct ConcertDetailView: View {
 
     private var heroTitleFontSize: CGFloat {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            return 48
+            return 24
         } else {
-            return verticalSizeClass == .regular ? 38 : 34
+            return verticalSizeClass == .regular ? 20 : 18
         }
     }
     

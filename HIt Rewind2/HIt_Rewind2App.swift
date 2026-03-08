@@ -34,6 +34,7 @@ struct HIt_Rewind2App: App {
     // App delegate adapter for orientation support
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+    @StateObject private var updateService = AppUpdateService.shared
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -126,12 +127,22 @@ struct HIt_Rewind2App: App {
             }
             .animation(.easeInOut(duration: 0.3), value: hasCompletedOnboarding)
             .preferredColorScheme(.dark)
+            .alert("Update Available",
+                   isPresented: $updateService.updateAvailable) {
+                Button("Update") {
+                    updateService.openAppStore()
+                }
+                Button("Later", role: .cancel) { }
+            } message: {
+                Text("A new version of Hit Rewind is available. Update now for the latest features.")
+            }
             .onAppear {
                 // Only lock to landscape if onboarding is already complete
                 // Onboarding runs in portrait mode (flag already set in init)
                 if hasCompletedOnboarding {
                     OrientationManager.shared.lockToLandscape()
                     incrementLaunchCount()
+                    AppUpdateService.shared.checkIfNeeded()
                 } else {
                     // Force portrait orientation for onboarding
                     OrientationManager.shared.switchToPortraitForOnboarding()

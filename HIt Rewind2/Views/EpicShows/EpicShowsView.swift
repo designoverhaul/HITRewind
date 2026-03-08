@@ -10,7 +10,7 @@ import SuperwallKit
 
 struct EpicShowsView: View {
     @StateObject private var airtableService = AirtableService()
-    @StateObject private var youtubeService = YouTubeService()
+    @StateObject private var youtubeService = YouTubeService.shared
     @State private var lastDataLoadDate: Date?
 
     // Cached shuffled data for performance
@@ -50,7 +50,7 @@ struct EpicShowsView: View {
         ZStack(alignment: .top) {
             ScrollView {
                 VStack(alignment: .leading, spacing: contentSpacing) {
-                    if airtableService.isLoading {
+                    if airtableService.isLoading || (cachedSortedLegendaryCategories.isEmpty && airtableService.errorMessage == nil) {
                         loadingView
                     } else if let errorMessage = airtableService.errorMessage {
                         errorView(message: errorMessage)
@@ -87,7 +87,7 @@ struct EpicShowsView: View {
     private var iPhoneLayout: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: contentSpacing) {
-                if airtableService.isLoading {
+                if airtableService.isLoading || (cachedSortedLegendaryCategories.isEmpty && airtableService.errorMessage == nil) {
                     loadingView
                 } else if let errorMessage = airtableService.errorMessage {
                     errorView(message: errorMessage)
@@ -206,14 +206,12 @@ struct EpicShowsView: View {
     
     // MARK: - Loading & Error Views
     private var loadingView: some View {
-        VStack(spacing: 24) {
-            TuningIndicatorView()
-            
-            Text("Tuning...")
-                .font(.title3)
-                .fontWeight(.medium)
+        VStack(spacing: 16) {
+            SpinningRecordView()
+
+            Text("Loading...")
+                .font(.system(size: 14))
                 .foregroundColor(.hitRewindSecondaryText)
-                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.top, 100)
@@ -606,9 +604,6 @@ struct SettingsView: View {
                 accountSection
             }
 
-            // Data & Sync Section
-            dataSection
-
             // Subscription Section
             subscriptionSection
 
@@ -751,8 +746,7 @@ struct SettingsView: View {
         Group {
             switch favoritesService.syncStatus {
             case .syncing:
-                ProgressView()
-                    .scaleEffect(0.8)
+                SpinningRecordView(size: 20)
             case .synced:
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.green)
@@ -797,8 +791,7 @@ struct SettingsView: View {
                     Spacer()
 
                     if isRestoringPurchases {
-                        ProgressView()
-                            .scaleEffect(0.8)
+                        SpinningRecordView(size: 20)
                     }
                 }
             }
@@ -869,6 +862,19 @@ struct SettingsView: View {
                         .foregroundColor(.white)
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .foregroundColor(.hitRewindSecondaryText)
+                        .font(.caption)
+                }
+            }
+
+            Link(destination: URL(string: "https://apps.apple.com/app/id6479374259?action=write-review")!) {
+                HStack {
+                    Image(systemName: "star")
+                        .foregroundColor(.hitRewindPurple)
+                    Text("Leave a Review")
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
                         .foregroundColor(.hitRewindSecondaryText)
                         .font(.caption)
                 }
@@ -1086,7 +1092,7 @@ struct LegendaryShowThumbnailView: View {
     
     @StateObject private var favoritesService = FavoritesService.shared
     @StateObject private var authService = AuthenticationService.shared
-    @StateObject private var youtubeService = YouTubeService()
+    @StateObject private var youtubeService = YouTubeService.shared
     @State private var duration: String = ""
     @State private var showingRemoveFavoriteConfirmation = false
 
@@ -1128,8 +1134,7 @@ struct LegendaryShowThumbnailView: View {
                         Rectangle()
                             .fill(Color.hitRewindDarkGray)
                             .overlay {
-                                ProgressView()
-                                    .tint(.hitRewindPurple)
+                                SpinningRecordView(size: 24)
                             }
                     }
                 } else {
@@ -1142,8 +1147,7 @@ struct LegendaryShowThumbnailView: View {
                         Rectangle()
                             .fill(Color.hitRewindDarkGray)
                             .overlay {
-                                ProgressView()
-                                    .tint(.hitRewindPurple)
+                                SpinningRecordView(size: 24)
                             }
                     }
                 }

@@ -28,7 +28,6 @@ struct ArtistVideo: Identifiable {
 
 struct ArtistSongsView: View {
     let artistName: String
-    @StateObject private var airtableService = AirtableService()
     @State private var videos: [ArtistVideo] = []
     
     // Device and orientation detection for grid layout
@@ -122,8 +121,7 @@ struct ArtistSongsView: View {
     }
     
     private var loadingView: some View {
-        ProgressView()
-            .tint(.hitRewindPurple)
+        SpinningRecordView(size: 30)
     }
     
     private var videosScrollView: some View {
@@ -207,29 +205,22 @@ struct ArtistSongsView: View {
     }
     
     private func loadArtistVideos() async {
-        await airtableService.fetchPlaylists()
-        var results: [ArtistVideo] = []
-        for playlist in airtableService.playlists {
-            let titles = playlist.fields.videoTitles ?? []
-            let urls = playlist.fields.videoUrls ?? []
-            let artists = playlist.fields.artistNames ?? []
-            let years = playlist.fields.videoYears ?? []
-            for (idx, artist) in artists.enumerated() {
-                if artist.caseInsensitiveCompare(artistName) == .orderedSame,
-                   let url = urls[safe: idx],
-                   let id = extractYouTubeVideoID(from: url) {
-                    let title = titles[safe: idx] ?? "Unknown Title"
-                    // Use individual video year if available, fallback to playlist year
-                    let videoYear = years[safe: idx] ?? String(playlist.fields.year)
-                    results.append(ArtistVideo(id: id, title: title, videoId: id, year: videoYear))
-                }
+        let service = DirectVideoService.shared
+        await service.fetchVideos()
+
+        let results = service.videos
+            .filter { $0.fields.artistName?.caseInsensitiveCompare(artistName) == .orderedSame }
+            .compactMap { record -> ArtistVideo? in
+                guard let title = record.fields.title,
+                      let videoId = record.fields.youtubeVideoId else { return nil }
+                return ArtistVideo(id: videoId, title: title, videoId: videoId, year: record.fields.year ?? "")
             }
-        }
+
         // Sort by year (newest first), then by title
         videos = results.sorted { first, second in
             if let firstYear = Int(first.year), let secondYear = Int(second.year) {
                 if firstYear != secondYear {
-                    return firstYear > secondYear // Newest first
+                    return firstYear > secondYear
                 }
             }
             return first.title.localizedCaseInsensitiveCompare(second.title) == .orderedAscending

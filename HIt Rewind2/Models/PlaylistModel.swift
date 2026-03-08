@@ -26,6 +26,7 @@ struct PlaylistFields: Codable {
     var isVisible: [Bool?]
     var isLocked: Bool?
     var isPlaylist: Bool?
+    var videoDurations: [String]?
     var youtubeChannelId: String?
     var youtubeChannelIcon: String?
 
@@ -42,6 +43,7 @@ struct PlaylistFields: Codable {
         case isPlaylist
         case artistNames
         case artistName // alias used by Airtable
+        case videoDurations = "VideoDuration"
         case youtubeChannelId
         case youtubeChannelIcon
     }
@@ -64,6 +66,7 @@ struct PlaylistFields: Codable {
         if artistNames == nil {
             artistNames = try container.decodeIfPresent([String].self, forKey: .artistName)
         }
+        videoDurations = try container.decodeIfPresent([String].self, forKey: .videoDurations)
         youtubeChannelId = try container.decodeIfPresent(String.self, forKey: .youtubeChannelId)
         youtubeChannelIcon = try container.decodeIfPresent(String.self, forKey: .youtubeChannelIcon)
     }
@@ -80,6 +83,7 @@ struct PlaylistFields: Codable {
         isVisible: [Bool?] = [],
         isLocked: Bool? = nil,
         isPlaylist: Bool? = nil,
+        videoDurations: [String]? = nil,
         youtubeChannelId: String? = nil,
         youtubeChannelIcon: String? = nil
     ) {
@@ -94,6 +98,7 @@ struct PlaylistFields: Codable {
         self.isVisible = isVisible
         self.isLocked = isLocked
         self.isPlaylist = isPlaylist
+        self.videoDurations = videoDurations
         self.youtubeChannelId = youtubeChannelId
         self.youtubeChannelIcon = youtubeChannelIcon
     }
@@ -111,6 +116,7 @@ struct PlaylistFields: Codable {
         try container.encodeIfPresent(isLocked, forKey: .isLocked)
         try container.encodeIfPresent(isPlaylist, forKey: .isPlaylist)
         try container.encodeIfPresent(artistNames, forKey: .artistNames)
+        try container.encodeIfPresent(videoDurations, forKey: .videoDurations)
         try container.encodeIfPresent(youtubeChannelId, forKey: .youtubeChannelId)
         try container.encodeIfPresent(youtubeChannelIcon, forKey: .youtubeChannelIcon)
     }

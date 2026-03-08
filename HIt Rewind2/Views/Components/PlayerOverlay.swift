@@ -37,9 +37,13 @@ struct PlayerOverlay: View {
         return window.safeAreaInsets.bottom
     }
 
-    // Mini player size (~10% larger than 192×108)
-    private let miniWidth: CGFloat = 211
-    private let miniHeight: CGFloat = 119
+    // Mini player size (~10% larger than 192×108, 50% larger on iPad)
+    private var miniWidth: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 317 : 211
+    }
+    private var miniHeight: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 179 : 119
+    }
 
     private var isVJ: Bool { manager.state == .vjMode }
     private var isMini: Bool { manager.state == .mini }
@@ -70,6 +74,15 @@ struct PlayerOverlay: View {
                         .frame(width: videoW, height: videoH)
                         .clipped()
                         .background(Color.black)
+                        .overlay {
+                            if isMini {
+                                Color.clear
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        manager.expandToVJMode()
+                                    }
+                            }
+                        }
                         .position(
                             x: isMini ? miniWidth / 2 - 13 : vjW / 2,
                             y: isMini ? h - miniHeight / 2 + 20 : vjH / 2
@@ -104,7 +117,8 @@ struct PlayerOverlay: View {
                             VJModeVideoStack(
                                 videos: manager.displayedVideos,
                                 currentVideoId: manager.currentVideo?.id ?? "",
-                                onVideoSelect: { v in manager.playVideo(v) }
+                                onVideoSelect: { v in manager.playVideo(v) },
+                                showYearSubtitle: manager.isLiveMode
                             )
                             .frame(width: videoStackWidth)
                         }
@@ -127,8 +141,8 @@ struct PlayerOverlay: View {
                     // ── MINI BUTTONS (top-left, expand above close) ──
                     if isMini {
                         VStack(spacing: 6) {
-                            Button(action: { manager.expandToVJMode() }) {
-                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            Button(action: { manager.playerCoordinator.togglePlayPause() }) {
+                                Image(systemName: manager.playerCoordinator.isPlaying ? "pause.fill" : "play.fill")
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(.white.opacity(0.85))
                                     .frame(width: 32, height: 32)
@@ -203,8 +217,8 @@ struct PlayerOverlay: View {
                     selectedArtist: $manager.selectedArtist,
                     availableYears: manager.availableYears,
                     availableArtists: manager.availableArtists,
-                    onYearSelected: { year in manager.fetchVideosForYear(year) },
-                    onArtistSelected: { artist in manager.fetchVideosForArtist(artist) }
+                    onYearSelected: { year in manager.fetchVideosForYear(year, fromPicker: true) },
+                    onArtistSelected: { artist in manager.fetchVideosForArtist(artist, fromPicker: true) }
                 )
                 .frame(height: pickerHeight)
             }
