@@ -104,6 +104,12 @@ struct NEWVideosView: View {
                 // Video grid (3 columns) with headroom scroll tracking
                 videoGridContent
                     .frame(width: gridWidth)
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        HeadroomHeader(height: headerHeight)
+                            .offset(y: headerOffset)
+                            .opacity(max(0, 1 + headerOffset / headerHeight))
+                            .animation(.easeOut(duration: 0.18), value: headerOffset)
+                    }
 
                 // Years sidebar (fixed width, on right side)
                 YearSidebarView(
@@ -114,11 +120,6 @@ struct NEWVideosView: View {
                 .frame(width: sidebarWidth)
                 .background(Color.hitRewindBackground)
             }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            HeadroomHeader(height: headerHeight)
-                .offset(y: headerOffset)
-                .animation(.spring(response: 0.35, dampingFraction: 0.9), value: headerOffset)
         }
         .navigationTitle("")
         .navigationBarHidden(true)
@@ -171,6 +172,7 @@ struct NEWVideosView: View {
                                     artist: video.fields.artistName ?? "Unknown Artist",
                                     year: video.fields.year ?? "",
                                     onTap: {},
+                                    hideArtistAndYear: isShowingTopToday,
                                     rank: video.fields.rank,
                                     hideDuration: true
                                 )
@@ -242,6 +244,7 @@ struct NEWVideosView: View {
                                     artist: video.fields.artistName ?? "Unknown Artist",
                                     year: video.fields.year ?? "",
                                     onTap: {},
+                                    hideArtistAndYear: isShowingTopToday,
                                     rank: video.fields.rank,
                                     hideDuration: true
                                 )
@@ -282,16 +285,16 @@ struct NEWVideosView: View {
         return videoService.videos(forYear: year)
     }
 
-    private var gridColumns: [GridItem] {
-        // Always 3 columns - iPhone landscape only
-        [
-            GridItem(.flexible(), spacing: 8),
-            GridItem(.flexible(), spacing: 8),
-            GridItem(.flexible(), spacing: 8)
-        ]
+    private var isPortrait: Bool {
+        verticalSizeClass == .regular && horizontalSizeClass == .compact
     }
 
-    private var gridSpacing: CGFloat { 8 }
+    private var gridColumns: [GridItem] {
+        let columnCount = isPortrait ? 2 : 3
+        return Array(repeating: GridItem(.flexible(), spacing: 8), count: columnCount)
+    }
+
+    private var gridSpacing: CGFloat { isShowingTopToday ? 12 : 8 }
 
     private var gridPadding: CGFloat { 8 }
 

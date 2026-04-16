@@ -95,8 +95,7 @@ struct VideoThumbnailView: View {
                         .resizable()
                         .scaledToFill()
                 } else if thumbnailLoadFailed {
-                    // Failed placeholder
-                    Image("TooFamous")
+                    Image("missing")
                         .resizable()
                         .scaledToFill()
                 } else {

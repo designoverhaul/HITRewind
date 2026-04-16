@@ -25,6 +25,33 @@ extension Notification.Name {
     static let showSignInSheet = Notification.Name("showSignInSheet")
     static let vjPickerArtistChanged = Notification.Name("vjPickerArtistChanged")
     static let vjPickerYearChanged = Notification.Name("vjPickerYearChanged")
+    static let openSearchSheet = Notification.Name("openSearchSheet")
+    static let openSettingsSheet = Notification.Name("openSettingsSheet")
+}
+
+// MARK: - More Menu (dropdown for Search & Settings)
+struct MoreMenu: View {
+    var body: some View {
+        Menu {
+            Button {
+                NotificationCenter.default.post(name: .openSearchSheet, object: nil)
+            } label: {
+                Label("Search", systemImage: "magnifyingglass")
+            }
+
+            Button {
+                NotificationCenter.default.post(name: .openSettingsSheet, object: nil)
+            } label: {
+                Label("Settings", systemImage: "gearshape")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
+        }
+    }
 }
 
 struct ContentView: View {
@@ -41,6 +68,8 @@ struct ContentView: View {
     @State private var navigateToSearch = false
     @State private var searchArtistName = ""
     @State private var showingSignInSheet = false
+    @State private var showingSearchSheet = false
+    @State private var showingSettingsSheet = false
     @State private var isLandscape = false
 
     // Size class detection for landscape mode
@@ -136,29 +165,24 @@ struct ContentView: View {
     var body: some View {
         ZStack {
         TabView(selection: $selectedTab) {
-            Tab("Collections", systemImage: "music.mic", value: 0) {
+            Tab("Collections", systemImage: "tray.full", value: 0) {
                 EpicShowsView()
             }
 
-            Tab("Top 100", systemImage: "movieclapper", value: 1) {
+            Tab("Top 100", systemImage: "calendar", value: 1) {
                 NEWVideosView()
             }
 
-            Tab("Artists", systemImage: "ticket", value: 2) {
+            Tab("Artists", systemImage: "music.mic", value: 2) {
                 FanCamsView()
             }
 
             Tab("Faves", systemImage: "heart.fill", value: 3) {
                 FavoritesView()
             }
-
-            Tab("", systemImage: "ellipsis", value: 4) {
-                MoreMenuView()
-            }
-            .accessibilityLabel("More")
         }
         .tabViewStyle(.tabBarOnly)
-        .toolbar(miniPlayerManager.state == .vjMode ? .hidden : .visible, for: .tabBar)
+        .toolbar(miniPlayerManager.state == .vjMode || miniPlayerManager.state == .portrait ? .hidden : .visible, for: .tabBar)
         .environment(\.onboardingRestart, $shouldRestartOnboarding)
         .overlay(videoPlayerControlsOverlay)
         .overlay(alignment: .bottom) {
@@ -189,7 +213,7 @@ struct ContentView: View {
         }
         .onChange(of: selectedTab) { oldValue, newValue in
             previousTab = newValue
-            let tabNames = [0: "Collections", 1: "Top 100", 2: "Artists", 3: "Faves", 4: "More"]
+            let tabNames = [0: "Collections", 1: "Top 100", 2: "Artists", 3: "Faves"]
             AnalyticsService.logTabViewed(tab: tabNames[newValue] ?? "Unknown")
         }
         .onReceive(NotificationCenter.default.publisher(for: .favoriteAdded)) { _ in
@@ -223,8 +247,21 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .showSignInSheet)) { _ in
             showingSignInSheet = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openSearchSheet)) { _ in
+            showingSearchSheet = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openSettingsSheet)) { _ in
+            showingSettingsSheet = true
+        }
         .sheet(isPresented: $showingSignInSheet) {
             SignInSheetView()
+        }
+        .sheet(isPresented: $showingSearchSheet) {
+            NavigationStack { SearchView() }
+        }
+        .sheet(isPresented: $showingSettingsSheet) {
+            NavigationStack { SettingsView() }
+                .environment(\.onboardingRestart, $shouldRestartOnboarding)
         }
 
             // PlayerOverlay sits above the TabView
@@ -342,67 +379,6 @@ struct AnimatedHeartTabIcon: View {
     }
 }
 
-// MARK: - More Menu View
-struct MoreMenuView: View {
-    @State private var selectedDestination: MoreDestination?
-
-    enum MoreDestination: Identifiable {
-        case search
-        case settings
-
-        var id: Self { self }
-    }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Button(action: {
-                    selectedDestination = .search
-                }) {
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.hitRewindPurple)
-                            .frame(width: 24)
-                        Text("Search")
-                            .foregroundColor(.white)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.hitRewindSecondaryText)
-                            .font(.caption)
-                    }
-                }
-
-                Button(action: {
-                    selectedDestination = .settings
-                }) {
-                    HStack {
-                        Image(systemName: "gearshape")
-                            .foregroundColor(.hitRewindPurple)
-                            .frame(width: 24)
-                        Text("Settings")
-                            .foregroundColor(.white)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.hitRewindSecondaryText)
-                            .font(.caption)
-                    }
-                }
-            }
-            .listStyle(.insetGrouped)
-            .navigationTitle("More")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(item: $selectedDestination) { destination in
-                switch destination {
-                case .search:
-                    SearchView()
-                case .settings:
-                    SettingsView()
-                }
-            }
-        }
-    }
-}
-
 // Epic Shows view is now implemented in its own file
 
 // MusicVideosView and FanCamsView are now implemented in their own files
@@ -424,13 +400,13 @@ struct FavoritesView: View {
     @State private var sortOption: FavoritesSortOption = .dateAdded
     @State private var showingSortOptions = false
 
-    // 4-column grid (app is landscape-only)
-    private let gridColumns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16)
-    ]
+    @Environment(\.verticalSizeClass) private var favVerticalSizeClass
+
+    // 3 columns in portrait, 4 in landscape
+    private var gridColumns: [GridItem] {
+        let count = favVerticalSizeClass == .compact ? 4 : 3
+        return Array(repeating: GridItem(.flexible(), spacing: 16), count: count)
+    }
 
     private let gridSpacing: CGFloat = 16
     
@@ -517,6 +493,9 @@ struct FavoritesView: View {
                         .frame(height: 28)
 
                     Spacer()
+
+                    MoreMenu()
+                        .frame(width: 60)
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 8)
@@ -557,6 +536,9 @@ struct FavoritesView: View {
                                 .foregroundColor(.hitRewindPurple)
                         }
                     }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    MoreMenu()
                 }
             }
         }

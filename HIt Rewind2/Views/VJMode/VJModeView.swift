@@ -344,8 +344,8 @@ struct VJModeView: View {
     // MARK: - Helper Methods
 
     private func setupVJMode() {
-        // Lock to landscape
-        OrientationManager.shared.lockToLandscapeRight()
+        // Lock to landscape for VJ Mode
+        OrientationManager.shared.enterVJMode()
 
         // Reset any preserved playback position from a previous video session
         // This ensures each new video starts from the beginning
@@ -386,6 +386,7 @@ struct VJModeView: View {
         // Preserve playback position so portrait player can resume
         playerCoordinator.preservePlaybackPosition()
         cleanupVJMode()
+        OrientationManager.shared.exitVJMode()
         dismiss()
     }
 

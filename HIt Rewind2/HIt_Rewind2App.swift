@@ -140,7 +140,7 @@ struct HIt_Rewind2App: App {
                 // Only lock to landscape if onboarding is already complete
                 // Onboarding runs in portrait mode (flag already set in init)
                 if hasCompletedOnboarding {
-                    OrientationManager.shared.lockToLandscape()
+                    OrientationManager.shared.isOnboardingShowing = false
                     incrementLaunchCount()
                     AppUpdateService.shared.checkIfNeeded()
                 } else {

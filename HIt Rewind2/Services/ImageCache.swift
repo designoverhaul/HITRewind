@@ -132,30 +132,59 @@ final class ImageCache: @unchecked Sendable {
         return result
     }
 
-    /// Load YouTube thumbnail with automatic fallback to different qualities
+    /// Load YouTube thumbnail with automatic fallback to different qualities.
+    /// Returns nil when YouTube serves its 120×90 "no thumbnail" gray placeholder
+    /// (happens for removed/private videos), so callers can show the `missing` asset.
     func loadYouTubeThumbnail(videoId: String) async -> UIImage? {
         let cacheKey = "yt_thumb_\(videoId)"
 
-        // Check cache first (memory + disk)
         if let cached = image(for: cacheKey) {
             return cached
         }
 
-        // Try different qualities and hosts
-        let qualities = ["mqdefault.jpg", "hqdefault.jpg", "default.jpg"]
+        // mqdefault is 320×180 for real videos, 120×90 when missing.
+        // hqdefault is 480×360 for real videos, 120×90 when missing.
+        // We intentionally skip `default.jpg` since its real size (120×90) is
+        // indistinguishable from the gray placeholder.
+        let qualities = ["mqdefault.jpg", "hqdefault.jpg"]
         let hosts = ["i.ytimg.com", "img.youtube.com"]
 
         for quality in qualities {
             for host in hosts {
                 guard let url = URL(string: "https://\(host)/vi/\(videoId)/\(quality)") else { continue }
 
-                if let image = await loadImage(from: url, cacheKey: cacheKey) {
-                    return image
+                if let image = await loadImageWithoutCache(from: url) {
+                    if image.size.width > 120 {
+                        store(image, for: cacheKey)
+                        return image
+                    }
                 }
             }
         }
 
         return nil
+    }
+
+    /// Fetch image bytes without consulting or writing to the cache.
+    /// Used when the caller needs to validate the response before caching.
+    private func loadImageWithoutCache(from url: URL) async -> UIImage? {
+        do {
+            var request = URLRequest(url: url)
+            request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148", forHTTPHeaderField: "User-Agent")
+            request.setValue("image/avif,image/webp,image/apng,image/*,*/*;q=0.8", forHTTPHeaderField: "Accept")
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                return nil
+            }
+            guard let contentType = http.value(forHTTPHeaderField: "Content-Type"), contentType.hasPrefix("image") else {
+                return nil
+            }
+            return UIImage(data: data)
+        } catch {
+            return nil
+        }
     }
 
     /// Clear all cached images
@@ -187,6 +216,47 @@ final class ImageCache: @unchecked Sendable {
         loadQueue.async {
             guard let data = image.jpegData(compressionQuality: 0.8) else { return }
             try? data.write(to: path)
+        }
+    }
+}
+
+// MARK: - YouTube Thumbnail View
+
+/// Loads a YouTube thumbnail via `ImageCache` and falls back to the `missing`
+/// asset when the video is gone or YouTube served its gray "no thumbnail" image.
+struct YouTubeThumbnailImage: View {
+    let videoId: String
+    var contentMode: ContentMode = .fill
+
+    @State private var uiImage: UIImage?
+    @State private var didFail = false
+
+    var body: some View {
+        Group {
+            if let uiImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: contentMode)
+            } else if didFail {
+                Image("missing")
+                    .resizable()
+                    .aspectRatio(contentMode: contentMode)
+            } else {
+                Rectangle().fill(Color.hitRewindDarkGray)
+            }
+        }
+        .onAppear {
+            if uiImage == nil, let cached = ImageCache.shared.cachedImage(for: videoId) {
+                uiImage = cached
+            }
+        }
+        .task(id: videoId) {
+            guard uiImage == nil, !didFail else { return }
+            if let img = await ImageCache.shared.loadYouTubeThumbnail(videoId: videoId) {
+                uiImage = img
+            } else {
+                didFail = true
+            }
         }
     }
 }

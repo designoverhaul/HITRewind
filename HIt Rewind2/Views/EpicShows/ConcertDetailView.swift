@@ -112,7 +112,8 @@ struct ConcertDetailView: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 HeadroomHeader(height: headerHeight, showBackButton: true, onBackTap: { dismiss() })
                     .offset(y: headerOffset)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.9), value: headerOffset)
+                    .opacity(max(0, 1 + headerOffset / headerHeight))
+                    .animation(.easeOut(duration: 0.18), value: headerOffset)
             }
             .headroomScrollTracking(
                 headerOffset: $headerOffset,
@@ -122,7 +123,9 @@ struct ConcertDetailView: View {
         }
     }
 
-    // MARK: - Banner Image Section (fixed height, full width, scrolls with content)
+    // MARK: - Banner Image Section (full width, scrolls with content)
+    // Custom banner images: show at full aspect ratio (no height cropping)
+    // Fallback banners (no image): shorter fixed height
     private var bannerImageSection: some View {
         Group {
             if let bannerUrl = concert.fields.bannerImage?.first?.url,
@@ -132,27 +135,30 @@ struct ConcertDetailView: View {
                     case .success(let image):
                         image
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxWidth: .infinity)
                     case .failure:
                         fallbackBannerImage
                     default:
                         Rectangle()
                             .fill(Color.hitRewindDarkGray)
+                            .frame(height: fallbackBannerHeight)
+                            .frame(maxWidth: .infinity)
                     }
                 }
             } else {
                 fallbackBannerImage
             }
         }
-        .frame(height: bannerHeight)
-        .frame(maxWidth: .infinity)
-        .clipped()
     }
 
     private var fallbackBannerImage: some View {
         Image("HeaderBackground")
             .resizable()
             .aspectRatio(contentMode: .fill)
+            .frame(height: fallbackBannerHeight)
+            .frame(maxWidth: .infinity)
+            .clipped()
     }
 
     // MARK: - Body Content (below banner, solid background)
@@ -213,8 +219,8 @@ struct ConcertDetailView: View {
         .padding(.vertical, 16)
     }
 
-    private var bannerHeight: CGFloat {
-        UIDevice.current.userInterfaceIdiom == .pad ? 280 : 200
+    private var fallbackBannerHeight: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 140 : 100
     }
     
     // MARK: - Content Section (Apple TV Style)
@@ -336,8 +342,8 @@ struct ConcertDetailView: View {
         if UIDevice.current.userInterfaceIdiom == .pad {
             return horizontalSizeClass == .regular ? 4 : 3
         } else {
-            // iPhone: always 3 columns (app is landscape only)
-            return 3
+            // iPhone: 3 columns in landscape, 2 in portrait
+            return verticalSizeClass == .regular ? 2 : 3
         }
     }
     
@@ -385,7 +391,7 @@ struct ConcertDetailView: View {
         let playlistContext = PlaylistContext(
             videos: playlistVideos,
             currentIndex: currentIndex,
-            sourceType: .concert
+            sourceType: .concert(bannerImageURL: concert.fields.bannerImage?.first?.url)
         )
 
         MiniPlayerManager.shared.openVJMode(

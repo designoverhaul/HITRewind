@@ -295,7 +295,7 @@ struct VJModeOverlay: View {
     // MARK: - Setup/Cleanup
 
     private func setupVJMode() {
-        OrientationManager.shared.lockToLandscapeRight()
+        OrientationManager.shared.enterVJMode()
         isFavorited = favoritesService.isFavorited(currentVideo.id)
         setupDisplayedVideos()
 
@@ -314,6 +314,7 @@ struct VJModeOverlay: View {
         // Preserve playback position so portrait player can resume
         playerCoordinator.preservePlaybackPosition()
         cleanupVJMode()
+        OrientationManager.shared.exitVJMode()
         withAnimation(.easeInOut(duration: 0.3)) {
             isPresented = false
         }

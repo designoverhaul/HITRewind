@@ -20,8 +20,42 @@ struct VJModePicker: View {
     let onYearSelected: (Int) -> Void
     let onArtistSelected: (String) -> Void
 
+    /// Changes when the artist/year list changes, resetting scroll position
+    private var pickerResetID: String {
+        switch sourceType {
+        case .musicVideos:
+            return "years-\(availableYears.count)"
+        case .live:
+            return "artists-\(availableArtists.hashValue)"
+        default:
+            return "none"
+        }
+    }
+
+    /// Index of the currently selected item, so we can scroll to it
+    private var selectedItemIndex: Int? {
+        switch sourceType {
+        case .musicVideos:
+            guard let year = selectedYear else { return nil }
+            return availableYears.firstIndex(of: year)
+        case .live:
+            guard let artist = selectedArtist else { return nil }
+            return availableArtists.firstIndex(of: artist)
+        default:
+            return nil
+        }
+    }
+
+    private var itemCount: Int {
+        switch sourceType {
+        case .musicVideos: return availableYears.count
+        case .live: return availableArtists.count
+        default: return 0
+        }
+    }
+
     var body: some View {
-        HorizontalOnlyScrollView {
+        HorizontalOnlyScrollView(resetID: pickerResetID, scrollToItemIndex: selectedItemIndex, totalItems: itemCount) {
             HStack(alignment: .center, spacing: 8) {
                 switch sourceType {
                 case .musicVideos:
@@ -94,9 +128,11 @@ struct VJModePicker: View {
             onArtistSelected(artist)
         }) {
             Text(artist)
-                .font(.custom(AppFont.ticketingName(), size: 14))
+                .font(.system(size: 14))
                 .fontWeight(selectedArtist == artist ? .bold : .medium)
                 .foregroundColor(selectedArtist == artist ? .black : .hitRewindPrimaryText)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(
@@ -112,8 +148,14 @@ struct VJModePicker: View {
 
 struct HorizontalOnlyScrollView<Content: View>: UIViewRepresentable {
     let content: Content
+    var resetID: String?
+    var scrollToItemIndex: Int?
+    var totalItems: Int
 
-    init(@ViewBuilder content: () -> Content) {
+    init(resetID: String? = nil, scrollToItemIndex: Int? = nil, totalItems: Int = 0, @ViewBuilder content: () -> Content) {
+        self.resetID = resetID
+        self.scrollToItemIndex = scrollToItemIndex
+        self.totalItems = totalItems
         self.content = content()
     }
 
@@ -146,12 +188,24 @@ struct HorizontalOnlyScrollView<Content: View>: UIViewRepresentable {
         ])
 
         context.coordinator.hostingController = hostingController
+        context.coordinator.lastResetID = resetID
 
         return scrollView
     }
 
     func updateUIView(_ scrollView: UIScrollView, context: Context) {
         context.coordinator.hostingController?.rootView = content
+
+        // Reset scroll position when resetID changes, scrolling to selected item
+        if resetID != context.coordinator.lastResetID {
+            context.coordinator.lastResetID = resetID
+            scrollToItem(in: scrollView, animated: false)
+        }
+        // On first layout, scroll to selected item once content is sized
+        if !context.coordinator.hasScrolledInitially && scrollView.contentSize.width > scrollView.bounds.width {
+            context.coordinator.hasScrolledInitially = true
+            scrollToItem(in: scrollView, animated: false)
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -160,6 +214,28 @@ struct HorizontalOnlyScrollView<Content: View>: UIViewRepresentable {
 
     class Coordinator {
         var hostingController: UIHostingController<Content>?
+        var lastResetID: String?
+        var hasScrolledInitially: Bool = false
+    }
+
+    /// Scroll to the selected item by estimating its position proportionally
+    private func scrollToItem(in scrollView: UIScrollView, animated: Bool) {
+        guard let index = scrollToItemIndex, totalItems > 0 else {
+            scrollView.setContentOffset(.zero, animated: animated)
+            return
+        }
+        // After a brief delay so content is laid out
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            let contentWidth = scrollView.contentSize.width
+            let viewWidth = scrollView.bounds.width
+            guard contentWidth > viewWidth else { return }
+
+            // Estimate item position (evenly distributed)
+            let itemFraction = CGFloat(index) / CGFloat(max(1, totalItems))
+            let targetX = itemFraction * contentWidth - viewWidth / 2
+            let clampedX = max(0, min(targetX, contentWidth - viewWidth))
+            scrollView.setContentOffset(CGPoint(x: clampedX, y: 0), animated: animated)
+        }
     }
 }
 

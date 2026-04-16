@@ -47,8 +47,8 @@ struct HeadroomHeader: View {
 
                 Spacer()
 
-                // Balance the layout
-                Spacer()
+                // More menu (Search / Settings)
+                MoreMenu()
                     .frame(width: 44)
             }
             .padding(.horizontal, 8)
@@ -86,15 +86,15 @@ struct HeadroomScrollModifier: ViewModifier {
                 let offset = newValue
                 let delta = offset - lastScrollOffset
 
-                // Only respond to significant scroll changes (avoid jitter)
-                guard abs(delta) > 5 else { return }
+                // Tiny dead-zone to filter pure jitter while staying responsive to fingertip motion
+                guard abs(delta) > 1 else { return }
 
-                // Hide header when scrolling up (content moving up) and past initial content
-                if delta > 0 && offset > 80 {
+                // Hide header the moment the user scrolls up (content moving up), past the very top
+                if delta > 0 && offset > 5 {
                     headerOffset = -headerHeight
                 }
-                // Show header when scrolling down (content moving down) or near top
-                else if delta < 0 || offset < 20 {
+                // Show header when scrolling down (content moving down) or right at the top
+                else if delta < 0 || offset < 5 {
                     headerOffset = 0
                 }
 

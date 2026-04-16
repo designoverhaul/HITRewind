@@ -105,8 +105,14 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding() {
-        // Switch to landscape before showing main app
-        OrientationManager.shared.lockToLandscape()
+        // Clear onboarding flag so all orientations are allowed
+        OrientationManager.shared.isOnboardingShowing = false
+        if #available(iOS 16.0, *) {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootVC = windowScene.windows.first?.rootViewController {
+                rootVC.setNeedsUpdateOfSupportedInterfaceOrientations()
+            }
+        }
 
         // Complete onboarding right away (music continues fading in background)
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")

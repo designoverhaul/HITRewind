@@ -100,7 +100,8 @@ struct EpicShowsView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             HeadroomHeader(height: headerHeight)
                 .offset(y: headerOffset)
-                .animation(.spring(response: 0.35, dampingFraction: 0.9), value: headerOffset)
+                .opacity(max(0, 1 + headerOffset / headerHeight))
+                .animation(.easeOut(duration: 0.18), value: headerOffset)
         }
         .headroomScrollTracking(
             headerOffset: $headerOffset,
@@ -142,9 +143,18 @@ struct EpicShowsView: View {
         }
     }
 
-    // MARK: - Double Concert Banner Row (two side by side, full width)
+    // MARK: - Double Concert Banner Row (side by side in landscape, stacked in portrait)
+
+    private var isPortraitLayout: Bool {
+        verticalSizeClass == .regular && horizontalSizeClass == .compact
+    }
+
     private func doubleConcertBannerRow(concerts: [Concert]) -> some View {
-        HStack(spacing: 10) {
+        let layout = isPortraitLayout
+            ? AnyLayout(VStackLayout(spacing: 16))
+            : AnyLayout(HStackLayout(spacing: 16))
+
+        return layout {
             if concerts.count >= 1 {
                 NavigationLink(destination: ConcertDetailView(concert: concerts[0])) {
                     ConcertBannerView(concert: concerts[0])
@@ -159,8 +169,8 @@ struct EpicShowsView: View {
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
-            } else {
-                // If only one concert, add empty spacer for balance
+            } else if !isPortraitLayout {
+                // If only one concert in landscape, add empty spacer for balance
                 Spacer()
                     .frame(maxWidth: .infinity)
             }
@@ -477,9 +487,10 @@ struct EpicShowsView: View {
             var otherCategories = categories.filter { $0.name != "Last Dance" }
             let lastDanceCategory = categories.first { $0.name == "Last Dance" }
 
-            // Randomly pick up to 4 from other categories, then add Last Dance as the 5th
+            // Randomly pick up to 2 from other categories, then add Last Dance as the 3rd
+            // (3 categories → 3 scrolling rows + 6 concert banners)
             otherCategories.shuffle()
-            let maxOther = lastDanceCategory != nil ? 4 : 5
+            let maxOther = lastDanceCategory != nil ? 2 : 3
             otherCategories = Array(otherCategories.prefix(maxOther))
 
             // Add "Last Dance" at the end if it exists
@@ -1123,37 +1134,9 @@ struct LegendaryShowThumbnailView: View {
     
     private var thumbnailView: some View {
         ZStack {
-            // Use custom videoImage if available, otherwise fall back to YouTube thumbnail
-            Group {
-                if let customImageUrl = show.fields.videoImage, !customImageUrl.isEmpty {
-                    AsyncImage(url: URL(string: customImageUrl)) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Rectangle()
-                            .fill(Color.hitRewindDarkGray)
-                            .overlay {
-                                SpinningRecordView(size: 24)
-                            }
-                    }
-                } else {
-                    // Fallback to YouTube thumbnail
-                    AsyncImage(url: youtubeService.getThumbnailURL(for: videoId, quality: .medium)) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Rectangle()
-                            .fill(Color.hitRewindDarkGray)
-                            .overlay {
-                                SpinningRecordView(size: 24)
-                            }
-                    }
-                }
-            }
-            .clipped()
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            YouTubeThumbnailImage(videoId: videoId)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             
             // Duration badge and heart button
             VStack {

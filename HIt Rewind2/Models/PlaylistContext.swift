@@ -40,7 +40,8 @@ enum VideoSourceType: Equatable {
     case epicShows(categoryName: String, allCategoryVideos: [PlaylistVideo])
 
     /// Concert page - shows concert videos only (no picker)
-    case concert
+    /// bannerImageURL: The concert banner image URL (optional)
+    case concert(bannerImageURL: String? = nil)
 
     /// Live/FanCams page - shows artists from category and videos by artist
     /// artistName: The current artist name
@@ -53,7 +54,7 @@ enum VideoSourceType: Equatable {
         case (.musicVideos, .musicVideos):
             return true
         case (.concert, .concert):
-            return true
+            return true // ignore bannerImageURL for equality
         case let (.epicShows(name1, _), .epicShows(name2, _)):
             return name1 == name2
         case (.live(let artist1, _, _), .live(let artist2, _, _)):

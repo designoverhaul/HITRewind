@@ -15,34 +15,116 @@ struct YearSidebarView: View {
     @Binding var selectedYear: Int?
     let onYearSelected: (Int) -> Void
 
-    var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 2) {
-                // Hardcoded "Top Today" row at the top
-                YearRowView(
-                    year: kSpotifyTop50Year,
-                    isSelected: selectedYear == kSpotifyTop50Year,
-                    onTap: {
-                        onYearSelected(kSpotifyTop50Year)
-                    }
-                )
+    // Track whether the selected row is visible and its relative position
+    @State private var selectedRowVisible: Bool = true
+    @State private var selectedAboveViewport: Bool = false
+    @State private var lastKnownAboveState: Bool = false  // remembers direction when row unloads
 
-                // Regular year rows
-                ForEach(years.filter { $0 != kSpotifyTop50Year }, id: \.self) { year in
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    /// In landscape (compact vertical), stick to the very edge; in portrait, add margin
+    private var isLandscape: Bool {
+        verticalSizeClass == .compact
+    }
+
+    /// All years in display order: "Today" first, then the rest
+    private var allYears: [Int] {
+        [kSpotifyTop50Year] + years.filter { $0 != kSpotifyTop50Year }
+    }
+
+    var body: some View {
+        GeometryReader { outerGeo in
+            let sidebarHeight = outerGeo.size.height
+            ZStack(alignment: selectedAboveViewport ? .top : .bottom) {
+                // Main scrollable list
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 2) {
+                            ForEach(allYears, id: \.self) { year in
+                                YearRowView(
+                                    year: year,
+                                    isSelected: selectedYear == year,
+                                    onTap: { onYearSelected(year) }
+                                )
+                                .id(year)
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear
+                                            .preference(
+                                                key: SelectedYearVisibilityKey.self,
+                                                value: selectedYear == year
+                                                    ? SelectedYearPosition(minY: geo.frame(in: .named("sidebarScroll")).minY,
+                                                                           maxY: geo.frame(in: .named("sidebarScroll")).maxY)
+                                                    : nil
+                                            )
+                                    }
+                                )
+                            }
+                        }
+                        .padding(.vertical, isLandscape ? 0 : 8)
+                    }
+                    .coordinateSpace(name: "sidebarScroll")
+                    .onPreferenceChange(SelectedYearVisibilityKey.self) { position in
+                        if let pos = position {
+                            // Check if the selected row is within the sidebar's own bounds
+                            let margin: CGFloat = isLandscape ? 0 : 8
+                            let isVisible = pos.maxY > margin && pos.minY < sidebarHeight - margin
+                            selectedRowVisible = isVisible
+                            // Determine if the row is above or below the viewport
+                            // Above: row's bottom edge is at or above the top margin
+                            // Also consider "heading above" when minY < half the sidebar (top half of scroll)
+                            let isAbove = pos.maxY <= margin
+                            selectedAboveViewport = isAbove
+                            // Track which half of the sidebar the row is in, so when LazyVStack
+                            // unloads it we know which direction it went
+                            lastKnownAboveState = pos.minY < sidebarHeight / 2
+                        } else {
+                            // Selected year not in lazy stack's loaded range (LazyVStack unloaded it)
+                            // Use the last known direction to determine sticky position
+                            selectedRowVisible = false
+                            selectedAboveViewport = lastKnownAboveState
+                        }
+                    }
+                    .onChange(of: selectedYear) { _, newYear in
+                        guard let year = newYear else { return }
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(year, anchor: .center)
+                        }
+                    }
+                }
+
+                // Sticky selected year pinned to top or bottom when scrolled off-screen (landscape only)
+                if isLandscape, !selectedRowVisible, let year = selectedYear {
                     YearRowView(
                         year: year,
-                        isSelected: selectedYear == year,
-                        onTap: {
-                            onYearSelected(year)
-                        }
+                        isSelected: true,
+                        onTap: { onYearSelected(year) }
                     )
+                    .transition(.opacity)
+                    .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: selectedAboveViewport ? 2 : -2)
                 }
             }
-            .padding(.vertical, 8)
         }
+        .ignoresSafeArea(.container, edges: isLandscape ? [.top, .bottom] : [])
         .background(Color.hitRewindBackground)
     }
 }
+
+// MARK: - Preference Key for tracking selected row position
+
+private struct SelectedYearPosition: Equatable {
+    let minY: CGFloat
+    let maxY: CGFloat
+}
+
+private struct SelectedYearVisibilityKey: PreferenceKey {
+    static var defaultValue: SelectedYearPosition? = nil
+    static func reduce(value: inout SelectedYearPosition?, nextValue: () -> SelectedYearPosition?) {
+        value = value ?? nextValue()
+    }
+}
+
+// MARK: - Year Row
 
 struct YearRowView: View {
     let year: Int

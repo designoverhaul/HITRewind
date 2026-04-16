@@ -36,7 +36,7 @@ class AirtableService: ObservableObject {
     private static let playlistsCacheFile = cacheDirectory.appendingPathComponent("playlists.json")
     private static let categoriesCacheFile = cacheDirectory.appendingPathComponent("categories.json")
     private static let concertsCacheFile = cacheDirectory.appendingPathComponent("concerts.json")
-    private static let legendaryCategoriesCacheFile = cacheDirectory.appendingPathComponent("legendary_categories.json")
+    private static let legendaryCategoriesCacheFile = cacheDirectory.appendingPathComponent("legendary_categories_v2.json")
     private static let artistsCacheDirectory = cacheDirectory.appendingPathComponent("artists")
     private static let cacheMetadataFile = cacheDirectory.appendingPathComponent("cache_metadata.json")
     private static let cacheMaxAge: TimeInterval = 7 * 24 * 60 * 60 // 7 days
@@ -47,7 +47,7 @@ class AirtableService: ObservableObject {
         let lastUpdated: Date
         let version: Int
 
-        static let currentVersion = 2
+        static let currentVersion = 3
     }
 
     // MARK: - Request Deduplication
@@ -498,8 +498,7 @@ class AirtableService: ObservableObject {
         guard var components = URLComponents(string: AirtableConfig.artistsUrl) else { throw PlaylistError.invalidURL }
         var items = components.queryItems ?? []
         let escaped = name.replacingOccurrences(of: "\"", with: "\\\"")
-            .replacingOccurrences(of: "'", with: "\\'")
-        items.append(URLQueryItem(name: "filterByFormula", value: "{artistName} = '\(escaped)'"))
+        items.append(URLQueryItem(name: "filterByFormula", value: "{artistName} = \"\(escaped)\""))
         items.append(URLQueryItem(name: "pageSize", value: "1"))
 
         // Limit fields to reduce payload size
@@ -511,10 +510,14 @@ class AirtableService: ObservableObject {
         items.append(URLQueryItem(name: "fields[]", value: "youtubeChannelIcon"))
 
         components.queryItems = items
+        // Encode '+' as %2B so it isn't interpreted as a space by the server
+        if let query = components.percentEncodedQuery {
+            components.percentEncodedQuery = query.replacingOccurrences(of: "+", with: "%2B")
+        }
         guard let url = components.url else { throw PlaylistError.invalidURL }
 
         print("🔍 API URL: \(url.absoluteString)")
-        print("🔍 Filter formula: {artistName} = '\(escaped)'")
+        print("🔍 Filter formula: {artistName} = \"\(escaped)\"")
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -614,14 +617,18 @@ class AirtableService: ObservableObject {
 
     // MARK: - Fetch Official Videos from OfficialVideos table
     func fetchOfficialVideos(artistName: String) async throws -> [YouTubeChannelVideo] {
-        let escaped = artistName.replacingOccurrences(of: "'", with: "\\'")
+        let escaped = artistName.replacingOccurrences(of: "\"", with: "\\\"")
         guard var components = URLComponents(string: AirtableConfig.officialVideosUrl) else { throw PlaylistError.invalidURL }
         var items = components.queryItems ?? []
-        items.append(URLQueryItem(name: "filterByFormula", value: "{artistName} = '\(escaped)'"))
+        items.append(URLQueryItem(name: "filterByFormula", value: "{artistName} = \"\(escaped)\""))
         items.append(URLQueryItem(name: "sort[0][field]", value: "publishedDate"))
         items.append(URLQueryItem(name: "sort[0][direction]", value: "desc"))
         items.append(URLQueryItem(name: "pageSize", value: "100"))
         components.queryItems = items
+        // Encode '+' as %2B so it isn't interpreted as a space by the server
+        if let query = components.percentEncodedQuery {
+            components.percentEncodedQuery = query.replacingOccurrences(of: "+", with: "%2B")
+        }
         guard let url = components.url else { throw PlaylistError.invalidURL }
 
         var request = URLRequest(url: url)
@@ -685,6 +692,9 @@ class AirtableService: ObservableObject {
         items.append(URLQueryItem(name: "filterByFormula", value: "LOWER({artist})=LOWER(\"\(escaped)\")"))
         items.append(URLQueryItem(name: "pageSize", value: "1"))
         components.queryItems = items
+        if let query = components.percentEncodedQuery {
+            components.percentEncodedQuery = query.replacingOccurrences(of: "+", with: "%2B")
+        }
         guard let url = components.url else { throw PlaylistError.invalidURL }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -1569,59 +1579,26 @@ class AirtableService: ObservableObject {
         return accumulated
     }
     
-    /// Build Legendary categories by grouping Videos table rows by multi-select LegendaryShows
-    /// Also fetches from MTvVideosNEW table and merges results
+    /// Build Legendary categories by grouping Videos rows by the LegendaryShow multi-select field
     private func performLegendaryCategoriesFromVideosRequest() async throws -> [LegendaryCategory] {
         struct AirtableListResponse<Record: Codable>: Codable { let records: [Record]; let offset: String? }
 
-        // Videos table structure
         struct VideoRecord: Codable { let id: String; let fields: VideoFields }
         struct VideoFields: Codable {
             let Title: String?
-            let Artist: String?
-            let artistName: [String]? // some bases store as array
-            let Year: String?
+            let artistName: [String]?
             let URL: String?
-            let videoImage: String?
-            let LegendaryShow: [String]? // multi-select values (names)
-        }
-
-        // MTvVideosNEW table structure (different field names)
-        struct MtvVideoRecord: Codable { let id: String; let fields: MtvVideoFields }
-        struct MtvVideoFields: Codable {
-            let title: String?
-            let artistName: String?
-            let url: String?
             let Year: String?
-            let LegendaryShows: [String]? // note: plural "Shows"
+            let LegendaryShow: [String]?
+            let videoImage: String?
         }
 
-        // Helper to generate YouTube thumbnail from URL
-        func extractVideoImage(from url: String) -> String? {
-            // Extract video ID from YouTube URL
-            if let range = url.range(of: "v=") {
-                let videoId = String(url[range.upperBound...].prefix(11))
-                return "https://img.youtube.com/vi/\(videoId)/mqdefault.jpg"
-            } else if url.contains("youtu.be/") {
-                if let range = url.range(of: "youtu.be/") {
-                    let videoId = String(url[range.upperBound...].prefix(11))
-                    return "https://img.youtube.com/vi/\(videoId)/mqdefault.jpg"
-                }
-            }
-            return nil
-        }
-
-        var groups: [String: [LegendaryShow]] = [:]
-        let decoder = JSONDecoder()
-
-        // MARK: - Fetch from Videos table
         func makeVideosPageURL(offset: String?) throws -> URL {
             guard var components = URLComponents(string: AirtableConfig.videosUrl) else { throw PlaylistError.invalidURL }
             var items = components.queryItems ?? []
-            if !items.contains(where: { $0.name == "pageSize" }) {
-                items.append(URLQueryItem(name: "pageSize", value: "100"))
-            }
-            let fields = ["Title","artistName","Year","URL","videoImage","LegendaryShow"]
+            items.append(URLQueryItem(name: "pageSize", value: "100"))
+            items.append(URLQueryItem(name: "filterByFormula", value: "LegendaryShow!=''"))
+            let fields = ["Title","artistName","Year","URL","LegendaryShow","videoImage"]
             for f in fields { items.append(URLQueryItem(name: "fields[]", value: f)) }
             if let offset = offset { items.append(URLQueryItem(name: "offset", value: offset)) }
             components.queryItems = items
@@ -1629,7 +1606,9 @@ class AirtableService: ObservableObject {
             return finalURL
         }
 
-        var videosAccumulated: [VideoRecord] = []
+        let decoder = JSONDecoder()
+        var groups: [String: [LegendaryShow]] = [:]
+        var accumulated: [VideoRecord] = []
         var nextOffset: String? = nil
 
         repeat {
@@ -1638,24 +1617,20 @@ class AirtableService: ObservableObject {
             request.httpMethod = "GET"
             request.setValue("Bearer \(AirtableConfig.apiKey)", forHTTPHeaderField: "Authorization")
             let (data, responseMeta) = try await session.data(for: request)
-            if let json = String(data: data, encoding: .utf8) {
-                print("📡 Raw Videos Legendary fetch (page): \(String(json.prefix(500)))…")
-            }
             if let http = responseMeta as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
                 throw PlaylistError.networkError(NSError(domain: "Airtable", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode)"]))
             }
             let response = try decoder.decode(AirtableListResponse<VideoRecord>.self, from: data)
-            videosAccumulated.append(contentsOf: response.records)
+            accumulated.append(contentsOf: response.records)
             nextOffset = response.offset
         } while nextOffset != nil
 
-        // Process Videos table records
-        for rec in videosAccumulated {
+        for rec in accumulated {
             let f = rec.fields
             guard let url = f.URL, !url.isEmpty,
                   let title = f.Title, !title.isEmpty
             else { continue }
-            let artist = (f.artistName?.first?.isEmpty == false ? f.artistName?.first : f.Artist) ?? "Unknown Artist"
+            let artist = f.artistName?.first ?? "Unknown Artist"
             let yearInt: Int = Int(f.Year ?? "") ?? 0
             let showFields = LegendaryShowFields(title: title, artist: artist, year: yearInt, youtubeUrl: url, videoImage: f.videoImage)
             let show = LegendaryShow(id: rec.id, fields: showFields)
@@ -1665,64 +1640,8 @@ class AirtableService: ObservableObject {
             }
         }
 
-        print("✅ Processed \(videosAccumulated.count) records from Videos table")
+        print("✅ Processed \(accumulated.count) records from Videos table")
 
-        // MARK: - Fetch from MTvVideosNEW table
-        func makeMtvVideosPageURL(offset: String?) throws -> URL {
-            guard var components = URLComponents(string: AirtableConfig.mtvVideosNewUrl) else { throw PlaylistError.invalidURL }
-            var items = components.queryItems ?? []
-            items.append(URLQueryItem(name: "pageSize", value: "100"))
-            // Filter to only records that have LegendaryShows assigned
-            items.append(URLQueryItem(name: "filterByFormula", value: "LegendaryShows!=''"))
-            let fields = ["title","artistName","Year","url","LegendaryShows"]
-            for f in fields { items.append(URLQueryItem(name: "fields[]", value: f)) }
-            if let offset = offset { items.append(URLQueryItem(name: "offset", value: offset)) }
-            components.queryItems = items
-            guard let finalURL = components.url else { throw PlaylistError.invalidURL }
-            return finalURL
-        }
-
-        var mtvAccumulated: [MtvVideoRecord] = []
-        nextOffset = nil
-
-        repeat {
-            let requestUrl = try makeMtvVideosPageURL(offset: nextOffset)
-            var request = URLRequest(url: requestUrl)
-            request.httpMethod = "GET"
-            request.setValue("Bearer \(AirtableConfig.apiKey)", forHTTPHeaderField: "Authorization")
-            let (data, responseMeta) = try await session.data(for: request)
-            if let json = String(data: data, encoding: .utf8) {
-                print("📡 Raw MTvVideosNEW Legendary fetch (page): \(String(json.prefix(500)))…")
-            }
-            if let http = responseMeta as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-                print("⚠️ MTvVideosNEW fetch returned HTTP \(http.statusCode), skipping...")
-                break
-            }
-            let response = try decoder.decode(AirtableListResponse<MtvVideoRecord>.self, from: data)
-            mtvAccumulated.append(contentsOf: response.records)
-            nextOffset = response.offset
-        } while nextOffset != nil
-
-        // Process MTvVideosNEW records
-        for rec in mtvAccumulated {
-            let f = rec.fields
-            guard let url = f.url, !url.isEmpty,
-                  let title = f.title, !title.isEmpty
-            else { continue }
-            let artist = f.artistName ?? "Unknown Artist"
-            let yearInt: Int = Int(f.Year ?? "") ?? 0
-            let videoImage = extractVideoImage(from: url)
-            let showFields = LegendaryShowFields(title: title, artist: artist, year: yearInt, youtubeUrl: url, videoImage: videoImage)
-            let show = LegendaryShow(id: rec.id, fields: showFields)
-            let tags = f.LegendaryShows ?? []
-            for tag in tags where !tag.trimmingCharacters(in: .whitespaces).isEmpty {
-                groups[tag, default: []].append(show)
-            }
-        }
-
-        print("✅ Processed \(mtvAccumulated.count) records from MTvVideosNEW table")
-
-        // Convert to categories, shuffle videos within each, and return sorted by name
         let categories: [LegendaryCategory] = groups.map { (key, shows) in
             LegendaryCategory(name: key, shows: shows)
         }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }

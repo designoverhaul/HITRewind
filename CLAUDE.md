@@ -162,8 +162,9 @@ Color.hitRewindSecondaryText // Secondary/muted text
 
 ### Base & Tables
 - **Base ID**: `appxCBIOkiJEZiph7`
-- **MTvVideosNEW** (active): `tblNwqwVyflL8hNDy` - All music videos
+- **MTvVideosNEW** (active): `tblNwqwVyflL8hNDy` - Billboard Hot 100 music videos
 - **MTvVideos** (**DEPRECATED — DO NOT USE**): `tbl3waFYL7jfER18L` — All music video data lives in **MTvVideosNEW**
+- **Videos**: `tblTtRP4kdTDvfrBY` — Source for **Collections page legendary categories** (`LegendaryShow` multi-select field). Do NOT confuse with MTvVideosNEW.
 - **Concerts**: `tbl9umYOUTEVUZKnh`
 - **Concert Videos**: `tbloVr52R37ZRNLFS`
 - **Artists**: `tblu9a6MnrdzECJFJ`

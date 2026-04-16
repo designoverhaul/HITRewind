@@ -34,15 +34,15 @@ final class OrientationManager {
         }
     }
 
-    /// Called when scene activates - enforces landscape on iPad
+    /// Called when scene activates - enforces landscape on iPad only during VJ Mode
     private func enforceOrientationIfNeeded() {
-        // Don't enforce during onboarding or paywall
-        guard !isPaywallShowing && !isOnboardingShowing else { return }
+        // Only enforce landscape when VJ Mode is active
+        guard isVJModeActive else { return }
 
         // Only needed for iPad - iPhone respects AppDelegate
         guard UIDevice.current.userInterfaceIdiom == .pad else { return }
 
-        print("📱 iPad scene activated - enforcing landscape")
+        print("📱 iPad scene activated - enforcing landscape (VJ Mode active)")
         lockToLandscape()
     }
 
@@ -54,13 +54,20 @@ final class OrientationManager {
     }
 
     func lockToLandscape() {
-        print("🔄 lockToLandscape called, isPaywallShowing=\(isPaywallShowing)")
+        print("🔄 lockToLandscape called, isPaywallShowing=\(isPaywallShowing), isVJModeActive=\(isVJModeActive)")
         if isPaywallShowing {
-            print("🛡️ lockToLandscape BLOCKED")
+            print("🛡️ lockToLandscape BLOCKED (paywall showing)")
             return
         }
-        print("🔄 lockToLandscape running")
 
+        // Only force landscape rotation when VJ Mode is active
+        guard isVJModeActive else {
+            print("🔄 lockToLandscape: VJ Mode not active, just clearing flags")
+            isOnboardingShowing = false
+            return
+        }
+
+        print("🔄 lockToLandscape running (VJ Mode)")
         isOnboardingShowing = false
 
         if #available(iOS 16.0, *) {
@@ -94,15 +101,6 @@ final class OrientationManager {
                   let rootVC = windowScene.windows.first?.rootViewController else { return }
 
             rootVC.setNeedsUpdateOfSupportedInterfaceOrientations()
-
-            let targetOrientation = preferredLandscape
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: targetOrientation)) { error in
-                    if let error = error as NSError?, error.code != 0 {
-                        print("⚠️ requestGeometryUpdate error: \(error)")
-                    }
-                }
-            }
         }
     }
 
@@ -137,12 +135,48 @@ final class OrientationManager {
         try? await Task.sleep(nanoseconds: 300_000_000)
     }
 
+    // MARK: - VJ Mode Lock
+
+    func enterVJMode() {
+        print("🎬 enterVJMode: locking to landscape")
+        isVJModeActive = true
+        if #available(iOS 16.0, *) {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootVC = windowScene.windows.first?.rootViewController else { return }
+
+            rootVC.setNeedsUpdateOfSupportedInterfaceOrientations()
+
+            let targetOrientation = preferredLandscape
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: targetOrientation)) { error in
+                    if let error = error as NSError?, error.code != 0 {
+                        print("⚠️ enterVJMode requestGeometryUpdate error: \(error)")
+                    }
+                }
+            }
+        }
+    }
+
+    func exitVJMode() {
+        print("🎬 exitVJMode: unlocking orientation")
+        isVJModeActive = false
+        if #available(iOS 16.0, *) {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootVC = windowScene.windows.first?.rootViewController else { return }
+
+            rootVC.setNeedsUpdateOfSupportedInterfaceOrientations()
+        }
+    }
+
+    // MARK: - Supported Orientations
+
     func supportedOrientations() -> UIInterfaceOrientationMask {
         if isPaywallShowing || isOnboardingShowing {
             return .portrait
         }
-        // iPhone: dynamic island on left (landscape right only)
-        // iPad: either landscape direction
-        return UIDevice.current.userInterfaceIdiom == .pad ? .landscape : .landscapeRight
+        if isVJModeActive {
+            return UIDevice.current.userInterfaceIdiom == .pad ? .landscape : .landscapeRight
+        }
+        return .allButUpsideDown
     }
 }

@@ -342,19 +342,11 @@ struct SearchResultCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack(alignment: .topTrailing) {
-                // Video thumbnail
-                AsyncImage(url: youtubeImageURL) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } placeholder: {
-                    Rectangle()
-                        .fill(Color.hitRewindCardBackground.opacity(0.5))
-                }
-                .frame(maxWidth: .infinity)
-                .aspectRatio(16/9, contentMode: .fit)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                YouTubeThumbnailImage(videoId: result.videoId)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(16/9, contentMode: .fit)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(alignment: .topLeading) {
                     // Rank overlay for Billboard Top 100 videos
                     if let rank = result.rank {
@@ -433,14 +425,6 @@ struct SearchResultCard: View {
         } catch {
             print("Failed to load duration for video \(result.videoId): \(error)")
         }
-    }
-    
-    private var youtubeImageURL: URL? {
-        if !result.videoId.isEmpty {
-            // Use high quality thumbnail (480x360) which is more reliable than maxresdefault
-            return URL(string: "https://img.youtube.com/vi/\(result.videoId)/hqdefault.jpg")
-        }
-        return nil
     }
     
     private var isFavorite: Bool {

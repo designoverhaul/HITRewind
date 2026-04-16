@@ -976,7 +976,7 @@ extension SingleVideoView {
                             fetchVideosForArtist(artist)
                         }) {
                             Text(artist)
-                                .font(.custom(AppFont.ticketingName(), size: 16))
+                                .font(.system(size: 16))
                                 .fontWeight(selectedBrowseArtist == artist ? .bold : .medium)
                                 .foregroundColor(selectedBrowseArtist == artist ? .black : .hitRewindPrimaryText)
                                 .padding(.horizontal, 12)
@@ -1007,7 +1007,7 @@ extension SingleVideoView {
                         fetchLiveVideosForArtist(artist)
                     }) {
                         Text(artist)
-                            .font(.custom(AppFont.ticketingName(), size: 16))
+                            .font(.system(size: 16))
                             .fontWeight(selectedLiveArtist == artist ? .bold : .medium)
                             .foregroundColor(selectedLiveArtist == artist ? .black : .hitRewindPrimaryText)
                             .padding(.horizontal, 12)
@@ -1043,16 +1043,9 @@ extension SingleVideoView {
                         VStack(alignment: .leading, spacing: 4) {
                             // Video thumbnail with badge
                             ZStack {
-                                AsyncImage(url: URL(string: "https://img.youtube.com/vi/\(video.id)/mqdefault.jpg")) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(16/9, contentMode: .fill)
-                                } placeholder: {
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.3))
-                                }
-                                .frame(width: 140, height: 78.75)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                YouTubeThumbnailImage(videoId: video.id)
+                                    .frame(width: 140, height: 78.75)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
                                 // Badge (top-left): Year when in artist mode, Rank when in year mode
                                 VStack {
@@ -1117,16 +1110,9 @@ extension SingleVideoView {
                         VStack(alignment: .leading, spacing: 3) {
                             // Video thumbnail with year badge
                             ZStack {
-                                AsyncImage(url: URL(string: "https://img.youtube.com/vi/\(video.id)/mqdefault.jpg")) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(16/9, contentMode: .fill)
-                                } placeholder: {
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.3))
-                                }
-                                .frame(width: 140, height: 78.75)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                YouTubeThumbnailImage(videoId: video.id)
+                                    .frame(width: 140, height: 78.75)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
                                 // Year badge (top-left) - shows year instead of rank for Epic Shows
                                 VStack {
@@ -1185,16 +1171,9 @@ extension SingleVideoView {
                         VStack(alignment: .leading, spacing: 3) {
                             // Video thumbnail with year badge
                             ZStack {
-                                AsyncImage(url: URL(string: "https://img.youtube.com/vi/\(video.id)/mqdefault.jpg")) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(16/9, contentMode: .fill)
-                                } placeholder: {
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.3))
-                                }
-                                .frame(width: 140, height: 78.75)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                YouTubeThumbnailImage(videoId: video.id)
+                                    .frame(width: 140, height: 78.75)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
                                 // Year badge (top-left)
                                 VStack {
@@ -1260,16 +1239,9 @@ extension SingleVideoView {
                         VStack(alignment: .leading, spacing: 3) {
                             // Video thumbnail with year badge
                             ZStack {
-                                AsyncImage(url: URL(string: "https://img.youtube.com/vi/\(video.id)/mqdefault.jpg")) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(16/9, contentMode: .fill)
-                                } placeholder: {
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.3))
-                                }
-                                .frame(width: 140, height: 78.75)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                YouTubeThumbnailImage(videoId: video.id)
+                                    .frame(width: 140, height: 78.75)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
                                 // Year badge (top-left)
                                 VStack {

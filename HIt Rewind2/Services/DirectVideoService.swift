@@ -20,7 +20,10 @@ class DirectVideoService: ObservableObject {
     @Published var errorMessage: String?
 
     private let baseURL = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/tblNwqwVyflL8hNDy"
-    private let topTodayURL = "https://api.airtable.com/v0/appxCBIOkiJEZiph7/tblY46dNwduOlOuLG"
+    // YouTube Charts: "Top 100 Music Videos United States" playlist (updated daily by YouTube)
+    private let topTodayPlaylistId = "PL4fGSI1pDJn61unMfmrUSz68RT8IFFnks"
+    private let topTodayCacheFileName = "top_today_cache.json"
+    private let topTodayCacheExpiry: TimeInterval = 4 * 60 * 60 // 4 hours
 
     // Cache configuration
     private let cacheFileName = "direct_videos_cache.json"
@@ -216,11 +219,17 @@ class DirectVideoService: ObservableObject {
 
     // MARK: - Top Today Videos
 
-    /// Fetch videos from TopToday table
+    /// Fetch Top 100 Music Videos from YouTube Charts playlist (updated daily by YouTube)
     func fetchTopTodayVideos() async {
-        // If we already have videos loaded, don't reload
         if !topTodayVideos.isEmpty {
             print("📦 DirectVideo: Using \(topTodayVideos.count) cached TopToday videos")
+            return
+        }
+
+        // Try disk cache first
+        if let cached = loadTopTodayCache() {
+            self.topTodayVideos = cached
+            print("📦 DirectVideo: Loaded \(cached.count) TopToday videos from disk cache")
             return
         }
 
@@ -228,88 +237,140 @@ class DirectVideoService: ObservableObject {
         errorMessage = nil
 
         do {
-            var urlComponents = URLComponents(string: topTodayURL)
-            var queryItems: [URLQueryItem] = []
-
-            // Sort by rank ascending
-            queryItems.append(URLQueryItem(name: "sort[0][field]", value: "Rank"))
-            queryItems.append(URLQueryItem(name: "sort[0][direction]", value: "asc"))
-
-            // Set page size
-            queryItems.append(URLQueryItem(name: "pageSize", value: "100"))
-
-            urlComponents?.queryItems = queryItems
-
-            guard let url = urlComponents?.url else {
-                throw DirectVideoError.invalidURL
-            }
-
-            print("🔍 TopToday API URL: \(url.absoluteString)")
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.setValue("Bearer \(AirtableConfig.apiKey)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📡 Raw TopToday Response: \(String(jsonString.prefix(500)))...")
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw DirectVideoError.networkError(NSError(domain: "Invalid response", code: -1))
-            }
-
-            guard (200...299).contains(httpResponse.statusCode) else {
-                throw DirectVideoError.networkError(NSError(domain: "HTTP \(httpResponse.statusCode)", code: httpResponse.statusCode))
-            }
-
-            let decoder = JSONDecoder()
             var allVideos: [DirectVideoRecord] = []
-            var currentData = data
-            var hasMorePages = true
+            var pageToken: String? = nil
+            var rank = 1
 
-            // Handle pagination
-            while hasMorePages {
-                let videoResponse = try decoder.decode(DirectVideoRecordsResponse.self, from: currentData)
-                allVideos.append(contentsOf: videoResponse.records)
-
-                // Check if there are more pages
-                if let offset = videoResponse.offset {
-                    // Fetch next page
-                    var nextQueryItems = queryItems
-                    nextQueryItems.append(URLQueryItem(name: "offset", value: offset))
-                    urlComponents?.queryItems = nextQueryItems
-
-                    guard let nextURL = urlComponents?.url else {
-                        hasMorePages = false
-                        break
-                    }
-
-                    var nextRequest = URLRequest(url: nextURL)
-                    nextRequest.httpMethod = "GET"
-                    nextRequest.setValue("Bearer \(AirtableConfig.apiKey)", forHTTPHeaderField: "Authorization")
-                    nextRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-                    let (nextData, _) = try await URLSession.shared.data(for: nextRequest)
-                    currentData = nextData
-                } else {
-                    hasMorePages = false
+            // YouTube playlistItems returns max 50 per page, so we need 2 pages for 100
+            repeat {
+                var components = URLComponents(string: "\(YouTubeConfig.baseURL)/playlistItems")!
+                var queryItems = [
+                    URLQueryItem(name: "part", value: "snippet"),
+                    URLQueryItem(name: "playlistId", value: topTodayPlaylistId),
+                    URLQueryItem(name: "maxResults", value: "50"),
+                    URLQueryItem(name: "key", value: YouTubeConfig.apiKey)
+                ]
+                if let token = pageToken {
+                    queryItems.append(URLQueryItem(name: "pageToken", value: token))
                 }
-            }
+                components.queryItems = queryItems
+
+                guard let url = components.url else { throw DirectVideoError.invalidURL }
+
+                var request = URLRequest(url: url)
+                if let bundleId = Bundle.main.bundleIdentifier {
+                    request.setValue(bundleId, forHTTPHeaderField: "X-Ios-Bundle-Identifier")
+                }
+                let (data, response) = try await URLSession.shared.data(for: request)
+
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else {
+                    throw DirectVideoError.networkError(
+                        NSError(domain: "HTTP error", code: (response as? HTTPURLResponse)?.statusCode ?? -1)
+                    )
+                }
+
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+                let items = json["items"] as? [[String: Any]] ?? []
+                pageToken = json["nextPageToken"] as? String
+
+                for item in items {
+                    guard let snippet = item["snippet"] as? [String: Any],
+                          let resourceId = snippet["resourceId"] as? [String: Any],
+                          let videoId = resourceId["videoId"] as? String else { continue }
+
+                    let rawTitle = snippet["title"] as? String ?? "Unknown"
+                    let channelTitle = snippet["videoOwnerChannelTitle"] as? String ?? ""
+                    let artistName = Self.cleanChannelName(channelTitle)
+                    let videoTitle = Self.cleanVideoTitle(rawTitle, artist: artistName)
+
+                    let record = DirectVideoRecord(
+                        id: videoId,
+                        fields: DirectVideoFields(
+                            title: videoTitle,
+                            artistName: artistName,
+                            url: "https://www.youtube.com/watch?v=\(videoId)",
+                            rank: rank,
+                            year: nil
+                        )
+                    )
+                    allVideos.append(record)
+                    rank += 1
+                }
+            } while pageToken != nil && allVideos.count < 100
 
             self.topTodayVideos = allVideos
-            print("✅ Fetched \(allVideos.count) videos from TopToday")
+            saveTopTodayCache(allVideos)
+            print("✅ Fetched \(allVideos.count) videos from YouTube Charts playlist")
 
-        } catch let error as DirectVideoError {
-            self.errorMessage = error.localizedDescription
-            print("❌ TopToday fetch error: \(error.localizedDescription)")
         } catch {
-            self.errorMessage = "Failed to fetch TopToday videos: \(error.localizedDescription)"
+            // Don't set errorMessage — it's shared state and would block the year-based catalog view
             print("❌ TopToday fetch error: \(error)")
         }
 
         isLoading = false
+    }
+
+    /// Strip "VEVO", "- Topic", "Official", etc. from channel names to get clean artist names
+    private static func cleanChannelName(_ name: String) -> String {
+        name.replacingOccurrences(of: "VEVO", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: " - Topic", with: "")
+            .replacingOccurrences(of: " Official", with: "")
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Strip "Artist - " prefix and "(Official Video)"-style suffixes from YouTube titles
+    private static func cleanVideoTitle(_ title: String, artist: String) -> String {
+        var cleaned = title
+
+        // Drop "Artist - " prefix if present (case-insensitive)
+        if !artist.isEmpty {
+            let prefix = "\(artist) - "
+            if cleaned.lowercased().hasPrefix(prefix.lowercased()) {
+                cleaned = String(cleaned.dropFirst(prefix.count))
+            }
+        }
+
+        // Strip common parenthetical/bracket suffixes
+        let patterns = [
+            #"\s*\((?:Official\s+)?(?:Music\s+)?Video\)"#,
+            #"\s*\(Official\s+Audio\)"#,
+            #"\s*\(Official\s+Lyric\s+Video\)"#,
+            #"\s*\(Lyric\s+Video\)"#,
+            #"\s*\(Visualizer\)"#,
+            #"\s*\(Audio\)"#,
+            #"\s*\(Official\)"#,
+            #"\s*\(Clean\s+Edit\)"#,
+            #"\s*\[(?:Official\s+)?(?:Music\s+)?Video\]"#,
+            #"\s*\[Official\s+Audio\]"#,
+        ]
+        for pattern in patterns {
+            cleaned = cleaned.replacingOccurrences(of: pattern, with: "", options: [.regularExpression, .caseInsensitive])
+        }
+
+        return cleaned.trimmingCharacters(in: .whitespaces)
+    }
+
+    // MARK: - TopToday Disk Cache
+
+    private var topTodayCacheURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent(topTodayCacheFileName)
+    }
+
+    private func loadTopTodayCache() -> [DirectVideoRecord]? {
+        guard let url = topTodayCacheURL,
+              let data = try? Data(contentsOf: url),
+              let cached = try? JSONDecoder().decode(DirectVideoCacheData.self, from: data),
+              Date().timeIntervalSince(cached.timestamp) < topTodayCacheExpiry else { return nil }
+        return cached.videos
+    }
+
+    private func saveTopTodayCache(_ videos: [DirectVideoRecord]) {
+        guard let url = topTodayCacheURL else { return }
+        let cacheData = DirectVideoCacheData(videos: videos, timestamp: Date())
+        if let data = try? JSONEncoder().encode(cacheData) {
+            try? data.write(to: url)
+        }
     }
 }

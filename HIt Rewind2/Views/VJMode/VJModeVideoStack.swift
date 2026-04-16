@@ -68,17 +68,10 @@ struct VJModeVideoThumbnail: View {
             VStack(spacing: 2) {
                 // Thumbnail image
                 ZStack {
-                    AsyncImage(url: URL(string: "https://img.youtube.com/vi/\(video.id)/mqdefault.jpg")) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(16/9, contentMode: .fill)
-                    } placeholder: {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                    }
-                    .frame(height: 56)
-                    .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    YouTubeThumbnailImage(videoId: video.id)
+                        .frame(height: 56)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
 
                     // Playing indicator overlay
                     if isCurrentlyPlaying {

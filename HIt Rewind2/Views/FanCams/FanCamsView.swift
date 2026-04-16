@@ -14,6 +14,10 @@ struct FanCamsView: View {
 
     @State private var selectedCategory: FanCamCategory?
     @State private var selectedArtist: Playlist?
+
+    // Persist user's last selection so it's restored on next launch
+    @AppStorage("fancams.lastCategoryName") private var lastCategoryName: String = ""
+    @AppStorage("fancams.lastArtistName") private var lastArtistName: String = ""
     @State private var visibleVideoIndices: [Int] = []
     @State private var isLoadingVideos: Bool = false
     @State private var selectedTab: VideoSource = .liveLibrary
@@ -21,6 +25,12 @@ struct FanCamsView: View {
     @State private var isLoadingOfficialVideos: Bool = false
     @State private var chartVideos: [DirectVideoRecord] = []
     @State private var isLoadingChartVideos: Bool = false
+
+    // 0 = channel avatar fully visible at full size, 1 = scrolled fully off-screen.
+    // Drives the shrink in the channel header AND the grow in the artists row.
+    @State private var channelHeaderScrollProgress: CGFloat = 0
+    private let bigAvatarSize: CGFloat = 119
+    private let listAvatarSize: CGFloat = 38
 
     private enum VideoSource {
         case liveLibrary
@@ -43,10 +53,30 @@ struct FanCamsView: View {
         .task {
             await airtableService.fetchCategories()
 
-            // Default to "Pop" category on load
-            if let popCategory = airtableService.categories.first(where: { $0.name == "Pop" }) {
-                selectedCategory = popCategory
-                await airtableService.fetchVideoCounts(for: popCategory.artists)
+            // Restore last category if it still exists, otherwise default to "Pop"
+            let initialCategory = airtableService.categories.first(where: { $0.name == lastCategoryName })
+                ?? airtableService.categories.first(where: { $0.name == "Pop" })
+
+            if let category = initialCategory {
+                selectedCategory = category
+                await airtableService.fetchVideoCounts(for: category.artists)
+
+                // Restore last artist if it's in this category, otherwise pick a random one
+                let artistName = category.artists.first(where: {
+                    $0.localizedCaseInsensitiveCompare(lastArtistName) == .orderedSame
+                }) ?? category.artists.randomElement()
+
+                if let name = artistName {
+                    let placeholder = URL(string: "https://via.placeholder.com/300x200")!
+                    let artist = Playlist(
+                        id: name,
+                        fields: PlaylistFields(
+                            thumbnail: placeholder, year: 0, title: name,
+                            videoUrls: [], artistNames: [], videoTitles: [], isVisible: []
+                        )
+                    )
+                    handleArtistSelection(artist)
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .vjPickerArtistChanged)) { notification in
@@ -90,31 +120,9 @@ struct FanCamsView: View {
 
     // MARK: - iPad Layout
     private var iPadLayout: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Custom header row
-            HStack {
-                Color.clear
-                    .frame(width: 60, height: 22)
-
-                Spacer()
-
-                // Logo centered
-                Image("logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 28)
-
-                Spacer()
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 8)
-            .padding(.bottom, 16)
-            .background(Color.hitRewindBackground)
-
-            contentView
-        }
-        .navigationTitle("")
-        .navigationBarHidden(true)
+        contentView
+            .navigationTitle("")
+            .navigationBarHidden(true)
     }
 
     // MARK: - iPhone Layout
@@ -144,35 +152,73 @@ struct FanCamsView: View {
     // MARK: - Three Column Layout (Categories | Artists | Videos)
     private var threeColumnLayout: some View {
         GeometryReader { geometry in
+            if verticalSizeClass == .regular {
+                // Portrait: top half = categories + artists, bottom half = videos
+                portraitLayout(geometry: geometry)
+            } else {
+                // Landscape: original 3-column side by side
+                landscapeLayout(geometry: geometry)
+            }
+        }
+    }
+
+    // MARK: - Portrait Layout (Top/Bottom Split)
+    private func portraitLayout(geometry: GeometryProxy) -> some View {
+        VStack(spacing: 0) {
+            // Top half: Categories + Artists side by side
             HStack(spacing: 0) {
-                // Column 1: Categories list
                 categoriesColumn
-                    .frame(width: geometry.size.width * 0.22)
+                    .frame(width: geometry.size.width * 0.4)
                     .background(Color.hitRewindBackground)
 
-                // Divider
                 Rectangle()
                     .fill(Color.gray.opacity(0.3))
                     .frame(width: 1)
 
-                // Column 2: Artists list for selected category
                 artistsColumn
-                    .frame(width: max(1, geometry.size.width * 0.23 - 1))
-                    .background(Color.hitRewindBackground.opacity(0.7))
-
-                // Divider
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 1)
-
-                // Column 3: Videos for selected artist
-                videosColumn
-                    .padding(.leading, 6)
                     .frame(maxWidth: .infinity)
-                    .background(Color.hitRewindBackground.opacity(0.5))
+                    .background(Color.hitRewindBackground.opacity(0.7))
             }
-            .ignoresSafeArea(.container, edges: .trailing)
+            .frame(height: geometry.size.height * 0.3)
+
+            // Divider between top and bottom
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(height: 1)
+
+            // Bottom half: Videos
+            videosColumn
+                .padding(.leading, 6)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.hitRewindBackground.opacity(0.5))
         }
+    }
+
+    // MARK: - Landscape Layout (3 columns)
+    private func landscapeLayout(geometry: GeometryProxy) -> some View {
+        HStack(spacing: 0) {
+            categoriesColumn
+                .frame(width: geometry.size.width * 0.22)
+                .background(Color.hitRewindBackground)
+
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 1)
+
+            artistsColumn
+                .frame(width: max(1, geometry.size.width * 0.23 - 1))
+                .background(Color.hitRewindBackground.opacity(0.7))
+
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 1)
+
+            videosColumn
+                .padding(.leading, 6)
+                .frame(maxWidth: .infinity)
+                .background(Color.hitRewindBackground.opacity(0.5))
+        }
+        .ignoresSafeArea(.container, edges: .trailing)
     }
 
     // MARK: - Categories Column
@@ -216,7 +262,23 @@ struct FanCamsView: View {
                             Button(action: {
                                 handleArtistSelection(artist)
                             }) {
-                                HStack {
+                                HStack(spacing: 0) {
+                                    // Avatar grows in next to the selected artist's name as
+                                    // the channel-header avatar is scrolled off-screen.
+                                    if isSelected,
+                                       let iconUrl = selectedArtist?.fields.youtubeChannelIcon,
+                                       let url = URL(string: iconUrl) {
+                                        let size = listAvatarSize * channelHeaderScrollProgress
+                                        AsyncImage(url: url) { image in
+                                            image.resizable().scaledToFill()
+                                        } placeholder: {
+                                            Circle().fill(Color.gray.opacity(0.3))
+                                        }
+                                        .frame(width: size, height: size)
+                                        .clipShape(Circle())
+                                        .padding(.trailing, size > 0 ? 6 : 0)
+                                    }
+
                                     Text(artist.fields.title)
                                         .font(.system(size: 14))
                                         .fontWeight(isSelected ? .semibold : .regular)
@@ -226,7 +288,7 @@ struct FanCamsView: View {
                                 }
                                 .padding(.leading, 8)
                                 .padding(.trailing, 4)
-                                .padding(.vertical, 12)
+                                .padding(.vertical, 6)
                                 .background(isSelected ? Color.hitRewindPurple.opacity(0.15) : Color.clear)
                             }
                             .buttonStyle(.plain)
@@ -271,6 +333,13 @@ struct FanCamsView: View {
                     }
                 }
                 .id(selectedArtist?.fields.title ?? "")
+                .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                    geometry.contentOffset.y
+                } action: { _, newValue in
+                    // Map scroll [0 ... avatar+padding] → progress [0 ... 1]
+                    let triggerDistance = bigAvatarSize + 14
+                    channelHeaderScrollProgress = max(0, min(1, newValue / triggerDistance))
+                }
             } else {
                 VStack {
                     Spacer()
@@ -309,38 +378,74 @@ struct FanCamsView: View {
                     Circle()
                         .fill(Color.gray.opacity(0.3))
                 }
-                .frame(width: 119, height: 119)
+                .frame(width: bigAvatarSize, height: bigAvatarSize)
                 .clipShape(Circle())
+                // Shrink from 1.0 → 0.2 in place (vertically centered)
+                .scaleEffect(1.0 - 0.8 * channelHeaderScrollProgress)
             }
 
             Text(selectedArtist?.fields.title ?? "")
                 .font(.custom(AppFont.ticketingName(), size: 20))
                 .foregroundColor(.hitRewindPurple)
-
-            Spacer()
         }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Video Source Picker
-    private var videoPicker: some View {
-        Picker("Source", selection: $selectedTab) {
-            Text("Live Library").tag(VideoSource.liveLibrary)
-            if selectedArtist?.fields.youtubeChannelId != nil {
-                Text("New Releases").tag(VideoSource.official)
-            }
-            if !chartVideos.isEmpty {
-                Text("Charts").tag(VideoSource.charts)
-            }
+    private var availableTabs: [(label: String, tag: VideoSource)] {
+        var tabs: [(label: String, tag: VideoSource)] = [("Live Library", .liveLibrary)]
+        if selectedArtist?.fields.youtubeChannelId != nil {
+            tabs.append(("New Releases", .official))
         }
-        .pickerStyle(.segmented)
+        if !chartVideos.isEmpty {
+            tabs.append(("Charts", .charts))
+        }
+        return tabs
     }
 
     // MARK: - Sticky Video Picker (pinned section header)
     private var stickyVideoPicker: some View {
-        videoPicker
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color.hitRewindBackground)
+        HStack(spacing: 6) {
+            ForEach(availableTabs, id: \.tag) { tab in
+                let isSelected = selectedTab == tab.tag
+                Button(action: { selectedTab = tab.tag }) {
+                    Text(tab.label)
+                        .font(.system(size: 13, weight: isSelected ? .bold : .medium))
+                        .foregroundColor(isSelected ? .black : .hitRewindPrimaryText)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(isSelected ? Color.hitRewindPurple : Color.hitRewindSecondaryBackground)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(
+            ZStack {
+                // Blur layer (blurs whatever videos pass underneath)
+                Rectangle().fill(.ultraThinMaterial)
+                // Black tint kills the bluish-gray Material cast — invisible
+                // against the black background, dims videos when they're behind.
+                Color.black.opacity(0.7)
+            }
+            .mask(
+                LinearGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: .black, location: 0.0),
+                        .init(color: .black, location: 0.6),
+                        .init(color: .clear, location: 1.0)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .allowsHitTesting(false)
+        )
     }
 
     // MARK: - Tab Content (switches content without rebuilding scroll view)
@@ -608,6 +713,7 @@ struct FanCamsView: View {
     private func handleCategorySelection(_ category: FanCamCategory) {
         print("📂 Category selected: \(category.name)")
         selectedCategory = category
+        lastCategoryName = category.name
         selectedArtist = nil
         visibleVideoIndices = []
         selectedTab = .liveLibrary
@@ -622,10 +728,12 @@ struct FanCamsView: View {
     private func handleArtistSelection(_ artist: Playlist) {
         print("👤 Artist selected: \(artist.fields.title)")
         AnalyticsService.logArtistViewed(artist: artist.fields.title)
+        lastArtistName = artist.fields.title
         isLoadingVideos = true
         selectedTab = .liveLibrary
         officialChannelVideos = []
         chartVideos = []
+        channelHeaderScrollProgress = 0
 
         Task {
             print("🔎 Loading videos for artist: \(artist.fields.title)")
@@ -750,8 +858,12 @@ struct FanCamsView: View {
                   record.fields.yearInt != nil else { continue }
 
             let parsedNames = parseArtistNames(from: recordArtist)
+            let normalizedArtistName = normalizeForComparison(artistName).lowercased().trimmingCharacters(in: .whitespaces)
+            let strippedArtistName = stripPunctuation(normalizedArtistName)
             let matches = parsedNames.contains { name in
-                name.localizedCaseInsensitiveContains(artistName)
+                let normalized = normalizeForComparison(name).lowercased().trimmingCharacters(in: .whitespaces)
+                // Exact match first, then try with punctuation stripped (R.E.M. ↔ REM)
+                return normalized == normalizedArtistName || stripPunctuation(normalized) == strippedArtistName
             }
 
             if matches && !addedVideoIds.contains(videoId) {
@@ -765,12 +877,27 @@ struct FanCamsView: View {
     }
 
     private func parseArtistNames(from artistField: String) -> [String] {
-        let separators = [" & ", " feat. ", " feat ", " featuring ", " and ", ", ", "/"]
+        let separators = [" & ", " feat. ", " feat ", " featuring ", " and ", ", ", " / "]
         var names = [artistField]
         for separator in separators {
             names = names.flatMap { $0.components(separatedBy: separator) }
         }
         return names.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+    }
+
+    /// Normalize quotes/apostrophes for reliable string matching
+    private func normalizeForComparison(_ text: String) -> String {
+        text.replacingOccurrences(of: "\u{2019}", with: "'")  // ' → '
+            .replacingOccurrences(of: "\u{2018}", with: "'")  // ' → '
+            .replacingOccurrences(of: "\u{201C}", with: "\"") // " → "
+            .replacingOccurrences(of: "\u{201D}", with: "\"") // " → "
+    }
+
+    /// Strip punctuation for fuzzy artist name matching (R.E.M. → REM, AC/DC → ACDC)
+    private func stripPunctuation(_ text: String) -> String {
+        text.replacingOccurrences(of: ".", with: "")
+            .replacingOccurrences(of: " + ", with: " and ")
+            .trimmingCharacters(in: .whitespaces)
     }
 
     private var chartVideosByYear: [(year: Int, videos: [DirectVideoRecord])] {
